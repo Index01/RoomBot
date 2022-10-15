@@ -26,25 +26,33 @@ Proposed DB schemaV0.01
 ### React
 install deps
 ```
-npm install axios bootstrap reactstrap --save
+npm install
+npm install axios bootstrap reactstrap react-bs-datatable--save
 ```
 
 ## Dev setup
 
 First time:
 ```
-python manage.py makemigrations --empty --name reservations guests
+python manage.py makemigrations --empty --name reservations reservations
 ```
+Then the usual make migrations migrate.
 
 Model changes:
 ```
 python manage.py makemigrations
 python manage.py migrate
 ```
+Source the env vars:
+```
+source backend/.env
+```
 
 Run it:
 ```
 python manage.py runserver 0.0.0.0:8000
+and then another terminal:
+cd frontend && npm start
 ```
 
 ### Dependencies

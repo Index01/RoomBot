@@ -1,25 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+//import RoomDataTable from './components/dasDataTable.js';
+//import "./styles/RoomDataTable.css";
+import RoomSelekta from "./pages/RoomSelekta"
+import Login from "./pages/Login"
+import { Route, Routes } from "react-router-dom"
 
-function App() {
+
+
+export default function App() {
+  document.body.style = "background: #343a40;";
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/rooms" element={<RoomSelekta />} />
+    </Routes>
+
+
+    // <span className="componentContainer">
+
+    //     <div className="AppHeader">
+    //       <p>
+    //          Select it. Swap it. Wtvr.
+    //       </p>
+    //     </div>
+    //      
+    //     <div className="DTApp">
+    //       <RoomDataTable/>
+    //     </div>
+    // </span>
   );
 }
-
-export default App;
