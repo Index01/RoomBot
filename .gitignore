@@ -2,6 +2,9 @@
 ### Mine ###
 .env*
 env/
+backend/reservations/migrations/*
+!backend/reservations/migrations/.gitkeep
+
 
 
 ### C++ ###

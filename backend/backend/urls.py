@@ -1,4 +1,4 @@
-"""backend URL Configuration
+"""room_bot URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.1/topics/http/urls/
@@ -14,8 +14,21 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
+from reservations import views
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    re_path(r'^api/guests/$', views.guest_list),
+    re_path(r'^api/guests/([0-9])$', views.guest_detail),
+    re_path(r'^api/rooms/$', views.room_list),
+    re_path(r'^api/rooms/([0-9])$', views.room_detail),
+    re_path(r'^api/login/$', views.login),
+    re_path(r'^api/my_rooms/$', views.my_rooms),
+    re_path(r'^api/swap_gen/$', views.swap_gen),
+    re_path(r'^api/swap_it_up/$', views.swap_it_up),
 ]
+
+ 
