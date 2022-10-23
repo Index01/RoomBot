@@ -14,20 +14,17 @@ import {
 import axios from 'axios';
 import React from "react";
 
-const CreateSwapCode = (evt) => {
-        console.log(evt);
+const IAmAParty = (evt) => {
+        const duration = prompt("\n\nDo you want to let ppl know they can stop by?\nDon't mind making new friends?\n\nEnter the number of hours your would like to be listed as a ppaaarrtaay.\n");
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://192.168.4.24:8000/api/swap_gen/`, {
-        //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
-                jwt: jwt,
+        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/i_am_party/`, {
+                jwt: jwt['jwt'],
                 number: evt,
+                duration: duration,
           })
           .then(res => {
-            const phrase = JSON.parse(res.data)["swap_phrase"];
-            //localStorage.setItem('jwt', res.data);
-            //window.location = "/rooms";
-            alert(`Send this code to your friend if u rly want to swap roomz with them. You will need to checkin at the front desk within the hr.\n\nThis code is good for 10mins\nNo un-swapzies.\n\nSwap Code: ${phrase}`);
-    
+            const duration_remaining = JSON.parse(res.data)["swap_phrase"];
+	    console.log(duration_remaining);
           })
           .catch((error) => {
             //this.setState({errorMessage: error.message});
@@ -35,9 +32,6 @@ const CreateSwapCode = (evt) => {
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
-              //setErrorMessage("Example error message!")
-              //errorMessage = "Failure to Login, fam!";
-              //errorFlag = true; 
             } else if (error.request) {
               console.log("network error");
             } else {
@@ -46,25 +40,18 @@ const CreateSwapCode = (evt) => {
           });
 }
 
-const SendSwapCode = (evt) => {
 
-}
-
-const EnterSwapCode = (evt) => {
+const CreateSwapCode = (evt) => {
         console.log(evt);
-        const code = prompt(`Enter your friends swap code to swap this room with theirs.`);
-        console.log(code);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://192.168.4.24:8000/api/swap_it_up/`, {
+        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_gen/`, {
         //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
-                jwt: jwt,
+                jwt: jwt['jwt'],
                 number: evt,
-                swap_code: code
           })
           .then(res => {
-            console.log(res.data);
-            //localStorage.setItem('jwt', res.data);
-            //window.location = "/rooms";
+            const phrase = JSON.parse(res.data)["swap_phrase"];
+            alert(`Send this code to your friend if u rly want to swap roomz with them. You will need to checkin at the front desk within the hr.\n\nThis code is good for 10mins\nNo un-swapzies.\n\nSwap Code: ${phrase}`);
           })
           .catch((error) => {
             //this.setState({errorMessage: error.message});
@@ -72,9 +59,36 @@ const EnterSwapCode = (evt) => {
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
-              //setErrorMessage("Example error message!")
+            } else if (error.request) {
+              console.log("network error");
+            } else {
+              console.log(error);
+            }
+          });
+}
+
+
+const EnterSwapCode = (evt) => {
+        console.log(evt);
+        const code = prompt(`Enter your friends swap code to swap this room with theirs.`);
+        console.log(code);
+        const jwt = JSON.parse(localStorage.getItem('jwt'));
+        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
+        //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+                jwt: jwt['jwt'],
+                number: evt,
+                swap_code: code
+          })
+          .then(res => {
+            console.log(res.data);
+          })
+          .catch((error) => {
+            //this.setState({errorMessage: error.message});
+            //errorMessage = error.mesage;
+            if (error.response) {
+              console.log(error.response);
+              console.log("server responded");
               //errorMessage = "Failure to Login, fam!";
-              //errorFlag = true; 
             } else if (error.request) {
               console.log("network error");
             } else {
@@ -86,13 +100,27 @@ const EnterSwapCode = (evt) => {
 
 const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
     {
-      prop: "type",
-      title: "RoomType",
+      prop: "number",
+      title: "Number",
+      isSortable: true,
     },
     {
-      prop: "number",
-      title: "RoomNumber",
-      isSortable: true,
+      prop: "type",
+      title: "Type",
+    },
+    {
+      prop: "button",
+      cell: (row) => (
+        <Button
+          variant="outline-info"
+          size="sm"
+          onClick={(e) => {
+            IAmAParty(row.number);
+          }}
+        >
+          IAmAParty
+        </Button>
+      )
     },
     {
       prop: "button",
@@ -131,33 +159,17 @@ export default class MyRoomsTable extends React.Component {
   }
   
   
-  
-  //let arr = new Array();
   componentDidMount() {
-    //axios.get(`http://192.168.4.24:8000/api/rooms/`)
-    //  .then(res => {
-    //    //console.log(res.data);
-    //    //arr.push(res.data)
-    //    //res.data.forEach(elem => arr.push(elem))
-    //    //const jwt = JSON.parse(localStorage.getItem('jwt'));
-    //    //console.log(jwt);
-    //    const data = res.data
-    //    this.state.rooms = data
-    //    this.setState({ data  });
-    //    console.log(this.state.rooms);
-    //  })
-
-
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    axios.post(`http://192.168.4.24:8000/api/my_rooms/`, {
+    axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/my_rooms/`, {
     //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
-            jwt: jwt
+            jwt: jwt["jwt"]
       })
       .then(res => {
         //console.log(res.data);
         //window.location = "/rooms";
         const data = JSON.parse(res.data)
-        //console.log(JSON.parse(JSON.stringify(data)));
+        console.log(JSON.parse(JSON.stringify(data)));
         this.state.rooms = data
         this.setState({ data  });
     

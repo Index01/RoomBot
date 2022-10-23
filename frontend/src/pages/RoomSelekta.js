@@ -9,17 +9,17 @@ const RoomSelekta = () => {
         <span className="componentContainer">
 
             <div className="AppHeader">
-              <p>
-                 Select it. Swap it. Wtvr.
-              </p>
+	         <img src="roombaht_header.png" alt="RoomBaht9000" />
             </div>
              
-            <div className="DTApp">
-              <RoomDataTable/>
-            </div>
             <div className="DTApp"> My Rooms
               <MyRoomsTable/>
             </div>
+
+            <div className="DTApp"> Swappable Rooms
+              <RoomDataTable/>
+            </div>
+
         </span>
     );
 };

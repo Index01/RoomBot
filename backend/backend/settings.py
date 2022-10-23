@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 
+import os
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6feu^))em7+u=dh6_aj$@&*1^zw%*_yj-qc993-qg)hduxo5#0'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -140,12 +143,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # not fot prod
 CORS_ORIGIN_ALLOW_ALL = True 
 
+ALLOWED_HOSTS = ["*"] # for testing only
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:80",
+    "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:80",
+    "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000",
+    "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000"
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -153,3 +161,5 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 't4l3rb@gmail.com'
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+ 

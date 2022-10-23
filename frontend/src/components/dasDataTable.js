@@ -12,21 +12,22 @@ import {
 
 import axios from 'axios';
 import React from "react";
+import ModalImage from "react-modal-image";
 
-const ReserveRoom = (evt) => {
+
+const RequestSwap = (evt) => {
+        const contacts = prompt("Ok fam so rly we can only do so much for you here. We can send the owner of this room an email with your contact info, try to put you in touch, but we cant make them look at their phone or care about trading rooms with you. So. If you have another way of reaching this person go for it.\n\nOnce you are in contact, click the CreateSwapCode button on your room. Send the code and have them enter it.\n\nEnter your email addres or phone number for the room owner to reach you:");
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://192.168.4.24:8000/api/rooms/`, {
-        //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
-
-                jwt: jwt,
-                number: evt 
-          })
+        const guest = {
+            jwt: jwt["jwt"],
+            number: evt,
+	    contact_info: contacts
+        }
+        //axios.post(`http://192.168.4.24:8000/api/rooms/`, {
+        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_request/`, { guest })
           .then(res => {
             console.log(res.data);
-            //localStorage.setItem('jwt', res.data);
-            //window.location = "/rooms";
-    
           })
           .catch((error) => {
             //this.setState({errorMessage: error.message});
@@ -34,9 +35,6 @@ const ReserveRoom = (evt) => {
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
-              //setErrorMessage("Example error message!")
-              //errorMessage = "Failure to Login, fam!";
-              //errorFlag = true; 
             } else if (error.request) {
               console.log("network error");
             } else {
@@ -48,40 +46,49 @@ const ReserveRoom = (evt) => {
 
 const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
     {
-      prop: "name_take3",
-      title: "Take3Name",
-      isFilterable: true
-    },
-    {
-      prop: "name_hotel",
-      title: "HotelName"
-    },
-    {
       prop: "number",
-      title: "RoomNumber",
+      title: "Number",
       isSortable: true,
       isFilterable: true
     },
     {
+      prop: "name_hotel",
+      title: "Type",
+      isFilterable: true
+    },
+    {
       prop: "available",
-      title: "Available"
+      title: "Footprint",
+      cell: () => (
+          <ModalImage
+            small={"babyface_example_thumbnail.png"}
+            large={"babyface_example.png"}
+            alt="Babyface_footprint"
+          />
+      )
     },
     {
       prop: "score",
-      title: "Stuff"
+      title: "FloorPlan",
+      cell: () => (
+          <ModalImage
+            small={"floors_12-15-16-17_example_thumbnail.png"}
+            large={"floors_12-15-16-17_example.png"}
+            alt="Babyface_footprint"
+          />
+      )
     },
     {
       prop: "button",
       cell: (row) => (
-        <Button
-          variant="outline-primary"
+	<Button disabled={row.available ? false : true}
+	  variant={row.available ? "outline-primary" : "outline-secondary"}
           size="sm"
           onClick={(e) => {
-            alert(`Room number:${row.number} will be reserved in your name. \nYou will need to checkin at the front desk`);
-            ReserveRoom(row.number);
+            RequestSwap(row.number);
           }}
         >
-          SelectRoom
+          SendSwapRequest
         </Button>
       )
     }
@@ -95,22 +102,28 @@ export default class RoomDataTable extends React.Component {
   
   
   
-  //let arr = new Array();
   componentDidMount() {
-    axios.get(`http://192.168.4.24:8000/api/rooms/`)
-    //console.log(process.env.REACT_APP_DJANGO_IP+":8000/api/login/");
-    //axios.get(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/")
+    const jwt = JSON.parse(localStorage.getItem('jwt'));
+    axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/rooms/`, {
+    //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+            jwt: jwt["jwt"]
+      })
       .then(res => {
-        //console.log(res.data);
-        //arr.push(res.data)
-        //res.data.forEach(elem => arr.push(elem))
-        //const jwt = JSON.parse(localStorage.getItem('jwt'));
-        //console.log(jwt);
+        console.log(res.data);
         const data = res.data
+       // const data = JSON.parse(res.data)
+       // console.log(JSON.parse(JSON.stringify(data)));
+
         this.state.rooms = data
         this.setState({ data  });
-        //console.log(data);
-        console.log(this.state.rooms);
+
+    //axios.get(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/rooms/`)
+    //  .then(res => {
+    //    //console.log(res.data);
+    //    const data = res.data
+    //    this.state.rooms = data
+    //    this.setState({ data  });
+    //    console.log(this.state.rooms);
       })
   }
 
