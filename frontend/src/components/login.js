@@ -2,9 +2,6 @@ import "../styles/Login.css";
 import React from 'react';
 import axios from 'axios';
 import { useState } from 'react';
-import { useNavigate, Navigate } from "react-router-dom";
-
-    
 
 
 export default class LoginForm extends React.Component {
@@ -27,16 +24,24 @@ export default class LoginForm extends React.Component {
         const email = uname.value;
         const otp = pass.value;
     
-        axios.post(`http://192.168.4.24:8000/api/login/`, {
+	//axios.post(`http://192.168.4.24:8000/api/login/`, {
+        //axios.post(`http://127.0.0.1:8000/api/login/`, {
+        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/`, {
                 guest_email: email,
                 jwt: otp
           })
           .then(res => {
-            localStorage.setItem('jwt', res.data);
-            localStorage.setItem('redirect', "true");
+	    throw new Error("Something went badly wrong!");
+	    //const data = res.data
+            //console.log(data);
+            //console.log("rcvd resp");
+            //window.localStorage.setItem('jwt', res.data);
+            //localStorage.setItem('redirect', "true");
+            //window.location.href = "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/rooms";
     
           })
           .catch((error) => {
+	    throw new Error("Something went badly wrong!");
             this.setState({errorMessage: error.message});
             if (error.response) {
               console.log(error.response);
@@ -56,7 +61,8 @@ export default class LoginForm extends React.Component {
            if (redirect_local) {
              console.log('Redirectingggg');
              localStorage.setItem('redirect', "false");
-             window.location = "/rooms";
+             //window.location = "/rooms";
+             window.location.href = "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/rooms";
            }
     }
 
