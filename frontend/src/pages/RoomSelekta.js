@@ -6,7 +6,7 @@ import React from 'react';
 
 const RoomSelekta = () => {
     return(
-        <span className="componentContainer">
+        <div className="componentContainer">
 
             <div className="AppHeader">
 	         <img src="roombaht_header.png" alt="RoomBaht9000" />
@@ -20,7 +20,7 @@ const RoomSelekta = () => {
               <RoomDataTable/>
             </div>
 
-        </span>
+        </div>
     );
 };
 

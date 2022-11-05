@@ -51,7 +51,7 @@ const CreateSwapCode = (evt) => {
           })
           .then(res => {
             const phrase = JSON.parse(res.data)["swap_phrase"];
-            alert(`Send this code to your friend if u rly want to swap roomz with them. You will need to checkin at the front desk within the hr.\n\nThis code is good for 10mins\nNo un-swapzies.\n\nSwap Code: ${phrase}`);
+            alert(`Send this code to your friend if u rly want to trade roomz with them. Direct them to follow the link in the request email, or initial placement email. Have them click EnterSwapCode on the room they are trading to you.\n\nThis code is good for 10mins\nNo un-swapzies.\n\nSwap Code: ${phrase}`);
           })
           .catch((error) => {
             //this.setState({errorMessage: error.message});
@@ -70,7 +70,10 @@ const CreateSwapCode = (evt) => {
 
 const EnterSwapCode = (evt) => {
         console.log(evt);
-        const code = prompt(`Enter your friends swap code to swap this room with theirs.`);
+        const code = prompt(`Enter your friends swap code to trade this room with theirs.`);
+        if (code === null) {
+            return; 
+        }
         console.log(code);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
         axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
@@ -81,6 +84,7 @@ const EnterSwapCode = (evt) => {
           })
           .then(res => {
             console.log(res.data);
+            window.location = "/rooms" 
           })
           .catch((error) => {
             //this.setState({errorMessage: error.message});
@@ -108,20 +112,20 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
       prop: "type",
       title: "Type",
     },
-    {
-      prop: "button",
-      cell: (row) => (
-        <Button
-          variant="outline-info"
-          size="sm"
-          onClick={(e) => {
-            IAmAParty(row.number);
-          }}
-        >
-          IAmAParty
-        </Button>
-      )
-    },
+    //{
+    //  prop: "button",
+    //  cell: (row) => (
+    //    <Button
+    //      variant="outline-info"
+    //      size="sm"
+    //      onClick={(e) => {
+    //        IAmAParty(row.number);
+    //      }}
+    //    >
+    //      IAmAParty
+    //    </Button>
+    //  )
+    //},
     {
       prop: "button",
       cell: (row) => (

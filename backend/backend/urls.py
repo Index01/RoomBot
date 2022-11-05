@@ -30,6 +30,7 @@ urlpatterns = [
     re_path(r'^api/swap_gen/$', views.swap_gen),
     re_path(r'^api/swap_it_up/$', views.swap_it_up),
     re_path(r'^api/swap_request/$', views.swap_request),
+    re_path(r'^api/login_reset/$', views.login_reset),
 ]
 
  

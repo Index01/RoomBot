@@ -5,6 +5,8 @@ env/
 backend/reservations/migrations/*
 !backend/reservations/migrations/.gitkeep
 /samples/main_*
+output/*
+!output/.gitkeep
 
 
 
