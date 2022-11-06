@@ -3,32 +3,35 @@ img {
   max-width: 100%;
   max-height: 100%;
 }
+
+.componentContainer {
+  border-radius: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  min-width: 500px;
+  width: 60%;
+}
+
 .AppHeader {
   background-color: #44454c;
-  border-radius: 25px;
+  border-radius: 20px;
   color: white;
-  #padding: 25px;
-  #padding-top: 25px;
-  #padding-bottom: 25px;
-  #margin-top: 10px;
-  #margin-bottom: 10px;
-  margin: 10px;
-  width: 1000px;
-  height: 120px;
   text-align: center;
   font-size: 18pt;
+  margin: 10px;
+  #width: 1000px;
+  height: 120px;
+  #width: 50%;
 
 }
 .DTApp {
   background-color: #44454c;
-  border-radius: 25px;
+  border-radius: 20px;
   color: white;
   margin: 10px;
   padding: 25px;
-  padding-top: 25px;
-  padding-bottom: 25px;
-  width: 1000px;
-  align: center;
+  #width: 1000px;
+  #width: 50%;
 
 }
 
@@ -37,6 +40,3 @@ img {
 
 }
 
-.componentContainer {
-  background-color: #44454c;
-}

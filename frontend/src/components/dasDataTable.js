@@ -17,6 +17,9 @@ import ModalImage from "react-modal-image";
 
 const RequestSwap = (evt) => {
         const contacts = prompt("Ok fam so rly we can only do so much for you here. We can send the owner of this room an email with your contact info, try to put you in touch, but we cant make them look at their phone or care about trading rooms with you. So. If you have another way of reaching this person go for it.\n\nOnce you are in contact, click the CreateSwapCode button on your room. Send the code and have them enter it.\n\nEnter your email addres or phone number for the room owner to reach you:");
+        if (contacts === null) {
+            return; 
+        }
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
         const guest = {
@@ -24,6 +27,7 @@ const RequestSwap = (evt) => {
             number: evt,
 	    contact_info: contacts
         }
+        //TODO(tb): move api urls to envs
         //axios.post(`http://192.168.4.24:8000/api/rooms/`, {
         axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_request/`, { guest })
           .then(res => {
@@ -52,28 +56,32 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
       isFilterable: true
     },
     {
-      prop: "name_hotel",
+      prop: "name_take3",
       title: "Type",
       isFilterable: true
     },
+    //{
+    //  prop: "footprint",
+    //  title: "Footprint",
+    //  cell: (row) => (
+    //      <ModalImage
+    //        //small={row.footprint[1]}
+    //        //large={row.footprint[0]}
+    //        //small={"babyface_example_thumbnail.png"}
+    //        //large={"babyface_example.png"}
+    //        alt="footprint"
+    //      />
+    //  )
+    //},
     {
-      prop: "available",
-      title: "Footprint",
-      cell: () => (
-          <ModalImage
-            small={"babyface_example_thumbnail.png"}
-            large={"babyface_example.png"}
-            alt="Babyface_footprint"
-          />
-      )
-    },
-    {
-      prop: "score",
+      prop: "floorplan",
       title: "FloorPlan",
-      cell: () => (
+      cell: (row) => (
           <ModalImage
-            small={"floors_12-15-16-17_example_thumbnail.png"}
-            large={"floors_12-15-16-17_example.png"}
+            small={row.floorplans[1]}
+            large={row.floorplans[0]}
+            //small={"floors_12-15-16-17_example_thumbnail.png"}
+            //large={"floors_12-15-16-17_example.png"}
             alt="Babyface_footprint"
           />
       )
@@ -117,13 +125,6 @@ export default class RoomDataTable extends React.Component {
         this.state.rooms = data
         this.setState({ data  });
 
-    //axios.get(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/rooms/`)
-    //  .then(res => {
-    //    //console.log(res.data);
-    //    const data = res.data
-    //    this.state.rooms = data
-    //    this.setState({ data  });
-    //    console.log(this.state.rooms);
       })
   }
 

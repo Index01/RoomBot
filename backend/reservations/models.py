@@ -19,7 +19,7 @@ class Room(models.Model):
     available = models.BooleanField("Available", default=True)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
-    guest = models.ForeignKey(Guest, on_delete=models.CASCADE, blank=True, null=True)
+    guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
         return str(self.number)
