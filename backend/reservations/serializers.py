@@ -3,7 +3,7 @@
 
 
 from rest_framework import serializers
-from .models import Guest, Room
+from .models import Guest, Room, Party
 
 class RoomSerializer(serializers.ModelSerializer):
 
@@ -18,4 +18,10 @@ class GuestSerializer(serializers.ModelSerializer):
         model = Guest
         fields = ('name', 'email', 'ticket', 'invitation', 'room_number')
 
+
+class PartySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Party
+        fields = ('room_number', 'description', 'end_time')
 

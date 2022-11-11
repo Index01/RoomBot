@@ -24,4 +24,13 @@ class Room(models.Model):
     def __str__(self):
         return str(self.number)
 
+class Party(models.Model):
+    room_number = models.CharField("RoomNumber", max_length=20)
+    description = models.CharField("Description", max_length=50, blank=True, null=True)
+    end_time = models.DateTimeField("EndTime", blank=True, null=True)
+
+    def __str__(self):
+        return (self.room_number, self.description, self.end_time)
+
+
 

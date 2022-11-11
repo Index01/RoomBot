@@ -17,7 +17,8 @@ import React from "react";
 const IAmAParty = (evt) => {
         const duration = prompt("\n\nDo you want to let ppl know they can stop by?\nDon't mind making new friends?\n\nEnter the number of hours your would like to be listed as a ppaaarrtaay.\n");
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/i_am_party/`, {
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/i_am_party/`, {
+        axios.post(process.env.REACT_APP_BASE_URL+":8000/api/i_am_party/", {
                 jwt: jwt['jwt'],
                 number: evt,
                 duration: duration,
@@ -44,8 +45,9 @@ const IAmAParty = (evt) => {
 const CreateSwapCode = (evt) => {
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_gen/`, {
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_gen/`, {
         //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+        axios.post(process.env.REACT_APP_BASE_URL+":8000/api/rooms/", {
                 jwt: jwt['jwt'],
                 number: evt,
           })
@@ -76,8 +78,9 @@ const EnterSwapCode = (evt) => {
         }
         console.log(code);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
         //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+        axios.post(process.env.REACT_APP_BASE_URL+":8000/api/swap_it_up/", {
                 jwt: jwt['jwt'],
                 number: evt,
                 swap_code: code
@@ -165,8 +168,9 @@ export default class MyRoomsTable extends React.Component {
   
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/my_rooms/`, {
+    //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/my_rooms/`, {
     //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+    axios.post(process.env.REACT_APP_BASE_URL+":8000/api/my_rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {

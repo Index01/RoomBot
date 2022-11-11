@@ -20,7 +20,8 @@ class SubmitForm extends React.Component {
         //TODO(tb): HackHackHack fix it when not live.
         if(this.state.pass==""){
                 console.log("empty pass");
-            axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+            //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+            axios.post(process.env.BASE_URL+":8000/api/login_reset/", { guest })
             .then(res=>{
                 //window.localStorage.setItem('jwt', res.data);
                 //console.log(res);
@@ -29,7 +30,8 @@ class SubmitForm extends React.Component {
         })
         }
         else{
-            axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/', { guest })
+            //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/', { guest })
+            axios.post(process.env.BASE_URL+":8000/api/login/", { guest })
             .then(res=>{
                 window.localStorage.setItem('jwt', res.data);
                 console.log(res);
@@ -44,7 +46,8 @@ class SubmitForm extends React.Component {
         const guest = {
             email: this.state.email,
         }
-        axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+        //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+        axios.post(process.env.BASE_URL+":8000/api/login_reset/", { guest })
         .then(res=>{
             //window.localStorage.setItem('jwt', res.data);
             //console.log(res);

@@ -29,7 +29,8 @@ const RequestSwap = (evt) => {
         }
         //TODO(tb): move api urls to envs
         //axios.post(`http://192.168.4.24:8000/api/rooms/`, {
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_request/`, { guest })
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_request/`, { guest })
+        axios.post(process.env.BASE_URL+":8000/api/swap_request/", { guest })
           .then(res => {
             console.log(res.data);
           })
@@ -112,8 +113,8 @@ export default class RoomDataTable extends React.Component {
   
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/rooms/`, {
-    //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+    //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/rooms/`, {
+    axios.post(process.env.BASE_URL+":8000/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {
@@ -135,12 +136,6 @@ export default class RoomDataTable extends React.Component {
         //body={arr}
         body={this.state.rooms}
         headers={STORY_HEADERS}
-        paginationOptionsProps={{
-          initialState: {
-            rowsPerPage: 10,
-            options: [5, 10, 15, 20]
-          }
-        }}
       >
         <Row className="mb-4 p-2">
           <Col
@@ -156,7 +151,6 @@ export default class RoomDataTable extends React.Component {
             lg={4}
             className="d-flex flex-col justify-content-lg-center align-items-center justify-content-sm-start mb-2 mb-sm-0"
           >
-            <PaginationOptions />
           </Col>
           <Col
             xs={12}
@@ -164,7 +158,6 @@ export default class RoomDataTable extends React.Component {
             lg={4}
             className="d-flex flex-col justify-content-end align-items-end"
           >
-            <Pagination />
           </Col>
         </Row>
         <Table>

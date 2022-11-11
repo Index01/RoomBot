@@ -28,6 +28,27 @@ logging.info("Views Logger")
 logger = logging.getLogger('ViewLogger')
 
 @api_view(['GET', 'POST'])
+def iama_party(request):
+    if request.method == 'GET':
+        data = Party.objects.all()
+        print(f"partyz: {data}")
+
+        serializer = PartySerializer(data, context={'request': request}, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        data = request.data
+        print(f"i am a party: {data}")
+        serializer = PartySerializer(data=data)
+        print(f"serializer: {serializer}")
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
 def guest_list(request):
     if request.method == 'GET':
         data = Guest.objects.all()
@@ -43,6 +64,7 @@ def guest_list(request):
             return Response(status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['PUT', 'DELETE'])
 def guest_detail(request, pk):

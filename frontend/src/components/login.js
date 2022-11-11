@@ -9,7 +9,7 @@ export default class LoginForm extends React.Component {
        super(props);
    
        this.state = {
-               errorMessage: "",
+               errmrMessage: "",
                redirect: false
        };
    
@@ -19,14 +19,12 @@ export default class LoginForm extends React.Component {
 
 
     handleSubmit() {  
-
+        e.preventDefault();
         var { uname, pass } = document.forms[0];
         const email = uname.value;
         const otp = pass.value;
     
-	//axios.post(`http://192.168.4.24:8000/api/login/`, {
-        //axios.post(`http://127.0.0.1:8000/api/login/`, {
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/`, {
+        axios.post(process.env.REACT_APP_BASE_URL+":8000/api/login/", {
                 guest_email: email,
                 jwt: otp
           })
