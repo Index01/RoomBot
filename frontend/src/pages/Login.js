@@ -17,19 +17,13 @@ class SubmitForm extends React.Component {
             email: this.state.email,
             jwt: this.state.pass
         }
-        //TODO(tb): HackHackHack fix it when not live.
         if(this.state.pass==""){
-                console.log("empty pass");
-            axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
-            .then(res=>{
-                //window.localStorage.setItem('jwt', res.data);
-                //console.log(res);
-                console.log(res.data);
-                window.location = "/login" 
-        })
+            console.log("empty pass");
+            window.location = "/login" 
         }
         else{
-            axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/', { guest })
+            //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/', { guest })
+            axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/login/', { guest })
             .then(res=>{
                 window.localStorage.setItem('jwt', res.data);
                 console.log(res);
@@ -44,10 +38,9 @@ class SubmitForm extends React.Component {
         const guest = {
             email: this.state.email,
         }
-        axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+        //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/login_reset/', { guest })
         .then(res=>{
-            //window.localStorage.setItem('jwt', res.data);
-            //console.log(res);
             console.log(res.data);
             window.location = "/login" 
         })
@@ -97,22 +90,4 @@ class SubmitForm extends React.Component {
 }
 export default SubmitForm;
 
-
-
-//TODO(tb): prolly want to move back to this paradigm
-//import LoginForm from '../components/login.js';
-//import "../styles/Login.css";
-//import React from 'react';
-//
-//const LoginComponent = () => {
-//    return(
-//        <span className="auth-wrapper">
-//            <div className="auth-inner">
-//              <LoginForm />
-//            </div>
-//        </span>
-//    );
-//};
-//
-//export default LoginComponent;
 

@@ -15,22 +15,26 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path
-from reservations import views
+from reservations import views_flat
+
+from reservations.views import guests
+from reservations.views import rooms
+from reservations.views import login
 
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    re_path(r'^api/guests/$', views.guest_list),
-    re_path(r'^api/guests/([0-9])$', views.guest_detail),
-    re_path(r'^api/rooms/$', views.room_list),
-    re_path(r'^api/rooms/([0-9])$', views.room_detail),
-    re_path(r'^api/login/$', views.login),
-    re_path(r'^api/my_rooms/$', views.my_rooms),
-    re_path(r'^api/swap_gen/$', views.swap_gen),
-    re_path(r'^api/swap_it_up/$', views.swap_it_up),
-    re_path(r'^api/swap_request/$', views.swap_request),
-    re_path(r'^api/login_reset/$', views.login_reset),
+    re_path(r'^api/guests/$', guests.guest_list),
+    re_path(r'^api/guests/([0-9])$', guests.guest_detail),
+    re_path(r'^api/rooms/$', rooms.room_list),
+    re_path(r'^api/rooms/([0-9])$', rooms.room_detail),
+    re_path(r'^api/login/$', login.login),
+    re_path(r'^api/my_rooms/$', views_flat.my_rooms),
+    re_path(r'^api/swap_gen/$', rooms.swap_gen),
+    re_path(r'^api/swap_it_up/$', rooms.swap_it_up),
+    re_path(r'^api/swap_request/$', rooms.swap_request),
+    re_path(r'^api/login_reset/$', login.login_reset),
 ]
 
  

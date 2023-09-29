@@ -3,6 +3,7 @@ import os
 import random
 import string
 import django
+
 django.setup()
 from reservations.models import Guest, Room
 from django.core.mail import send_mail
@@ -198,6 +199,7 @@ def create_guests(init_file="", init_rooms=""):
     characters = string.ascii_letters + string.digits + string.punctuation
 
     for guest_new in dr:
+        print(f'new guest: {guest_new}')
         guest_entries = Guest.objects.filter(email=guest_new["email"])
         if ("Directed Sale Room (1 King Bed)" in guest_new["product"]):
             guest_new["product"] = "King"
@@ -221,18 +223,21 @@ def create_guests(init_file="", init_rooms=""):
         if (guest_search(gl, 0, glen, guest_new["email"])==None and len(guest_entries)==0):
             print(f'Email doesnt exist. Creating new guest contact.')
             otp = ''.join(random.choice(characters) for i in range(10))
+            print(f"guest: {guest_new} otp: {otp}")
             guest_contact_new(guest_new, otp)
             continue
 
         # If email does exist. check whether ticket exists. if not, create guest
         if(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))==0):
             otp = ''.join(random.choice(characters) for i in range(10))
+            print(f"guest: {guest_new} otp: {otp}")
             guest_contact_exists(guest_new, otp)
 
         # If email does exist. check whether ticket exists. if so, update the guest entry.
         # This case if for resigning room/tickets to new owner. update operation so secret party export is source of authority.
         elif(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))!=0):
             otp = ''.join(random.choice(characters) for i in range(10))
+            print(f"guest: {guest_new} otp: {otp}")
             guest_owner_update(guest_new, otp)
 
 
@@ -321,7 +326,7 @@ def create_rooms_main(init_file =""):
 
 
 RANDOM_ROOMS = True
-SEND_MAIL = False
+SEND_MAIL = False 
 def main():
     """ This is oldy timey and dodge AF. put some switches on this thing. """
 
@@ -329,17 +334,16 @@ def main():
     #create_rooms()
 
 
-    #create_rooms_main(init_file='../samples/main_room_list_11042022.csv')
+    create_rooms_main(init_file='../samples/exampleMainRoomList.csv')
 
+    Guest.objects.all().delete()
+    create_guests(init_file="../samples/exampleMainGuestList.csv", 
+                  init_rooms="../samples/exampleMainRoomList.csv")
 
-    #Guest.objects.all().delete()
-    create_guests(init_file="../samples/secretPartyExmple_swag.csv",
-                  init_rooms="../samples/roomsExample_swag.csv")
-    #create_guests(init_file="../samples/secretPartyExmple_swag.csv", init_rooms="../samples/main_room_list_11042022.csv")
     #create_guests(init_file="../samples/main_guest_list_11022022.csv", init_rooms="../samples/main_room_list_11042022.csv")
     #create_guests(init_file="./directed_fixed_test.csv", init_rooms="../samples/main_room_list_11042022.csv")
 
-
+    #NOTE(tb): This is the one we used onsite. I think.
     #create_guests(init_file="./directed_fixed.csv", init_rooms="../samples/main_room_list_11042022.csv")
 
 
@@ -350,7 +354,7 @@ def main():
 
 
     # logging, air quotes
-    #dump_guest_rooms()
+    # dump_guest_rooms()
 
 
 
