@@ -1,10 +1,8 @@
 
-import os 
+import os
 import random
 import string
-import boto3
 import django
-import pandas as pd
 django.setup()
 from reservations.models import Guest, Room
 from django.core.mail import send_mail
@@ -40,7 +38,7 @@ def guest_sort(guest_list):
             k += 1
 
 def guest_search(arr, low, high, x):
-    ''' binary search by email ''' 
+    ''' binary search by email '''
     if high >= low:
         mid = (high + low) // 2
         #print(f'arr mid: {arr[mid].email }')
@@ -95,9 +93,9 @@ def guest_contact_new(guest_new, otp):
         if(room is None):
             return
 
-        guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'], 
-            email=guest_new['email'], 
-            ticket=guest_new['ticket_code'], 
+        guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'],
+            email=guest_new['email'],
+            ticket=guest_new['ticket_code'],
             jwt=otp,
             room_number=room.number)
         guest.save()
@@ -106,7 +104,7 @@ def guest_contact_new(guest_new, otp):
         room.save()
 
     time.sleep(5)
-    if(SEND_MAIL): 
+    if(SEND_MAIL):
         print(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
 
         body_text = f"""
@@ -114,20 +112,20 @@ BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you kn
 
 After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
 
-Goes without saying, but don't forward this email. 
+Goes without saying, but don't forward this email.
 
 This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
 Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
-{otp} 
+{otp}
 http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/login
 
 Good Luck, Starfighter.
 
         """
- 
-        send_mail("RoomService RoomBaht", 
+
+        send_mail("RoomService RoomBaht",
                   body_text,
-                  "placement@take3presents.com", 
+                  "placement@take3presents.com",
                   [guest_new["email"]],
                   auth_user="placement@take3presents.com",
                   auth_password=os.environ['EMAIL_HOST_PASSWORD'],
@@ -144,9 +142,9 @@ def guest_contact_exists(guest_new, otp):
     if(room is None):
         return
 
-    guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'], 
-        email=guest_new['email'], 
-        ticket=guest_new['ticket_code'], 
+    guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'],
+        email=guest_new['email'],
+        ticket=guest_new['ticket_code'],
         jwt=otp,
         room_number=room.number)
 
@@ -163,9 +161,9 @@ def guest_owner_update(guest_new, otp):
         print(f'[-] Update detected')
         print(f"existing: {existing_ticket}, fields: {existing_ticket[0].name},{existing_ticket[0].ticket},{existing_ticket[0].room_number}")
         existing_ticket.update(
-                              name=guest_new['first_name']+" "+ guest_new['last_name'], 
-                              email=guest_new['email'], 
-                              ticket=guest_new['ticket_code'], 
+                              name=guest_new['first_name']+" "+ guest_new['last_name'],
+                              email=guest_new['email'],
+                              ticket=guest_new['ticket_code'],
                               jwt=otp,
                               room_number = room_num)
 
@@ -176,7 +174,7 @@ def guest_owner_update(guest_new, otp):
         print(f'[*] Email exists, ticket exists, room exists, everything matches entry')
 
 
-def create_guests(init_file="", init_rooms=""): 
+def create_guests(init_file="", init_rooms=""):
     dr = None
     new_guests=[]
     gl = list(Guest.objects.all())
@@ -218,7 +216,7 @@ def create_guests(init_file="", init_rooms=""):
         if (guest_new['ticket_code'] in black_list):
             print(f'[-] Ticket {guest_new["ticket_code"]} {guest_new["first_name"]} {guest_new["last_name"]} excluded by rooms csv column P')
             continue
-        
+
         # If email doesnt exist, send email and create guest
         if (guest_search(gl, 0, glen, guest_new["email"])==None and len(guest_entries)==0):
             print(f'Email doesnt exist. Creating new guest contact.')
@@ -231,12 +229,12 @@ def create_guests(init_file="", init_rooms=""):
             otp = ''.join(random.choice(characters) for i in range(10))
             guest_contact_exists(guest_new, otp)
 
-        # If email does exist. check whether ticket exists. if so, update the guest entry. 
+        # If email does exist. check whether ticket exists. if so, update the guest entry.
         # This case if for resigning room/tickets to new owner. update operation so secret party export is source of authority.
         elif(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))!=0):
             otp = ''.join(random.choice(characters) for i in range(10))
             guest_owner_update(guest_new, otp)
-        
+
 
 
 
@@ -251,9 +249,9 @@ def create_rooms(init_file =""):
             dr.append(elem)
 
     for elem in dr:
-        rooms.append(Room(name_take3=elem['Take3Name'], 
-                          name_hotel=elem['HotelName'], 
-                          number=elem['Number'], 
+        rooms.append(Room(name_take3=elem['Take3Name'],
+                          name_hotel=elem['HotelName'],
+                          number=elem['Number'],
                           )
                     )
     list(map(lambda x: x.save(), rooms))
@@ -294,7 +292,7 @@ def create_rooms_main(init_file =""):
            #{"Queen": "Directed Sale Room (2 Queen Beds)"},
            #{"King": "Direct Sale Room (1 King Bed)"},
            {"Smoking Lakeview Queen": "Lakeview Standard Room (2 Queen Beds)"},
-    ]   
+    ]
     rooms=[]
     with open(init_file, "r") as f1:
         dr = [elem for elem in DictReader(f1)]
@@ -304,7 +302,7 @@ def create_rooms_main(init_file =""):
             if(elem["Room Type"] in name.keys()):
                 #print(f'[+] Adding room to inventory: {elem["Room Type"]}')
                 take3_name = name[elem["Room Type"]]
-                
+
         if(elem["ROOMBAHT"]=="R"):
             rooms.append(Room(name_hotel=elem['Room Type'].lstrip(),
                              number=elem['Room'].lstrip(),
@@ -323,7 +321,7 @@ def create_rooms_main(init_file =""):
 
 
 RANDOM_ROOMS = True
-SEND_MAIL = True
+SEND_MAIL = False
 def main():
     """ This is oldy timey and dodge AF. put some switches on this thing. """
 
@@ -335,12 +333,14 @@ def main():
 
 
     #Guest.objects.all().delete()
+    create_guests(init_file="../samples/secretPartyExmple_swag.csv",
+                  init_rooms="../samples/roomsExample_swag.csv")
     #create_guests(init_file="../samples/secretPartyExmple_swag.csv", init_rooms="../samples/main_room_list_11042022.csv")
     #create_guests(init_file="../samples/main_guest_list_11022022.csv", init_rooms="../samples/main_room_list_11042022.csv")
     #create_guests(init_file="./directed_fixed_test.csv", init_rooms="../samples/main_room_list_11042022.csv")
 
 
-    create_guests(init_file="./directed_fixed.csv", init_rooms="../samples/main_room_list_11042022.csv")
+    #create_guests(init_file="./directed_fixed.csv", init_rooms="../samples/main_room_list_11042022.csv")
 
 
     # Testing, air-quotes
