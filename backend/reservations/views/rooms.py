@@ -1,66 +1,25 @@
-import datetime
-import jwt
-import json
-import random
-import logging
-from django.shortcuts import render
-import environ
-from django.core.exceptions import ImproperlyConfigured 
-from django.core.mail import send_mail
 
-import os
+import logging
+import environ
+import random
+import json
+import jwt
+import datetime
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
+from ..models import Guest
+from ..models import Room
+from ..serializers import *
 
-from .models import Guest
-from .models import Room
-from .serializers import *
-
-SEND_MAIL=True
 logging.basicConfig(filename='../output/roombaht_application.md',
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.INFO)
-logging.info("Views Logger")
+logging.info("Roomw Views Logger")
 
-logger = logging.getLogger('ViewLogger')
-
-@api_view(['GET', 'POST'])
-def guest_list(request):
-    if request.method == 'GET':
-        data = Guest.objects.all()
-
-        serializer = GuestSerializer(data, context={'request': request}, many=True)
-
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        serializer = GuestSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['PUT', 'DELETE'])
-def guest_detail(request, pk):
-    try:
-        guest = Guest.objects.get(pk=pk)
-    except Guest.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'PUT':
-        serializer = GuestSerializer(guest, data=request.data,context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        guest.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+logger = logging.getLogger('ViewLogger_rooms')
 
 
 def validate_jwt(jwt_data):
@@ -83,7 +42,7 @@ def validate_jwt(jwt_data):
     dthen = datetime.datetime.fromisoformat(dec["datetime"])
     dnow = datetime.datetime.utcnow()
 
-    if (dthen - dnow > datetime.timedelta(days=1)):
+    if (dnow - dthen > datetime.timedelta(days=1)):
         #return False
         return None
     #elif (email == dec["email"] != guest_email):
@@ -91,7 +50,22 @@ def validate_jwt(jwt_data):
     else:
         #return True
         return dec["email"]
-          
+
+
+def phrasing():
+    words = None
+    with open("../samples/wordylyst.md", "r") as f:
+        words = [word for word in f.read().splitlines()]
+    word = words[random.randint(0, 999)].capitalize()+words[random.randint(0, 999)].capitalize()
+    rand = random.randint(1,3)
+    if(rand==1):
+        word = word+str(random.randint(0,99))
+    elif(rand==2):
+        word = word+str(random.randint(0,99))+words[random.randint(0,999)].capitalize()
+    else:
+        word = word+words[random.randint(0,999)].capitalize()
+    return word
+
 
 @api_view(['POST'])
 def room_list(request):
@@ -190,93 +164,6 @@ def room_detail(request, pk):
         room.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-def phrasing():
-    words = None
-    with open("../samples/wordylyst.md", "r") as f:
-        words = [word for word in f.read().splitlines()]
-    word = words[random.randint(0, 999)].capitalize()+words[random.randint(0, 999)].capitalize()
-    rand = random.randint(1,3)
-    if(rand==1):
-        word = word+str(random.randint(0,99))
-    elif(rand==2):
-        word = word+str(random.randint(0,99))+words[random.randint(0,999)].capitalize()
-    else:
-        word = word+words[random.randint(0,999)].capitalize()
-    return word
-
-
-@api_view(['POST'])
-def login(request):
-    if request.method == 'POST':
-        env = environ.Env()
-        environ.Env.read_env()
-        try:
-            key = env("JWT_KEY")
-        except ImproperlyConfigured as e:
-            print("env key fail")
-            return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
-
-        data = request.data["guest"]
-        print(f'data: {data}')
-        try:
-            guests = Guest.objects.all()
-            guest_email = guests.filter(email=data['email'])
-        except KeyError as e:
-            logger.info(f"[-] User login failed {data['email']}")
-            return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
-        logger.info(f"[+] User login attempt: {data['email']}")
-        #TODO(tb): FixMe
-        for guest in guest_email:
-            if data['jwt'] == guest.jwt:
-                #guest.jwt=""
-                #guest.save()
-                resp = jwt.encode({"email":guest.email, 
-                                   "datetime":str(datetime.datetime.utcnow())}, 
-                                   key, algorithm="HS256")
-                print(f'returning: {resp}')
-                logger.info(f"[+] User login succes. sending resp")
-                return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
-        return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def login_reset(request):
-    if request.method == 'POST':
-        try:
-            data = request.data["guest"]
-            email = data["email"]
-        except KeyError as e:
-            logger.info(f"[+] Reset fail missing field: {data['email']}")
-            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        print(f'reset: {data}')
-        logger.info(f"[+] User reset attempt: {data['email']}")
-
-        new_pass = phrasing() 
-        print(f'phrase: {new_pass}')
-        try:
-            guests = Guest.objects.all()
-            guest_email = guests.filter(email=email)[0]
-            guest_email.jwt=new_pass
-            guest_email.save()
-        except (IndexError, KeyError) as e:
-            logger.info(f"[-] User reset failed {data['email']}")
-            return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
-
-        print(f'{guest_email.email}')
-        body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
-        if(SEND_MAIL):
-            send_mail("RS Roombaht Password Reset", 
-                      body_text,
-                      "placement@take3presents.com", 
-                      [guest_email.email],
-                      auth_user="placement@take3presents.com",
-                      auth_password=os.environ['EMAIL_HOST_PASSWORD'],
-                      fail_silently=False,)
-
-
-        logger.info(f"[+] User pass reset and sent: {data['email']}")
-        return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -430,35 +317,5 @@ def swap_it_up(request):
         swap_room_theirs.save()
 
         return Response(status=status.HTTP_201_CREATED)
-
-
-@api_view(['POST'])
-def my_rooms(request):
-    if request.method == 'POST':
-        data = request.data
-        try:
-            jwt_data=data["jwt"]
-        except KeyError as e:
-            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-
-        email = validate_jwt(jwt_data)
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            guest_instances = Guest.objects.filter(email=email)
-            guest_id = guest_instances[0].id
-        except IndexError as e:
-            return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
-
-        rooms = Room.objects.all()
-        rooms_mine = [elem for elem in rooms if elem.guest!=None and elem.guest.email==email]
-        room_nums = [int(room.number) for room in rooms]
-
-        response = json.dumps([{"number": int(room.number), 
-                                "type": room.name_take3} for room in rooms_mine], indent=2)
-
-        print(f'my_rooms: {rooms_mine}')
-        return Response(response)
 
 

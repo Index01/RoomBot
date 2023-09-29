@@ -27,15 +27,11 @@ const RequestSwap = (evt) => {
             number: evt,
 	    contact_info: contacts
         }
-        //TODO(tb): move api urls to envs
-        //axios.post(`http://192.168.4.24:8000/api/rooms/`, {
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_request/`, { guest })
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/swap_request/', { guest })
           .then(res => {
             console.log(res.data);
           })
           .catch((error) => {
-            //this.setState({errorMessage: error.message});
-            //errorMessage = error.mesage;
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
@@ -60,19 +56,6 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
       title: "Type",
       isFilterable: true
     },
-    //{
-    //  prop: "footprint",
-    //  title: "Footprint",
-    //  cell: (row) => (
-    //      <ModalImage
-    //        //small={row.footprint[1]}
-    //        //large={row.footprint[0]}
-    //        //small={"babyface_example_thumbnail.png"}
-    //        //large={"babyface_example.png"}
-    //        alt="footprint"
-    //      />
-    //  )
-    //},
     {
       prop: "floorplan",
       title: "FloorPlan",
@@ -80,8 +63,6 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
           <ModalImage
             small={row.floorplans[1]}
             large={row.floorplans[0]}
-            //small={"floors_12-15-16-17_example_thumbnail.png"}
-            //large={"floors_12-15-16-17_example.png"}
             alt="Babyface_footprint"
           />
       )
@@ -102,25 +83,24 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
     }
   ];
 
+
 export default class RoomDataTable extends React.Component {
   state = {
     rooms : [],
     jwt: ""
   }
   
-  
-  
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/rooms/`, {
-    //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+    console.log("ALL THE ROOMSSS");
+    console.log(process.env.REACT_APP_DJANGO_ENDPOINT+"/api/rooms/");
+    axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+"/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {
         console.log(res.data);
         const data = res.data
-       // const data = JSON.parse(res.data)
-       // console.log(JSON.parse(JSON.stringify(data)));
+        //console.log(JSON.parse(JSON.stringify(data)));
 
         this.state.rooms = data
         this.setState({ data  });
@@ -128,11 +108,9 @@ export default class RoomDataTable extends React.Component {
       })
   }
 
-
   render(){
     return(
       <DatatableWrapper
-        //body={arr}
         body={this.state.rooms}
         headers={STORY_HEADERS}
         paginationOptionsProps={{

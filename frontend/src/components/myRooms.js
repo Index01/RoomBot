@@ -17,7 +17,8 @@ import React from "react";
 const IAmAParty = (evt) => {
         const duration = prompt("\n\nDo you want to let ppl know they can stop by?\nDon't mind making new friends?\n\nEnter the number of hours your would like to be listed as a ppaaarrtaay.\n");
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/i_am_party/`, {
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/i_am_party/`, {
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/i_am_party/', {
                 jwt: jwt['jwt'],
                 number: evt,
                 duration: duration,
@@ -27,8 +28,6 @@ const IAmAParty = (evt) => {
 	    console.log(duration_remaining);
           })
           .catch((error) => {
-            //this.setState({errorMessage: error.message});
-            //errorMessage = error.mesage;
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
@@ -44,8 +43,8 @@ const IAmAParty = (evt) => {
 const CreateSwapCode = (evt) => {
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_gen/`, {
-        //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_gen/`, {
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/swap_gen/', {
                 jwt: jwt['jwt'],
                 number: evt,
           })
@@ -54,8 +53,6 @@ const CreateSwapCode = (evt) => {
             alert(`Send this code to your friend if u rly want to trade roomz with them. Direct them to follow the link in the request email, or initial placement email. Have them click EnterSwapCode on the room they are trading to you.\n\nThis code is good for 10mins\nNo un-swapzies.\n\nSwap Code: ${phrase}`);
           })
           .catch((error) => {
-            //this.setState({errorMessage: error.message});
-            //errorMessage = error.mesage;
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
@@ -76,8 +73,8 @@ const EnterSwapCode = (evt) => {
         }
         console.log(code);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
-        //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+        //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/swap_it_up/', {
                 jwt: jwt['jwt'],
                 number: evt,
                 swap_code: code
@@ -87,12 +84,9 @@ const EnterSwapCode = (evt) => {
             window.location = "/rooms" 
           })
           .catch((error) => {
-            //this.setState({errorMessage: error.message});
-            //errorMessage = error.mesage;
             if (error.response) {
               console.log(error.response);
               console.log("server responded");
-              //errorMessage = "Failure to Login, fam!";
             } else if (error.request) {
               console.log("network error");
             } else {
@@ -165,12 +159,11 @@ export default class MyRoomsTable extends React.Component {
   
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/my_rooms/`, {
-    //axios.post(process.env.REACT_APP_DJANGO_IP+":8000/api/rooms/", {
+    //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/my_rooms/`, {
+    axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/my_rooms/', {
             jwt: jwt["jwt"]
       })
       .then(res => {
-        //console.log(res.data);
         //window.location = "/rooms";
         const data = JSON.parse(res.data)
         console.log(JSON.parse(JSON.stringify(data)));
@@ -195,7 +188,6 @@ export default class MyRoomsTable extends React.Component {
   render(){
     return(
       <DatatableWrapper
-        //body={arr}
         body={this.state.rooms}
         headers={STORY_HEADERS}
       >
