@@ -265,6 +265,7 @@ def create_rooms(init_file =""):
 def create_rooms_main(init_file =""):
     dr = None
     # {hotel_name: take3_name}
+	# TODO(mjp): load this from external CSV
     type_mapping = [
            {"Hearing Accessible King": "Standard Room (1 King Bed)"},
            {"Queen": "Standard Room (2 Queen Beds)"},
@@ -337,7 +338,7 @@ def main():
     create_rooms_main(init_file='../samples/exampleMainRoomList.csv')
 
     Guest.objects.all().delete()
-    create_guests(init_file="../samples/exampleMainGuestList.csv", 
+    create_guests(init_file="../samples/exampleMainGuestList.csv",
                   init_rooms="../samples/exampleMainRoomList.csv")
 
     #create_guests(init_file="../samples/main_guest_list_11022022.csv", init_rooms="../samples/main_room_list_11042022.csv")
