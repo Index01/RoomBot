@@ -1,10 +1,12 @@
 
+import os
 import logging
 import environ
 import random
 import json
 import jwt
 import datetime
+from django.core.mail import send_mail
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -21,6 +23,7 @@ logging.info("Roomw Views Logger")
 
 logger = logging.getLogger('ViewLogger_rooms')
 
+SEND_MAIL = os.environ['SEND_MAIL']
 
 def validate_jwt(jwt_data):
     env = environ.Env()
@@ -29,26 +32,20 @@ def validate_jwt(jwt_data):
         key = env("JWT_KEY")
     except ImproperlyConfigured as e:
         print("env key fail")
-        #return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
         return None
 
     try:
         dec = jwt.decode(jwt_data, key, algorithms="HS256")
     except (TypeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError) as e:
         print(f'Except during JWT decode: {e}')
-        #return False
         return None
         
     dthen = datetime.datetime.fromisoformat(dec["datetime"])
     dnow = datetime.datetime.utcnow()
 
     if (dnow - dthen > datetime.timedelta(days=1)):
-        #return False
         return None
-    #elif (email == dec["email"] != guest_email):
-    #    return False
     else:
-        #return True
         return dec["email"]
 
 
@@ -65,6 +62,36 @@ def phrasing():
     else:
         word = word+words[random.randint(0,999)].capitalize()
     return word
+
+
+@api_view(['POST'])
+def my_rooms(request):
+    if request.method == 'POST':
+        data = request.data
+        try:
+            jwt_data=data["jwt"]
+        except KeyError as e:
+            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+
+        email = validate_jwt(jwt_data)
+        if (email is None):
+            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            guest_instances = Guest.objects.filter(email=email)
+            guest_id = guest_instances[0].id
+        except IndexError as e:
+            return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
+
+        rooms = Room.objects.all()
+        rooms_mine = [elem for elem in rooms if elem.guest!=None and elem.guest.email==email]
+        room_nums = [int(room.number) for room in rooms]
+
+        response = json.dumps([{"number": int(room.number), 
+                                "type": room.name_take3} for room in rooms_mine], indent=2)
+
+        print(f'my_rooms: {rooms_mine}')
+        return Response(response)
 
 
 @api_view(['POST'])
@@ -126,7 +153,6 @@ def room_reserve(request):
         data = request.data['guest']
         print(f'data: {data}')
         try:
-            #email=data['guest_email']
             jwt_data=data["jwt"]['jwt']
             room_number = data["number"] 
         except KeyError as e:
@@ -204,8 +230,7 @@ Good Luck, Starfighter.
 
         """
 
-        #body_text = f"Hi,\n\nSomeone would like to trade rooms with you for RoomService. Since rooms are randomly assigned at RoomServcie, we built this kewl tool for everyone to trade rooms and get the placement they want.\nIf you are open to trading rooms, contact this person with the info below. Sort out the details then one of you will generate a swap code in the RoomService Roombaht application and send it to the other. Enter the code, switch-aroo magic happens and you checkin as normal\nContact info: {msg}\nAfter you have contacted the person asking to trade rooms with you, this is the link you want for creating the swap code and trading rooms on file:\nhttp://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/rooms Or you can login from the initial email you received upon placement.\n\nIf you have any issues contact placement@take3presents.com \n\nGood Luck, Starfighter."
-        if(SEND_MAIL):
+        if(SEND_MAIL==True):
             send_mail("RS Room Trade Request", 
                       body_text,
                       "placement@take3presents.com", 
@@ -214,12 +239,6 @@ Good Luck, Starfighter.
                       auth_password=os.environ['EMAIL_HOST_PASSWORD'],
                       fail_silently=False,)
 
-
-            #send_mail("RS RoomBot Swap Request", 
-            #        f"Hi,\n\nSomeone would like to trade rooms with you. If you're open to this contact them with the info below.\nSort out the details then one of you will generate a swap code in the RoomService Roombaht application and send it to the other. Enter the code, switch-aroo magic happens and you checkin as normal\nContact info: {msg}\nAfter you have sorted details this is the link you want for swap code stuffs:\nhttp://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/rooms\n\nGood Luck, Starfighter.", 
-            #              "placement@take3presents.com", 
-            #              [swap_req_email],
-            #              fail_silently=False,)
         return Response(status=status.HTTP_201_CREATED)
 
 
@@ -282,17 +301,6 @@ def swap_it_up(request):
             logger.info(f"[+] No guest found")
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
 
-        #rooms_mine = Room.objects.filter(guest=guest_id)
-        ##rooms_mine = Room.objects.filter(guest=guest_id)
-        #print(f"rooms_mine: {rooms_mine}")
-        #for room in rooms_mine:
-        #    if(str(room.number)==str(room_num)):
-        #        swap_room_mine = room
-        #    else:
-        #        return Response("Lies", status=status.HTTP_400_BAD_REQUEST)
-    
-
-        #print(f"swap_room_min: {swap_room_mine}")
         rooms_swap_match = Room.objects.filter(swap_code=swap_req)
         swap_room_mine = Room.objects.filter(number=room_num)[0]
         print(f'[+] swap matches: {rooms_swap_match}')

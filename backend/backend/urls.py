@@ -30,7 +30,7 @@ urlpatterns = [
     re_path(r'^api/rooms/$', rooms.room_list),
     re_path(r'^api/rooms/([0-9])$', rooms.room_detail),
     re_path(r'^api/login/$', login.login),
-    re_path(r'^api/my_rooms/$', views_flat.my_rooms),
+    re_path(r'^api/my_rooms/$', rooms.my_rooms),
     re_path(r'^api/swap_gen/$', rooms.swap_gen),
     re_path(r'^api/swap_it_up/$', rooms.swap_it_up),
     re_path(r'^api/swap_request/$', rooms.swap_request),

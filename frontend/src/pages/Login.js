@@ -22,7 +22,6 @@ class SubmitForm extends React.Component {
             window.location = "/login" 
         }
         else{
-            //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login/', { guest })
             axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/login/', { guest })
             .then(res=>{
                 window.localStorage.setItem('jwt', res.data);
@@ -38,7 +37,7 @@ class SubmitForm extends React.Component {
         const guest = {
             email: this.state.email,
         }
-        //axios.post('http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/login_reset/', { guest })
+        console.log("Attempting reset request");
         axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/login_reset/', { guest })
         .then(res=>{
             console.log(res.data);
@@ -75,12 +74,12 @@ class SubmitForm extends React.Component {
                 </div>
 
                 <div className="d-grid">
-                    <button type = "submit" className="btn btn-primary"> Submit </button>
+                    <button type="submit" className="btn btn-primary"> Submit </button>
                 </div>
                 <p>
                 </p>
                 <div className="d-grid">
-                    <button type = "submit" className="btn btn-primary"> RequestReset </button>
+                    <button type="submit" className="btn btn-primary" onClick={this.handleReset}> RequestReset </button>
                 </div>
                 </form>
             </div>
