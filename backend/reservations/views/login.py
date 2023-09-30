@@ -1,4 +1,5 @@
 
+import os
 import logging
 import jwt
 import datetime
@@ -9,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..models import Guest
 from ..models import Room
+from .rooms import phrasing
+
 
 logging.basicConfig(filename='../output/roombaht_application.md',
                     filemode='a',
@@ -18,6 +21,8 @@ logging.basicConfig(filename='../output/roombaht_application.md',
 logging.info("Login Views Logger")
 
 logger = logging.getLogger('ViewLogger_login')
+
+SEND_MAIL = os.environ['SEND_MAIL']
 
 @api_view(['POST'])
 def login(request):
@@ -80,7 +85,7 @@ def login_reset(request):
 
         print(f'{guest_email.email}')
         body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
-        if(SEND_MAIL):
+        if(SEND_MAIL==True):
             send_mail("RS Roombaht Password Reset", 
                       body_text,
                       "placement@take3presents.com", 
