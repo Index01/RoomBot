@@ -6,6 +6,7 @@ import random
 import json
 import jwt
 import datetime
+import sys
 from django.core.mail import send_mail
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -14,22 +15,17 @@ from ..models import Guest
 from ..models import Room
 from ..serializers import *
 
-logging.basicConfig(filename='../output/roombaht_application.md',
-                    filemode='a',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.INFO)
-logging.info("Roomw Views Logger")
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 logger = logging.getLogger('ViewLogger_rooms')
 
-SEND_MAIL = os.environ['SEND_MAIL']
+SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
 
 def validate_jwt(jwt_data):
     env = environ.Env()
     environ.Env.read_env()
     try:
-        key = env("JWT_KEY")
+        key = env("ROOMBAHT_JWT_KEY")
     except ImproperlyConfigured as e:
         print("env key fail")
         return None
@@ -39,7 +35,7 @@ def validate_jwt(jwt_data):
     except (TypeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError) as e:
         print(f'Except during JWT decode: {e}')
         return None
-        
+
     dthen = datetime.datetime.fromisoformat(dec["datetime"])
     dnow = datetime.datetime.utcnow()
 
@@ -87,7 +83,7 @@ def my_rooms(request):
         rooms_mine = [elem for elem in rooms if elem.guest!=None and elem.guest.email==email]
         room_nums = [int(room.number) for room in rooms]
 
-        response = json.dumps([{"number": int(room.number), 
+        response = json.dumps([{"number": int(room.number),
                                 "type": room.name_take3} for room in rooms_mine], indent=2)
 
         print(f'my_rooms: {rooms_mine}')
@@ -154,7 +150,7 @@ def room_reserve(request):
         print(f'data: {data}')
         try:
             jwt_data=data["jwt"]['jwt']
-            room_number = data["number"] 
+            room_number = data["number"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
@@ -215,25 +211,25 @@ def swap_request(request):
         logger.info(f"[+] Sending swap req from {requester_email} to {swap_req_email}")
 
         body_text = f"""
-        
-Someone would like to trade rooms with you for Room Service. Since rooms are randomly assigned, we built this tool for everyone to trade rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details, then one of you will generate a swap code in Roombaht and send it to the other. Enter the code, switch-aroo magic happens, and you check-in as normal. 
+
+Someone would like to trade rooms with you for Room Service. Since rooms are randomly assigned, we built this tool for everyone to trade rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details, then one of you will generate a swap code in Roombaht and send it to the other. Enter the code, switch-aroo magic happens, and you check-in as normal.
 
 Contact info: {msg}
 
-After you have contacted the person asking to trade rooms with you, click this link to create the swap code and trade rooms: http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/rooms 
+After you have contacted the person asking to trade rooms with you, click this link to create the swap code and trade rooms: http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/rooms
 
 If you have any trouble with that link you can login from the initial email you received from RoomBaht.
 
-If you have any issues contact placement@take3presents.com 
+If you have any issues contact placement@take3presents.com
 
 Good Luck, Starfighter.
 
         """
 
         if(SEND_MAIL==True):
-            send_mail("RS Room Trade Request", 
+            send_mail("RS Room Trade Request",
                       body_text,
-                      "placement@take3presents.com", 
+                      "placement@take3presents.com",
                       [swap_req_email],
                       auth_user="placement@take3presents.com",
                       auth_password=os.environ['EMAIL_HOST_PASSWORD'],
@@ -310,14 +306,14 @@ def swap_it_up(request):
         except IndexError as e:
             print("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
-            
+
         expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=600)
         if(expiration.timestamp() < datetime.datetime.utcnow().timestamp()):
             print("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
 
         guest_id_theirs = swap_room_theirs.guest
-        swap_room_theirs.guest = swap_room_mine.guest 
+        swap_room_theirs.guest = swap_room_mine.guest
         swap_room_mine.guest = guest_id_theirs
 
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_mine} {swap_room_theirs}")

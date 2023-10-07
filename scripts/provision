@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e
+SCRIPTDIR=$( cd "${0%/*}" && pwd)
+
+problems() {
+    2>&1 echo "Error: $*"
+    exit 1
+}
+
+[ $# == 2 ] || problems "invalid args"
+
+R_USER="$1"
+R_HOST="$2"
+
+scp "${SCRIPTDIR}/provision-remote.sh" "${R_USER}@${R_HOST}:/tmp/provision.sh"
+ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/provision.sh ; sudo rm /tmp/provision.sh"

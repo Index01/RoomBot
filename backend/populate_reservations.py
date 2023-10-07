@@ -128,8 +128,8 @@ Good Luck, Starfighter.
                   body_text,
                   "placement@take3presents.com",
                   [guest_new["email"]],
-                  auth_user="placement@take3presents.com",
-                  auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                  auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
+                  auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
                   fail_silently=False,)
 
 
@@ -326,7 +326,7 @@ def create_rooms_main(init_file =""):
 
 
 RANDOM_ROOMS = True
-SEND_MAIL = False 
+SEND_MAIL = False
 def main():
     """ This is oldy timey and dodge AF. put some switches on this thing. """
 
@@ -337,7 +337,7 @@ def main():
     create_rooms_main(init_file='../samples/exampleMainRoomList.csv')
 
     Guest.objects.all().delete()
-    create_guests(init_file="../samples/exampleMainGuestList.csv", 
+    create_guests(init_file="../samples/exampleMainGuestList.csv",
                   init_rooms="../samples/exampleMainRoomList.csv")
 
     #create_guests(init_file="../samples/main_guest_list_11022022.csv", init_rooms="../samples/main_room_list_11042022.csv")

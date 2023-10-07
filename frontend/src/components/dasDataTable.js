@@ -18,7 +18,7 @@ import ModalImage from "react-modal-image";
 const RequestSwap = (evt) => {
         const contacts = prompt("Ok fam so rly we can only do so much for you here. We can send the owner of this room an email with your contact info, try to put you in touch, but we cant make them look at their phone or care about trading rooms with you. So. If you have another way of reaching this person go for it.\n\nOnce you are in contact, click the CreateSwapCode button on your room. Send the code and have them enter it.\n\nEnter your email addres or phone number for the room owner to reach you:");
         if (contacts === null) {
-            return; 
+            return;
         }
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
@@ -27,7 +27,7 @@ const RequestSwap = (evt) => {
             number: evt,
 	    contact_info: contacts
         }
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/swap_request/', { guest })
+        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_request/', { guest })
           .then(res => {
             console.log(res.data);
           })
@@ -89,12 +89,12 @@ export default class RoomDataTable extends React.Component {
     rooms : [],
     jwt: ""
   }
-  
+
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     console.log("ALL THE ROOMSSS");
-    console.log(process.env.REACT_APP_DJANGO_ENDPOINT+"/api/rooms/");
-    axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+"/api/rooms/", {
+    console.log(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/");
+    axios.post(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {

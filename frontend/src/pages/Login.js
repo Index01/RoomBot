@@ -19,15 +19,15 @@ class SubmitForm extends React.Component {
         }
         if(this.state.pass==""){
             console.log("empty pass");
-            window.location = "/login" 
+            window.location = "/login"
         }
         else{
-            axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/login/', { guest })
+            axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/login/', { guest })
             .then(res=>{
                 window.localStorage.setItem('jwt', res.data);
                 console.log(res);
                 console.log(res.data);
-                window.location = "/rooms" 
+                window.location = "/rooms"
             })
         }
     }
@@ -38,10 +38,10 @@ class SubmitForm extends React.Component {
             email: this.state.email,
         }
         console.log("Attempting reset request");
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/login_reset/', { guest })
+        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/login_reset/', { guest })
         .then(res=>{
             console.log(res.data);
-            window.location = "/login" 
+            window.location = "/login"
         })
     }
 

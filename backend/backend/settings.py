@@ -18,22 +18,16 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
+DEV_MODE = os.environ.get('ROOMBAHT_DEV', 'false').lower()
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = os.environ['ROOMBAHT_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if DEV_MODE:
+    DEBUG = True
 
-ALLOWED_HOSTS = [
-    '192.168.4.24',
-    '192.168.28.25',
-    '127.0.0.1'
-
-]
+DEBUG = False
 
 
 # Application definition
@@ -47,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    #'guests',
     'reservations',
 ]
 
@@ -62,7 +55,6 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
-#ROOT_URLCONF = 'room_bot.urls'
 ROOT_URLCONF = 'backend.urls'
 
 TEMPLATES = [
@@ -81,17 +73,27 @@ TEMPLATES = [
     },
 ]
 
-#WSGI_APPLICATION = 'room_bot.wsgi.application'
 WSGI_APPLICATION = 'backend.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+if DEV_MODE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'roombaht',
+        'USER': 'postgres',
+        'PASSWORD': os.environ['ROOMBAHT_DB_PASSWORD'],
+        'HOST': os.environ['ROOMBAHT_DB_HOST'],
+        'PORT': 5432
     }
 }
 
@@ -137,30 +139,21 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 ### User adds
 
 # not fot prod
-CORS_ORIGIN_ALLOW_ALL = True 
+if DEV_MODE:
+    CORS_ORIGIN_ALLOW_ALL = True
+    ALLOWED_HOSTS = ["*"] # for testing only
 
-ALLOWED_HOSTS = ["*"] # for testing only
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://127.0.0.1:80",
-    "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:80",
-    "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000",
-    "http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000"
+ALLOWED_HOSTS = [
+    "localhost:8000",
+    "localhost"
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'placement@take3presents.com'
-#EMAIL_HOST_USER = 't4l3rb@gmail.com'
-EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
- 
+EMAIL_HOST_USER = os.environ['ROOMBAHT_EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']

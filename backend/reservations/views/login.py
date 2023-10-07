@@ -5,6 +5,7 @@ import jwt
 import datetime
 import json
 import environ
+import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,16 +14,11 @@ from ..models import Room
 from .rooms import phrasing
 
 
-logging.basicConfig(filename='../output/roombaht_application.md',
-                    filemode='a',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.INFO)
-logging.info("Login Views Logger")
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 logger = logging.getLogger('ViewLogger_login')
 
-SEND_MAIL = os.environ['SEND_MAIL']
+SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
 
 @api_view(['POST'])
 def login(request):
@@ -30,7 +26,7 @@ def login(request):
         env = environ.Env()
         environ.Env.read_env()
         try:
-            key = env("JWT_KEY")
+            key = env("ROOMBAHT_JWT_KEY")
         except ImproperlyConfigured as e:
             print("env key fail")
             return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
@@ -51,8 +47,8 @@ def login(request):
             if data['jwt'] == guest.jwt:
                 #guest.jwt=""
                 #guest.save()
-                resp = jwt.encode({"email":guest.email, 
-                                   "datetime":str(datetime.datetime.utcnow())}, 
+                resp = jwt.encode({"email":guest.email,
+                                   "datetime":str(datetime.datetime.utcnow())},
                                    key, algorithm="HS256")
                 print(f'returning: {resp}')
                 logger.info(f"[+] User login succes. sending resp")
@@ -72,7 +68,7 @@ def login_reset(request):
         print(f'reset: {data}')
         logger.info(f"[+] User reset attempt: {data['email']}")
 
-        new_pass = phrasing() 
+        new_pass = phrasing()
         print(f'phrase: {new_pass}')
         try:
             guests = Guest.objects.all()
@@ -86,12 +82,12 @@ def login_reset(request):
         print(f'{guest_email.email}')
         body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
         if(SEND_MAIL==True):
-            send_mail("RS Roombaht Password Reset", 
+            send_mail("RS Roombaht Password Reset",
                       body_text,
-                      "placement@take3presents.com", 
+                      "placement@take3presents.com",
                       [guest_email.email],
-                      auth_user="placement@take3presents.com",
-                      auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
+                      auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
                       fail_silently=False,)
 
 
