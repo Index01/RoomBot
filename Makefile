@@ -17,7 +17,7 @@ backend_dev:
 		( mkdir backend/.env && \
 			virtualenv -p python3 backend/.env) && \
 		backend/.env/bin/python3 -m pip install --upgrade pip
-	backend/.env/bin/pip install -r requirements.txt --upgrade	
+	backend/.env/bin/pip install -r backend/requirements.txt --upgrade	
 	cd backend && \
 		python manage.py migrate && \
 		python manage.py runserver 0.0.0.0:8080

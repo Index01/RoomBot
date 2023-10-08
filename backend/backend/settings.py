@@ -24,10 +24,9 @@ DEV_MODE = os.environ.get('ROOMBAHT_DEV', 'false').lower()
 SECRET_KEY = os.environ['ROOMBAHT_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
 if DEV_MODE:
     DEBUG = True
-
-DEBUG = False
 
 
 # Application definition
@@ -85,17 +84,17 @@ if DEV_MODE:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'roombaht',
-        'USER': 'postgres',
-        'PASSWORD': os.environ['ROOMBAHT_DB_PASSWORD'],
-        'HOST': os.environ['ROOMBAHT_DB_HOST'],
-        'PORT': 5432
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'roombaht',
+            'USER': 'postgres',
+            'PASSWORD': os.environ['ROOMBAHT_DB_PASSWORD'],
+            'HOST': os.environ['ROOMBAHT_DB_HOST'],
+            'PORT': 5432
+        }
     }
-}
 
 
 # Password validation
@@ -145,11 +144,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 if DEV_MODE:
     CORS_ORIGIN_ALLOW_ALL = True
     ALLOWED_HOSTS = ["*"] # for testing only
-
-ALLOWED_HOSTS = [
-    "localhost:8000",
-    "localhost"
-]
+else:
+    ALLOWED_HOSTS = [
+        "localhost:8000",
+        "localhost"
+    ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

@@ -30,7 +30,7 @@ Configuration is handled through environment variables, which are stored encrypt
 ## Frontend
 
 ```
-$ make frontend_dev
+$ REACT_ROOMBAHT_API_ENDPOINT="http://localhost:8000/" make frontend_dev
 ```
 
 This should build a docker image, use it to generate the react static, and then start react in dev mode listening on port 3000.
@@ -38,8 +38,11 @@ This should build a docker image, use it to generate the react static, and then 
 ## Backend
 
 ```
-$ export SECRET_KEY="narrative"
-$ export EMAIL_HOST_PASSWORD="words"
+$ export ROOMBAHT_DEV="true"
+$ export ROOMBAHT_SECRET_KEY="narrative"
+$ export ROOMBAHT_EMAIL_HOST_PASSWORD="words"
+$ export ROOMBAHT_EMAIL_HOST_USER="words"
+$ export ROOMBAHT_SEND_MAIL="true"
 $ make backend_dev
 ```
 

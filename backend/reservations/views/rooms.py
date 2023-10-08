@@ -15,7 +15,8 @@ from ..models import Guest
 from ..models import Room
 from ..serializers import *
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout,
+                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
 
 logger = logging.getLogger('ViewLogger_rooms')
 
@@ -27,13 +28,12 @@ def validate_jwt(jwt_data):
     try:
         key = env("ROOMBAHT_JWT_KEY")
     except ImproperlyConfigured as e:
-        print("env key fail")
+        logger.error("env key fail")
         return None
 
     try:
         dec = jwt.decode(jwt_data, key, algorithms="HS256")
     except (TypeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError) as e:
-        print(f'Except during JWT decode: {e}')
         return None
 
     dthen = datetime.datetime.fromisoformat(dec["datetime"])
@@ -86,7 +86,7 @@ def my_rooms(request):
         response = json.dumps([{"number": int(room.number),
                                 "type": room.name_take3} for room in rooms_mine], indent=2)
 
-        print(f'my_rooms: {rooms_mine}')
+        logger.debug(f'my_rooms: {rooms_mine}')
         return Response(response)
 
 
@@ -147,7 +147,7 @@ def room_reserve(request):
     if request.method == 'POST':
         #TODO(tb): there is prolly a more standard way of doing this. serializer probs tho.
         data = request.data['guest']
-        print(f'data: {data}')
+        logger.debug(f'data: {data}')
         try:
             jwt_data=data["jwt"]['jwt']
             room_number = data["number"]
@@ -204,7 +204,7 @@ def swap_request(request):
         swap_req = Room.objects.filter(number=room_num)
         try:
             swap_req_email = swap_req[0].guest.email
-            print(f'[+] Swap request sent to: {swap_req_email}')
+            logger.info(f'[+] Swap request sent to: {swap_req_email}')
         except KeyError as e:
             return Response("No email found for that room", status=status.HTTP_400_BAD_REQUEST)
 
@@ -243,7 +243,7 @@ Good Luck, Starfighter.
 def swap_gen(request):
     if request.method == 'POST':
         data = request.data
-        print(f"data_swap_gen: {data}")
+        logger.debug(f"data_swap_gen: {data}")
         try:
             jwt_data=data["jwt"]
             room_num=data["number"]
@@ -266,7 +266,6 @@ def swap_gen(request):
                 room.swap_time=datetime.datetime.utcnow()
                 room.save()
 
-        print(f'swap phrase: {phrase}')
         logger.info(f"[+] Swap phrase generated {phrase}")
         response = json.dumps({"swap_phrase": phrase}, indent=2)
         return Response(response)
@@ -282,10 +281,9 @@ def swap_it_up(request):
             swap_req=data["swap_code"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-            print(f"Missing fields")
+            logger.error(f"Missing fields")
         email = validate_jwt(jwt_data)
 
-        print(f"swap attempt: {data}")
         logger.info(f"[+] Swap attempt {data}")
         if (email is None):
             return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
@@ -293,23 +291,21 @@ def swap_it_up(request):
             guest_instances = Guest.objects.filter(email=email)
             guest_id = guest_instances[0].id
         except IndexError as e:
-            print(f"No guest found")
-            logger.info(f"[+] No guest found")
+            logger.warning(f"[+] No guest found")
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
 
         rooms_swap_match = Room.objects.filter(swap_code=swap_req)
         swap_room_mine = Room.objects.filter(number=room_num)[0]
-        print(f'[+] swap matches: {rooms_swap_match}')
         logger.info(f"[+] Swap match {rooms_swap_match}")
         try:
             swap_room_theirs = rooms_swap_match[0]
         except IndexError as e:
-            print("[-] No room matching code")
+            logger.warning("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
 
         expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=600)
         if(expiration.timestamp() < datetime.datetime.utcnow().timestamp()):
-            print("[-] Expired swap code")
+            logger.warning("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
 
         guest_id_theirs = swap_room_theirs.guest

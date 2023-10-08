@@ -14,7 +14,8 @@ from ..models import Room
 from .rooms import phrasing
 
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout,
+                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
 
 logger = logging.getLogger('ViewLogger_login')
 
@@ -28,11 +29,11 @@ def login(request):
         try:
             key = env("ROOMBAHT_JWT_KEY")
         except ImproperlyConfigured as e:
-            print("env key fail")
+            logger.error("jwt env key missing")
             return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data["guest"]
-        print(f'data: {data}')
+        logger.debug(f'data: {data}')
         try:
             guests = Guest.objects.all()
             guest_email = guests.filter(email=data['email'])
@@ -40,17 +41,17 @@ def login(request):
             logger.info(f"[-] User login failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
         logger.info(f"[+] User login attempt: {data['email']}")
-        print(f"[+] User login attempt: {data['email']}")
+        logger.debug(f"[+] User login attempt: {data['email']}")
         #TODO(tb): FixMe
         for guest in guest_email:
-            print(f"[+] in: {data['jwt']} db {guest.jwt}")
+            logger.debug(f"[+] in: {data['jwt']} db {guest.jwt}")
             if data['jwt'] == guest.jwt:
                 #guest.jwt=""
                 #guest.save()
                 resp = jwt.encode({"email":guest.email,
                                    "datetime":str(datetime.datetime.utcnow())},
                                    key, algorithm="HS256")
-                print(f'returning: {resp}')
+                logger.debug(f'returning: {resp}')
                 logger.info(f"[+] User login succes. sending resp")
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
         return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
@@ -65,11 +66,11 @@ def login_reset(request):
         except KeyError as e:
             logger.info(f"[+] Reset fail missing field: {data['email']}")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        print(f'reset: {data}')
+        logger.debug(f'reset: {data}')
         logger.info(f"[+] User reset attempt: {data['email']}")
 
         new_pass = phrasing()
-        print(f'phrase: {new_pass}')
+        logger.debug(f'phrase: {new_pass}')
         try:
             guests = Guest.objects.all()
             guest_email = guests.filter(email=email)[0]
@@ -79,7 +80,7 @@ def login_reset(request):
             logger.info(f"[-] User reset failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
 
-        print(f'{guest_email.email}')
+        logger.debug(f'sending email to {guest_email.email}')
         body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
         if(SEND_MAIL==True):
             send_mail("RS Roombaht Password Reset",
