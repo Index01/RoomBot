@@ -47,7 +47,8 @@ def validate_jwt(jwt_data):
 
 def phrasing():
     words = None
-    with open("../samples/wordylyst.md", "r") as f:
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open("%s/../../config/wordylyst.md" % dir_path , "r") as f:
         words = [word for word in f.read().splitlines()]
     word = words[random.randint(0, 999)].capitalize()+words[random.randint(0, 999)].capitalize()
     rand = random.randint(1,3)
