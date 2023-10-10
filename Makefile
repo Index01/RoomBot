@@ -15,7 +15,7 @@ frontend_dev: frontend_build
 backend_dev:
 	test -d backend/.env || \
 		( mkdir backend/.env && \
-			virtualenv -p python3 backend/.env) && \
+			virtualenv -p python3.8 backend/.env) && \
 		backend/.env/bin/python3 -m pip install --upgrade pip
 	backend/.env/bin/pip install -r backend/requirements.txt --upgrade	
 	cd backend && \
