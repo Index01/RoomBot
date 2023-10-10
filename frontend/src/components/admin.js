@@ -6,13 +6,13 @@ import "../styles/RoombotAdmin.css";
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 
-const AdminLoadRooms = (evt) => {
+const CreateGuests = (evt) => {
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
-        const guest = {
+        const data = {
             jwt: jwt["jwt"],
         }
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/admin_load_rooms/', { guest })
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/create_guests/', { data })
           .then(res => {
             console.log(res.data);
           })
@@ -28,7 +28,7 @@ const AdminLoadRooms = (evt) => {
           });
 }
 
-function RoomsCard() {
+function GuestsCard() {
   return (
     <Card>
       <Card.Header>Load Rooms</Card.Header>
@@ -39,27 +39,13 @@ function RoomsCard() {
         </Card.Text>
         <Button variant="primary"
           onClick={(e) => {
-            AdminLoadRooms();
+            CreateGuests();
           }}>Load</Button>
       </Card.Body>
     </Card>
   );
 }
 
-function GuestsCard() {
-  return (
-    <Card>
-      <Card.Header>Load Guests</Card.Header>
-      <Card.Body>
-        <Card.Title>Using file:</Card.Title>
-        <Card.Text>
-         ../samples/exampleGuestsList.csv 
-        </Card.Text>
-        <Button variant="primary">Load</Button>
-      </Card.Body>
-    </Card>
-  );
-}
 
 function ReportCard() {
   return (
@@ -87,7 +73,6 @@ function RoombotAdmin() {
         <Accordion.Header>Load Rooms & Guests</Accordion.Header>
         <Accordion.Body>
           <div>
-          <RoomsCard />
           <GuestsCard />
           </div>
         </Accordion.Body>
