@@ -1,9 +1,32 @@
 
+import axios from 'axios';
 import Accordion from 'react-bootstrap/Accordion';
 import "../styles/RoombotAdmin.css";
 
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
+
+const AdminLoadRooms = (evt) => {
+        console.log(evt);
+        const jwt = JSON.parse(localStorage.getItem('jwt'));
+        const guest = {
+            jwt: jwt["jwt"],
+        }
+        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/admin_load_rooms/', { guest })
+          .then(res => {
+            console.log(res.data);
+          })
+          .catch((error) => {
+            if (error.response) {
+              console.log(error.response);
+              console.log("server responded");
+            } else if (error.request) {
+              console.log("network error");
+            } else {
+              console.log(error);
+            }
+          });
+}
 
 function RoomsCard() {
   return (
@@ -14,7 +37,10 @@ function RoomsCard() {
         <Card.Text>
          ../samples/exampleRoomsList.csv 
         </Card.Text>
-        <Button variant="primary">Load</Button>
+        <Button variant="primary"
+          onClick={(e) => {
+            AdminLoadRooms();
+          }}>Load</Button>
       </Card.Body>
     </Card>
   );
@@ -42,13 +68,11 @@ function ReportCard() {
       <Card.Body>
         <Card.Title>Creating and emailing the following reports:</Card.Title>
         <Card.Text>
-          <p>
          '../output/diff_dump.md'
          '../output/roombaht_application.md'
          '../output/log_script_out.md'
          '../output/guest_dump.csv'
          '../output/room_dump.csv'
-          </p>
         </Card.Text>
         <Button variant="primary">Run</Button>
       </Card.Body>
