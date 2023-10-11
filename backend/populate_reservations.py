@@ -158,6 +158,8 @@ def guest_owner_update(guest_new, otp):
     '''  Email exists and Ticket exists. If existing guest does not match new guest, update existing entry.'''
     existing_ticket = Guest.objects.filter(ticket=guest_new["ticket_code"])
     room_num = existing_ticket[0].room_number
+    
+    # TODO(mjp): check this for previous ticket_code into new ticket code
     if(guest_new["email"]!=existing_ticket[0].email):
         print(f'[-] Update detected')
         print(f"existing: {existing_ticket}, fields: {existing_ticket[0].name},{existing_ticket[0].ticket},{existing_ticket[0].room_number}")
@@ -226,6 +228,7 @@ def create_guests(init_file="", init_rooms=""):
             print(f"guest: {guest_new} otp: {otp}")
             guest_contact_new(guest_new, otp)
             continue
+        
 
         # If email does exist. check whether ticket exists. if not, create guest
         if(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))==0):
@@ -233,6 +236,8 @@ def create_guests(init_file="", init_rooms=""):
             print(f"guest: {guest_new} otp: {otp}")
             guest_contact_exists(guest_new, otp)
 
+        # TODO(mjp): add functionality to read ticket_ID from previous and current holders
+        
         # If email does exist. check whether ticket exists. if so, update the guest entry.
         # This case if for resigning room/tickets to new owner. update operation so secret party export is source of authority.
         elif(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))!=0):

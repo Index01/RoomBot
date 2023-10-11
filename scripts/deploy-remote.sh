@@ -24,12 +24,13 @@ cleanup() {
 [ -e "$ENV_FILE" ] || problems "unable to find env file"
 
 source /tmp/secrets.env
-export ROOMBAHT_SECRET_KEY
+export ROOMBAHT_DJANGO_SECRET_KEY
 export ROOMBAHT_DB_PASSWORD
 export ROOMBAHT_DB_HOST
 export ROOMBAHT_EMAIL_HOST_USER
 export ROOMBAHT_EMAIL_HOST_PASSWORD
 export ROOMBAHT_SEND_MAIL
+export DJANGO_SETTINGS_MODULE
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
 if [ -d "${BACKEND_DIR}.old" ] ; then
@@ -38,20 +39,20 @@ fi
 
 mv "$BACKEND_DIR" "${BACKEND_DIR}.old"
 tar -C "/opt" -xzvf "$BACKEND_ARTIFACT"
-if [ -d "${BACKEND_DIR}/.old/.env" ] ; then
-    cp -r "${BACKEND_DIR}.old/.env" "${BACKEND_DIR}/.env"
+if [ -d "${BACKEND_DIR}/.old/venv" ] ; then
+    cp -r "${BACKEND_DIR}.old/venv" "${BACKEND_DIR}/venv"
 fi
 
 chown -R roombaht: "$BACKEND_DIR"
 chmod -R o-rwx "$BACKEND_DIR"
 
-sudo -u roombaht -- bash -c "test -d ${BACKEND_DIR}/.env || ( mkdir ${BACKEND_DIR}/.env && virtualenv -p python3 ${BACKEND_DIR}/.env ) && ${BACKEND_DIR}/.env/bin/python3 -m pip install --upgrade pip"
-sudo -u roombaht -- bash -c "${BACKEND_DIR}/.env/bin/pip install -r ${BACKEND_DIR}/requirements.txt --upgrade"
+sudo -u roombaht -- bash -c "test -d ${BACKEND_DIR}/venv || ( mkdir ${BACKEND_DIR}/venv && virtualenv -p python3 ${BACKEND_DIR}/venv ) && ${BACKEND_DIR}/venv/bin/python3 -m pip install --upgrade pip"
+sudo -u roombaht -- bash -c "${BACKEND_DIR}/venv/bin/pip install -r ${BACKEND_DIR}/requirements.txt --upgrade"
 
 if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q roombaht ; then
     psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE roombaht;"
 fi
-sed -e "s/@SECRET_KEY@/${ROOMBAHT_SECRET_KEY}/" \
+sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
     -e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
     -e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
@@ -61,7 +62,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_SECRET_KEY}/" \
     > "/etc/systemd/system/roombaht.service"
 systemctl daemon-reload
 systemctl stop roombaht
-"${BACKEND_DIR}/.env/bin/python" \
+"${BACKEND_DIR}/venv/bin/python" \
     "${BACKEND_DIR}/manage.py" migrate
 systemctl start roombaht
 
