@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPTDIR=$( cd "${0%/*}" && pwd)
+ROOTDIR="${SCRIPTDIR%/*}"
+ENV_FILE="${ROOTDIR}/secrets.env"
+
+problems() {
+    2>&1 echo "Error: $*"
+    exit 1
+}
+
+cleanup() {
+    if [ -e "$ENV_FILE" ] ; then
+	rm "$ENV_FILE"
+    fi
+}
+
+[ -e "${ROOTDIR}/secrets.env" ] && problems "plaintext secrets present"
+
+trap cleanup EXIT
+
+[ $# == 2 ] || problems "invalid args"
+
+R_USER="$1"
+R_HOST="$2"
+
+scp "${SCRIPTDIR}/deploy-remote.sh" \
+    "${R_USER}@${R_HOST}:/tmp/deploy.sh"
+scp "${ROOTDIR}/build/roombaht-backend.tgz" \
+    "${ROOTDIR}/build/roombaht-frontend.tgz" \
+    "${R_USER}@${R_HOST}:/tmp"
+"${SCRIPTDIR}/secrets" decrypt
+scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
+
+ssh "${R_USER}@${R_HOST}" \
+    "sudo bash /tmp/deploy.sh ; sudo rm /tmp/deploy.sh"

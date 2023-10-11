@@ -23,3 +23,5 @@ six==1.16.0
 sqlparse==0.4.3
 urllib3==1.26.12
 wcwidth==0.2.5
+uwsgi==2.0.22
+psycopg2==2.9.9

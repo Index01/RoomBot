@@ -18,7 +18,7 @@ const IAmAParty = (evt) => {
         const duration = prompt("\n\nDo you want to let ppl know they can stop by?\nDon't mind making new friends?\n\nEnter the number of hours your would like to be listed as a ppaaarrtaay.\n");
         const jwt = JSON.parse(localStorage.getItem('jwt'));
         //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/i_am_party/`, {
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/i_am_party/', {
+        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/i_am_party/', {
                 jwt: jwt['jwt'],
                 number: evt,
                 duration: duration,
@@ -44,7 +44,7 @@ const CreateSwapCode = (evt) => {
         console.log(evt);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
         //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_gen/`, {
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/swap_gen/', {
+        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_gen/', {
                 jwt: jwt['jwt'],
                 number: evt,
           })
@@ -69,19 +69,19 @@ const EnterSwapCode = (evt) => {
         console.log(evt);
         const code = prompt(`Enter your friends swap code to trade this room with theirs.`);
         if (code === null) {
-            return; 
+            return;
         }
         console.log(code);
         const jwt = JSON.parse(localStorage.getItem('jwt'));
         //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/swap_it_up/`, {
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/swap_it_up/', {
+        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_it_up/', {
                 jwt: jwt['jwt'],
                 number: evt,
                 swap_code: code
           })
           .then(res => {
             console.log(res.data);
-            window.location = "/rooms" 
+            window.location = "/rooms"
           })
           .catch((error) => {
             if (error.response) {
@@ -155,12 +155,12 @@ export default class MyRoomsTable extends React.Component {
     rooms : [],
     jwt: ""
   }
-  
-  
+
+
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     //axios.post(`http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:8000/api/my_rooms/`, {
-    axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/my_rooms/', {
+    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/my_rooms/', {
             jwt: jwt["jwt"]
       })
       .then(res => {
@@ -169,7 +169,7 @@ export default class MyRoomsTable extends React.Component {
         console.log(JSON.parse(JSON.stringify(data)));
         this.state.rooms = data
         this.setState({ data  });
-    
+
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});

@@ -1,8 +1,13 @@
 
 import environ
+import logging
 import mailchimp_transactional as MailchimpTransactional
 from mailchimp_transactional.api_client import ApiClientError
 
+
+logging.basicConfig(stream=sys.stdout,
+                    level=os.environlogging.INFO)
+logger = logging.getLogger('EmailerLogger')
 
 env = environ.Env()
 environ.Env.read_env()
@@ -12,12 +17,11 @@ mailchimp = MailchimpTransactional.Client(key)
 
 
 def connection_test():
-    print(f'key:{mailchimp.api_key}')
     try:
         response = mailchimp.users.ping()
-        print(f"[+] Email ping success: {response}")
+        logger.debug(f"[+] Email ping success: {response}")
     except ApiClientError as e:
-        print(f"[-] Email ping failre: {e.status_code}")
+        logger.error(f"[-] Email ping failre: {e.status_code}")
 
 
 
@@ -34,7 +38,6 @@ def send_mail(subject, body, recipient, bcc=None):
               }
     try:
         response = mailchimp.messages.send({"message":message})
-        print(f"[+] Email sent to {recipient}")
+        logger.info(f"[+] Email sent to {recipient}")
     except ApiClientError as e:
-        print(f"[-] Email send fail {e.text}")
-
+        logger.error(f"[-] Email send fail {e.text}")

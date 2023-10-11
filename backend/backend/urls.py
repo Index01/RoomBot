@@ -15,13 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path
-from reservations import views_flat
 
 from reservations.views import guests
 from reservations.views import rooms
 from reservations.views import login
-
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -37,4 +34,4 @@ urlpatterns = [
     re_path(r'^api/login_reset/$', login.login_reset),
 ]
 
- 
+

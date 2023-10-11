@@ -5,6 +5,7 @@ import jwt
 import datetime
 import json
 import environ
+import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,16 +14,12 @@ from ..models import Room
 from .rooms import phrasing
 
 
-logging.basicConfig(filename='../output/roombaht_application.md',
-                    filemode='a',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.INFO)
-logging.info("Login Views Logger")
+logging.basicConfig(stream=sys.stdout,
+                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
 
 logger = logging.getLogger('ViewLogger_login')
 
-SEND_MAIL = os.environ['SEND_MAIL']
+SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
 
 @api_view(['POST'])
 def login(request):
@@ -30,13 +27,13 @@ def login(request):
         env = environ.Env()
         environ.Env.read_env()
         try:
-            key = env("JWT_KEY")
+            key = env("ROOMBAHT_JWT_KEY")
         except ImproperlyConfigured as e:
-            print("env key fail")
+            logger.error("jwt env key missing")
             return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data["guest"]
-        print(f'data: {data}')
+        logger.debug(f'data: {data}')
         try:
             guests = Guest.objects.all()
             guest_email = guests.filter(email=data['email'])
@@ -44,17 +41,17 @@ def login(request):
             logger.info(f"[-] User login failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
         logger.info(f"[+] User login attempt: {data['email']}")
-        print(f"[+] User login attempt: {data['email']}")
+        logger.debug(f"[+] User login attempt: {data['email']}")
         #TODO(tb): FixMe
         for guest in guest_email:
-            print(f"[+] in: {data['jwt']} db {guest.jwt}")
+            logger.debug(f"[+] in: {data['jwt']} db {guest.jwt}")
             if data['jwt'] == guest.jwt:
                 #guest.jwt=""
                 #guest.save()
-                resp = jwt.encode({"email":guest.email, 
-                                   "datetime":str(datetime.datetime.utcnow())}, 
+                resp = jwt.encode({"email":guest.email,
+                                   "datetime":str(datetime.datetime.utcnow())},
                                    key, algorithm="HS256")
-                print(f'returning: {resp}')
+                logger.debug(f'returning: {resp}')
                 logger.info(f"[+] User login succes. sending resp")
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
         return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
@@ -69,11 +66,11 @@ def login_reset(request):
         except KeyError as e:
             logger.info(f"[+] Reset fail missing field: {data['email']}")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        print(f'reset: {data}')
+        logger.debug(f'reset: {data}')
         logger.info(f"[+] User reset attempt: {data['email']}")
 
-        new_pass = phrasing() 
-        print(f'phrase: {new_pass}')
+        new_pass = phrasing()
+        logger.debug(f'phrase: {new_pass}')
         try:
             guests = Guest.objects.all()
             guest_email = guests.filter(email=email)[0]
@@ -83,15 +80,15 @@ def login_reset(request):
             logger.info(f"[-] User reset failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
 
-        print(f'{guest_email.email}')
+        logger.debug(f'sending email to {guest_email.email}')
         body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
         if(SEND_MAIL==True):
-            send_mail("RS Roombaht Password Reset", 
+            send_mail("RS Roombaht Password Reset",
                       body_text,
-                      "placement@take3presents.com", 
+                      "placement@take3presents.com",
                       [guest_email.email],
-                      auth_user="placement@take3presents.com",
-                      auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
+                      auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
                       fail_silently=False,)
 
 
