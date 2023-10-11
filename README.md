@@ -39,7 +39,7 @@ This should build a docker image, use it to generate the react static, and then 
 
 ```
 $ export ROOMBAHT_DEV="true"
-$ export ROOMBAHT_SECRET_KEY="narrative"
+$ export ROOMBAHT_DJANGO_SECRET_KEY="narrative"
 $ export ROOMBAHT_EMAIL_HOST_PASSWORD="words"
 $ export ROOMBAHT_EMAIL_HOST_USER="words"
 $ export ROOMBAHT_SEND_MAIL="true"

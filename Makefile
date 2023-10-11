@@ -13,14 +13,15 @@ frontend_dev: frontend_build
 		-v $(shell pwd)/frontend/:/app roombaht:latest
 
 backend_dev:
-	test -d backend/.env || \
-		( mkdir backend/.env && \
-			virtualenv -p python3.8 backend/.env) && \
-		backend/.env/bin/python3 -m pip install --upgrade pip
-	backend/.env/bin/pip install -r backend/requirements.txt --upgrade	
-	cd backend && \
-		.env/bin/python3 manage.py migrate && \
-		.env/bin/python3 manage.py runserver 0.0.0.0:8080
+	test -d backend/venv || \
+		( mkdir backend/venv && \
+			virtualenv -p python3.8 backend/venv) && \
+		backend/venv/bin/python3 -m pip install --upgrade pip
+	backend/venv/bin/pip install -r backend/requirements.txt --upgrade	
+
+	test -f secrets.env || \
+		(scripts/secrets decrypt)
+	echo `pwd` && ./scripts/start_backend_dev.sh
 
 archive: backend_archive frontend_archive
 
@@ -29,6 +30,7 @@ backend_archive:
 		tar -cvz \
 			--exclude "__pycache__" \
 			--exclude ".env" \
+			--exclude "venv" \
 			--exclude "db.sqlite3" \
 			--transform 's,^backend,roombaht-backend,' \
 			backend > build/roombaht-backend.tgz
