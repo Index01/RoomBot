@@ -1,7 +1,7 @@
 import RoomSelekta from "./pages/RoomSelekta"
 import Login from "./pages/Login"
 import Admin from "./pages/Admin"
-import { Route, Routes } from "react-router-dom"
+import { Route, Routes , Navigate} from "react-router-dom"
 
 
 

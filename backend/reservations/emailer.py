@@ -1,3 +1,9 @@
+"""MailChimp 
+2023.10.12 STILL BEING DEVELOPED
+"""
+
+import sys
+import os
 
 import environ
 import logging

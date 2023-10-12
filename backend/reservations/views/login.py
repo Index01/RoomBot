@@ -9,6 +9,7 @@ import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.mail import send_mail
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
@@ -19,7 +20,7 @@ logging.basicConfig(stream=sys.stdout,
 
 logger = logging.getLogger('ViewLogger_login')
 
-SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
+SEND_MAIL = os.environ.get('ROOMBAHT_SEND_MAIL', False)
 
 @api_view(['POST'])
 def login(request):
