@@ -29,8 +29,8 @@ logging.info("Admin Views Logger")
 
 logger = logging.getLogger('ViewLogger_admin')
 
-SEND_MAIL = os.environ['SEND_MAIL']
-RANDOM_ROOMS = os.environ['RANDOM_ROOMS']
+SEND_MAIL = os.environ.get('ROOMBAHT_SEND_MAIL', False)
+RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
 
 env = environ.Env()
 
