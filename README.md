@@ -37,16 +37,23 @@ This should build a docker image, use it to generate the react static, and then 
 
 ## Backend
 
+To run the backend in dev mode, you will need something like the following env vars:
+```sh
+export ROOMBAHT_DEV="true"
+export ROOMBAHT_DJANGO_SECRET_KEY="narrative"
+export ROOMBAHT_EMAIL_HOST_PASSWORD="words"
+export ROOMBAHT_EMAIL_HOST_USER="words"
+export ROOMBAHT_SEND_MAIL="true"
 ```
-$ export ROOMBAHT_DEV="true"
-$ export ROOMBAHT_DJANGO_SECRET_KEY="narrative"
-$ export ROOMBAHT_EMAIL_HOST_PASSWORD="words"
-$ export ROOMBAHT_EMAIL_HOST_USER="words"
-$ export ROOMBAHT_SEND_MAIL="true"
-$ make backend_dev
+You can run `source dev.env` to export the example values stored in that file.
+
+To run the local dev django server, call
+```sh
+make backend_dev
 ```
 
 This should ensure proper depdendencies, initialize and run migrations on sqlite, and start the backend running on port 8080.
+
 
 # Managing a Real Host
 
@@ -64,7 +71,12 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 
 *Note* Be careful doing this as there are global-vars-as-config.
 
-Run the `populate_reservations.py` script to add new Rooms or Guests.
+Run the `populate_reservations.py` script to add new Rooms and populate with Guests:
+
+```
+source backend/venv/bin/activate
+python populate_reservations.py
+```
 
 # DB Schema
 

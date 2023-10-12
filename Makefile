@@ -19,9 +19,9 @@ backend_dev:
 		backend/venv/bin/python3 -m pip install --upgrade pip
 	backend/venv/bin/pip install -r backend/requirements.txt --upgrade	
 
-	test -f secrets.env || \
+	test -f dev.env || \
 		(scripts/secrets decrypt)
-	echo `pwd` && ./scripts/start_backend_dev.sh
+	./scripts/start_backend_dev.sh
 
 archive: backend_archive frontend_archive
 
