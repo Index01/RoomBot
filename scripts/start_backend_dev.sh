@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source dev.env
+printenv | grep ROOMBAHT
 
 source backend/venv/bin/activate
 which python

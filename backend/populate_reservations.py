@@ -105,15 +105,25 @@ def create_admins(init_file=None):
         for elem in DictReader(f1):
             dr.append(elem)
     for admin_new in dr:
+
+        characters = string.ascii_letters + string.digits + string.punctuation
+        otp = ''.join(random.choice(characters) for i in range(10))
+        guest=Guest(name=admin_new['name'],
+            email=admin_new['email'],
+            ticket=666,
+            jwt=otp)
+        guest.save()
+        print(f"[+] Created new admin guest login ")
+
         print(f"[+] Creating admin: {admin_new['name']}, {admin_new['email']}, {admin_new['is_admin']}")
         staff=Staff(name=admin_new['name'],
             email=admin_new['email'],
+            guest=guest,
             is_admin=admin_new['is_admin'])
         staff.save()
-    
-        characters = string.ascii_letters + string.digits + string.punctuation
-        otp = ''.join(random.choice(characters) for i in range(10))
         print(f"[+] Created new admin Email {admin_new['email']} Admin {otp}")
+    
+
         if(SEND_MAIL):
             print(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
     
