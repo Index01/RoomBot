@@ -1,0 +1,6 @@
+name,email,is_admin,
+Alice,alice@noop.com,False
+Bob,bob@noop.com,False
+Charlie,charlie@noop.com,True
+Index,tyler32bit@gmail.com,True
+Pez,mpesaven@gmail.com,True

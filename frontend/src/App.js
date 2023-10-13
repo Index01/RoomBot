@@ -1,6 +1,7 @@
 import RoomSelekta from "./pages/RoomSelekta"
 import Login from "./pages/Login"
-import { Route, Routes, Navigate } from "react-router-dom"
+import Admin from "./pages/Admin"
+import { Route, Routes , Navigate} from "react-router-dom"
 
 
 
@@ -12,6 +13,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/rooms" element={<RoomSelekta />} />
+      <Route path="/admin" element={<Admin />} />
     </Routes>
 
   );

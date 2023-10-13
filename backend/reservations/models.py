@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class Guest(models.Model):
     name = models.CharField("Name", max_length=240)
     email = models.EmailField()
@@ -11,6 +10,15 @@ class Guest(models.Model):
 
     def __str__(self):
         return self.name
+
+class Staff(models.Model):
+    name = models.CharField("Name", max_length=240)
+    email = models.EmailField()
+    is_admin = models.BooleanField("Admin", default=False)
+    guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
+
+    def __str__(self):
+        return f'staff name: {self.name}'
 
 class Room(models.Model):
     number = models.CharField("Number", max_length=20)

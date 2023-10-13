@@ -9,8 +9,10 @@ import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.mail import send_mail
 from ..models import Guest
 from ..models import Room
+from ..models import Staff
 from .rooms import phrasing
 
 
@@ -19,7 +21,7 @@ logging.basicConfig(stream=sys.stdout,
 
 logger = logging.getLogger('ViewLogger_login')
 
-SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
+SEND_MAIL = os.environ.get('ROOMBAHT_SEND_MAIL', False)
 
 @api_view(['POST'])
 def login(request):
@@ -34,20 +36,32 @@ def login(request):
 
         data = request.data["guest"]
         logger.debug(f'data: {data}')
+
+        logger.info(f"[+] User login attempt: {data['email']}")
         try:
-            guests = Guest.objects.all()
-            guest_email = guests.filter(email=data['email'])
+            email = data['email']
         except KeyError as e:
             logger.info(f"[-] User login failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
-        logger.info(f"[+] User login attempt: {data['email']}")
-        logger.debug(f"[+] User login attempt: {data['email']}")
-        #TODO(tb): FixMe
+        guests = Guest.objects.all()
+        guest_email = guests.filter(email=email)
+        staff = Staff.objects.all()
+        staff_email = staff.filter(email=email)
+
+        # Check if login attempt is admin
+        for admin in staff_email:
+            if data['jwt'] == admin.guest.jwt:
+                resp = jwt.encode({"email":admin.email,
+                                   "datetime":str(datetime.datetime.utcnow())},
+                                   key, algorithm="HS256")
+                logger.debug(f'returning: {resp}')
+                logger.info(f"[+] Admin login succes. sending resp")
+                return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
+
+        # Check if login attempt is guest
         for guest in guest_email:
             logger.debug(f"[+] in: {data['jwt']} db {guest.jwt}")
             if data['jwt'] == guest.jwt:
-                #guest.jwt=""
-                #guest.save()
                 resp = jwt.encode({"email":guest.email,
                                    "datetime":str(datetime.datetime.utcnow())},
                                    key, algorithm="HS256")
