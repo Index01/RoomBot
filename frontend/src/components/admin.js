@@ -3,32 +3,28 @@ import axios from 'axios';
 import Accordion from 'react-bootstrap/Accordion';
 import "../styles/RoombotAdmin.css";
 
+import { useEffect, useState } from 'react';
+
 import Button from 'react-bootstrap/Button';
+import Spinner from 'react-bootstrap/Spinner';
 import Card from 'react-bootstrap/Card';
 
-const CreateGuests = (evt) => {
-        console.log(evt);
-        const jwt = JSON.parse(localStorage.getItem('jwt'));
-        const data = {
-            jwt: jwt["jwt"],
-        }
-        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { data })
-          .then(res => {
-            console.log(res.data);
-          })
-          .catch((error) => {
-            if (error.response) {
-              console.log(error.response);
-              console.log("server responded");
-            } else if (error.request) {
-              console.log("network error");
-            } else {
-              console.log(error);
-            }
-          });
-}
 
 function GuestsCard() {
+  const [isLoading, setLoading] = useState(false);
+  const handleClick = () => setLoading(true);
+  const jwt = JSON.parse(localStorage.getItem('jwt'));
+  const data = {
+      jwt: jwt["jwt"],
+  }
+  useEffect(() => {
+    if (isLoading) {
+       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { data }).then((res) => {
+        console.log(res.data);
+        setLoading(false);
+      });
+    }
+  }, [isLoading]);
   return (
     <Card>
       <Card.Header>Load Guests</Card.Header>
@@ -37,10 +33,15 @@ function GuestsCard() {
         <Card.Text>
          ../samples/exampleGuestList.csv 
         </Card.Text>
-        <Button variant="primary"
-          onClick={(e) => {
-            CreateGuests();
-          }}>Load</Button>
+
+        <Button
+          variant="primary"
+          disabled={isLoading}
+          onClick={!isLoading ? handleClick : null}
+        >
+          {isLoading ? 'Loading…' : 'Click to load'}
+        </Button>
+
       </Card.Body>
     </Card>
   );
