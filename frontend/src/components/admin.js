@@ -35,7 +35,7 @@ function GuestsCard() {
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         ../samples/exampleGuestList.csv 
+         ../samples/exampleMainGuestList.csv 
         </Card.Text>
         <Button variant="primary"
           onClick={(e) => {
