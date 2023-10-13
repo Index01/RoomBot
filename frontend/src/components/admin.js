@@ -31,11 +31,11 @@ const CreateGuests = (evt) => {
 function GuestsCard() {
   return (
     <Card>
-      <Card.Header>Load Rooms</Card.Header>
+      <Card.Header>Load Guests</Card.Header>
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         ../samples/exampleRoomsList.csv 
+         ../samples/exampleGuestList.csv 
         </Card.Text>
         <Button variant="primary"
           onClick={(e) => {
