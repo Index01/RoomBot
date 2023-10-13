@@ -31,7 +31,7 @@ function GuestsCard() {
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         ../samples/exampleMainGuestList.csv 
+         ../samples/exampleGuestList.csv 
         </Card.Text>
 
         <Button
