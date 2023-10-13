@@ -12,7 +12,7 @@ const CreateGuests = (evt) => {
         const data = {
             jwt: jwt["jwt"],
         }
-        axios.post(process.env.REACT_APP_DJANGO_ENDPOINT+'/api/create_guests/', { data })
+        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { data })
           .then(res => {
             console.log(res.data);
           })

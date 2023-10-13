@@ -244,6 +244,7 @@ def create_guest_entries(init_file="", init_rooms=""):
 
 @api_view(['POST'])
 def create_guests(request):
+    guests_csv = "../samples/exampleMainGuestList.csv"
     if request.method == 'POST':
         data = request.data["data"]
         try:
@@ -255,22 +256,15 @@ def create_guests(request):
         print(f"email: {email}")
         if (email is None):
             return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
-        #try:
-        #    guest_instances = Guest.objects.filter(email=email)
-        #    print(f"guests: {guest_instances}")
-        #    guest_id = guest_instances[0].id
-        #except IndexError as e:
-        #    return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
         admins = Staff.objects.filter(email=email)
         print(f"admins: {admins}")
         if(len(admins)>0):
             Guest.objects.all().delete()
-            create_guest_entries(init_file="../samples/exampleMainGuestList.csv", 
+            create_guest_entries(init_file=guests_csv, 
                                  init_rooms="../samples/exampleMainRoomList.csv")
 
-            response = json.dumps([{"key": 'val'}])
-
-            return Response(response)
+            return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})), 
+                                             status=status.HTTP_201_CREATED)
         else:
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
 
