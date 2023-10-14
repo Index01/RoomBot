@@ -12,12 +12,13 @@ from csv import DictReader, DictWriter
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage, get_connection
 from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
 from .rooms import validate_jwt
+from ..reporting import dump_guest_rooms
 
 
 logging.basicConfig(filename='../output/roombaht_application.md',
@@ -34,8 +35,8 @@ RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
 
 
 def assign_room(type_purchased):
-    print(RANDOM_ROOMS)
-    if(RANDOM_ROOMS=='True'):
+    print(type(RANDOM_ROOMS))
+    if(RANDOM_ROOMS=="TRUE"):
         rooms = Room.objects.all()
         no_guest=list(filter(lambda x:x.guest==None, rooms))
         for room in no_guest:
@@ -51,6 +52,48 @@ def assign_room(type_purchased):
         # testing purposes
         print(f'test room assigned in create')
         return Room(number=666)
+
+
+def guest_sort(guest_list):
+    ''' merge sort by email. u know wat time it is '''
+    if (len(guest_list)>1):
+        mid = len(guest_list)//2
+        L = guest_list[:mid]
+        R = guest_list[mid:]
+        guest_sort(L)
+        guest_sort(R)
+        i = j = k = 0
+        while i<len(L) and j<len(R):
+            if L[i].email.lstrip() <= R[j].email.lstrip():
+                guest_list[k] = L[i]
+                i += 1
+            else:
+                guest_list[k] = R[j]
+                j += 1
+            k += 1
+        while i < len(L):
+            guest_list[k] = L[i]
+            i += 1
+            k += 1
+        while j < len(R):
+            guest_list[k] = R[j]
+            j += 1
+            k += 1
+
+
+def guest_search(arr, low, high, x):
+    ''' binary search by email '''
+    if high >= low:
+        mid = (high + low) // 2
+        if arr[mid].email == x:
+            return arr[mid]
+        elif arr[mid].email > x:
+            return guest_search(arr, low, mid - 1, x)
+        else:
+            return guest_search(arr, mid + 1, high, x)
+    else:
+        return None
+
 
 def guest_contact_new(guest_new, otp):
     ''' Create guest send email '''
@@ -122,48 +165,8 @@ def guest_contact_exists(guest_new, otp):
     print(f"[+] Assigned room number: {room.number}")
     room.save()
 
-def guest_sort(guest_list):
-    ''' merge sort by email. u know wat time it is '''
-    if (len(guest_list)>1):
-        mid = len(guest_list)//2
-        L = guest_list[:mid]
-        R = guest_list[mid:]
-        guest_sort(L)
-        guest_sort(R)
-        i = j = k = 0
-        while i<len(L) and j<len(R):
-            if L[i].email.lstrip() <= R[j].email.lstrip():
-                guest_list[k] = L[i]
-                i += 1
-            else:
-                guest_list[k] = R[j]
-                j += 1
-            k += 1
-        while i < len(L):
-            guest_list[k] = L[i]
-            i += 1
-            k += 1
-        while j < len(R):
-            guest_list[k] = R[j]
-            j += 1
-            k += 1
 
-def guest_search(arr, low, high, x):
-    ''' binary search by email '''
-    if high >= low:
-        mid = (high + low) // 2
-        #print(f'arr mid: {arr[mid].email }')
-        if arr[mid].email == x:
-            #print(f'returning: {arr[mid]}')
-            return arr[mid]
-        elif arr[mid].email > x:
-            return guest_search(arr, low, mid - 1, x)
-        else:
-            return guest_search(arr, mid + 1, high, x)
-    else:
-        return None
-
-def guest_owner_update(guest_new, otp):
+def guest_contact_update(guest_new, otp):
     '''  Email exists and Ticket exists. If existing guest does not match new guest, update existing entry.'''
     existing_ticket = Guest.objects.filter(ticket=guest_new["ticket_code"])
     room_num = existing_ticket[0].room_number
@@ -183,6 +186,7 @@ def guest_owner_update(guest_new, otp):
     else:
         print(f'[*] Email exists, ticket exists, room exists, everything matches entry')
 
+
 def create_guest_entries(init_file="", init_rooms=""):
     dr = None
     new_guests=[]
@@ -197,8 +201,6 @@ def create_guest_entries(init_file="", init_rooms=""):
     with open(init_file, "r") as f1:
         dr = []
         for elem in DictReader(f1):
-            #elem = {x.replace(' ', ''): v for x, v in elem.items()}
-            #elem = {x: v.replace(' ', '') for x, v in elem.items() if type(v)==str}
             dr.append(elem)
     with open(init_rooms, 'r') as f2:
         black_list = [elem['Ticket ID in SecretParty'] for elem in DictReader(f2) if elem['Ticket ID in SecretParty']!=""]
@@ -239,7 +241,27 @@ def create_guest_entries(init_file="", init_rooms=""):
         elif(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))!=0):
             otp = ''.join(random.choice(characters) for i in range(10))
             print(f"guest: {guest_new} otp: {otp}")
-            guest_owner_update(guest_new, otp)
+            guest_contact_update(guest_new, otp)
+
+
+def validate_admin(data):
+        try:
+            jwt_data=data["jwt"]
+        except KeyError as e:
+            logging.info(f"[-] Missing fields {request.data}")
+            return False
+        email = validate_jwt(jwt_data)
+        print(f"email: {email}, data: {data}")
+        if (email is None):
+            logging.info(f"[-] No guest with that email")
+            return False
+        staff = Staff.objects.filter(email=email)
+        print(f"staff: {staff}")
+        if(len(staff)==0 or staff[0].is_admin!=True):
+            logging.info(f"[-] No admin by that email")
+            return False
+        else:
+            return True
 
 
 @api_view(['POST'])
@@ -247,18 +269,7 @@ def create_guests(request):
     guests_csv = "../samples/exampleMainGuestList.csv"
     if request.method == 'POST':
         data = request.data["data"]
-        try:
-            jwt_data=data["jwt"]
-        except KeyError as e:
-            print(f"[-] Missing fields {request.data}")
-            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        email = validate_jwt(jwt_data)
-        print(f"email: {email}")
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
-        admins = Staff.objects.filter(email=email)
-        print(f"admins: {admins}")
-        if(len(admins)>0):
+        if(validate_admin(data)==True):
             Guest.objects.all().delete()
             create_guest_entries(init_file=guests_csv, 
                                  init_rooms="../samples/exampleMainRoomList.csv")
@@ -269,7 +280,54 @@ def create_guests(request):
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['POST'])
+def run_reports(request):
+    if request.method == 'POST':
+        data = request.data["data"]
+        logging.info(f'Run reports attempt')
+        if(validate_admin(data)==True):
+            admin_emails = Staff.objects.filter(is_admin=True)
+            logging.info(f'admin emails: {admin_emails}\n sending mail: {SEND_MAIL}')
+            dump_guest_rooms()
+            if(SEND_MAIL=="True"):
+                
+                bod = "Diff dump, roombaht http logs, reservations script log"
+                conn = get_connection()
+                msg = EmailMessage(subject="RoomBaht Logging", 
+                                   body=bod, 
+                                   to=[admin.email for admin in admin_emails],
+                                   connection=conn)
+                msg.attach_file(secpty_export)
+                #TODO(tb) verify these files
+                msg.attach_file('../output/diff_dump.md')
+                msg.attach_file('../output/roombaht_application.md')
+                msg.attach_file('../output/log_script_out.md')
+                msg.attach_file('../output/guest_dump.csv')
+                msg.attach_file('../output/room_dump.csv')
+                
+                msg.send()
+            return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})), 
+                                           status=status.HTTP_201_CREATED)
+        else:
+            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
 
 
-
+@api_view(['POST'])
+def request_metrics(request):
+    if request.method == 'POST':
+        data = request.data["data"]
+        logging.info(f'Run reports attempt')
+        if(validate_admin(data)==True):
+            guest_unique = len(set([guest.email for guest in Guest.objects.all()]))
+            guest_count = len(Guest.objects.all())
+            rooms_count = len(Room.objects.all())
+            rooms_occupied = Room.objects.filter(guest__isnull=False).count();
+            resp = str(json.dumps({"guest_count": guest_count,
+                                   "rooms_count": rooms_count, 
+                                   "rooms_occupied": rooms_occupied, 
+                                   "guest_unique": guest_unique, 
+                                   }))
+            return Response(resp, status=status.HTTP_201_CREATED)
+        else:
+            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
 

@@ -105,7 +105,6 @@ def room_list(request):
 
         logger.info(f"[+] Valid guest viewing rooms: {email}")
         rooms = Room.objects.all()
-        #guest = Guest.objects.filter(email=email)
         no_guest = list(filter(lambda x:x.guest==None, rooms))
         for elem in no_guest:
             elem.available=False

@@ -4,13 +4,15 @@ import django
 django.setup()
 from csv import DictReader, DictWriter
 from reservations.models import Guest, Room
-from django.core.mail import EmailMessage, get_connection
 from django.forms.models import model_to_dict
 
 
 #secpty_export = "../samples/main_guest_list_11042022.csv"
-secpty_export = "directed_fixed.csv"
-ticket_file = "../samples/verify_output.csv"
+#secpty_export = "directed_fixed.csv"
+secpty_export = "../samples/exampleMainGuestList.csv"
+#ticket_file = "../samples/verify_output.csv"
+ticket_file = "../samples/exampleVerifiedTickets.csv"
+
 
 secpty_lines = []
 ticket_lines = []
@@ -43,6 +45,7 @@ with open('../output/diff_dump.md', 'w') as f3:
 
 def dump_guest_rooms():
     guests = Guest.objects.all()
+    print(f'[-] dumping guests and room tables')
     with open('../output/guest_dump.csv', 'w+') as guest_file:
         header = [field.name for field in guests[0]._meta.fields if field.name!="jwt" and field.name!="invitation"]
         writer = DictWriter(guest_file, fieldnames=header)
@@ -61,21 +64,5 @@ def dump_guest_rooms():
             data = model_to_dict(room, fields=[field.name for field in room._meta.fields if field.name!="swap_code" and field.name!="swap_time"])
             writer.writerow(data)
 
-dump_guest_rooms()
 
-bod = "Diff dump, roombaht http logs, reservations script log"
-#bod = f"secpty num lines: {len(secpty_lines)} verified lines from placed+excluded: {len(ticket_lines)}"
-conn = get_connection()
-msg = EmailMessage(subject="RoomBaht Logging", 
-                   body=bod, 
-                   to=["jessica.nan.goldstein@gmail.com", "jeff@take3presents.com", "tyler32bit@gmail.com"],
-                   connection=conn)
-msg.attach_file(secpty_export)
-msg.attach_file('../output/diff_dump.md')
-msg.attach_file('../output/roombaht_application.md')
-msg.attach_file('../output/log_script_out.md')
-msg.attach_file('../output/guest_dump.csv')
-msg.attach_file('../output/room_dump.csv')
-
-msg.send()
 
