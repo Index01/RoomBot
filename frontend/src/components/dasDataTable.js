@@ -93,18 +93,14 @@ export default class RoomDataTable extends React.Component {
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     console.log("ALL THE ROOMSSS");
-    console.log(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/");
     axios.post(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {
         console.log(res.data);
         const data = res.data
-        //console.log(JSON.parse(JSON.stringify(data)));
-
         this.state.rooms = data
         this.setState({ data  });
-
       })
   }
 
