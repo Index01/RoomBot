@@ -106,13 +106,6 @@ def room_list(request):
         logger.info(f"[+] Valid guest viewing rooms: {email}")
         rooms = Room.objects.all()
 
-        #no_guest = list(filter(lambda x:x.guest==None, rooms))
-        #for elem in no_guest:
-        #    elem.available=False
-        #    elem.save()
-
-        rooms = Room.objects.all()
-
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
         data = serializer.data
 

@@ -43,6 +43,7 @@ def assign_room(type_purchased):
             #print(f'attempting: {room.name_take3} and {type_purchased}')
             if(room.name_take3==type_purchased or room.name_hotel==type_purchased):
                 print(f"[+] Assigned room number: {room.number}")
+
                 return room
             else:
                 pass
@@ -266,7 +267,8 @@ def validate_admin(data):
 
 @api_view(['POST'])
 def create_guests(request):
-    guests_csv = "../samples/exampleMainGuestList.csv"
+    #guests_csv = "../samples/exampleMainGuestList.csv"
+    guests_csv = "./guestUpload_latest.csv"
     if request.method == 'POST':
         data = request.data["data"]
         if(validate_admin(data)==True):
@@ -326,6 +328,32 @@ def request_metrics(request):
                                    "rooms_count": rooms_count, 
                                    "rooms_occupied": rooms_occupied, 
                                    "guest_unique": guest_unique, 
+                                   }))
+            return Response(resp, status=status.HTTP_201_CREATED)
+        else:
+            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def guest_file_upload(request):
+    if request.method == 'POST':
+        data = request.data["guest"]
+        logging.info(f'Run reports attempt')
+        if(validate_admin(data)==True):
+            logging.info(f'guest upload: {data["guest_list"]}')
+            rows = data['guest_list'].split('\n')
+            
+            #TODO(tb): use an abs path that is for sure reachable
+            with open('./guestUpload_latest.csv' , 'w') as fout:
+                for elem in rows:
+                    fout.write(elem+"\n")
+
+            
+            print(f'rcvd row count: {len(rows)}')
+            resp = str(json.dumps({"received_rows": len(rows),
+                                   "headers": rows[0] , 
+                                   "first_row": rows[1] , 
+                                   "status": "Ready to Load...", 
                                    }))
             return Response(resp, status=status.HTTP_201_CREATED)
         else:
