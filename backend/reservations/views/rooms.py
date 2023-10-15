@@ -105,10 +105,12 @@ def room_list(request):
 
         logger.info(f"[+] Valid guest viewing rooms: {email}")
         rooms = Room.objects.all()
-        no_guest = list(filter(lambda x:x.guest==None, rooms))
-        for elem in no_guest:
-            elem.available=False
-            elem.save()
+
+        #no_guest = list(filter(lambda x:x.guest==None, rooms))
+        #for elem in no_guest:
+        #    elem.available=False
+        #    elem.save()
+
         rooms = Room.objects.all()
 
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
@@ -202,13 +204,14 @@ def swap_request(request):
         if (requester_email is None):
             return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
         swap_req = Room.objects.filter(number=room_num)
+
         try:
             swap_req_email = swap_req[0].guest.email
             logger.info(f'[+] Swap request sent to: {swap_req_email}')
-        except KeyError as e:
+        except (KeyError, AttributeError) as e:
             return Response("No email found for that room", status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"[+] Sending swap req from {requester_email} to {swap_req_email}")
+        logger.info(f"[+] Sending swap req from {requester_email} to {swap_req_email} with msg: {msg}")
 
         body_text = f"""
 
@@ -235,7 +238,7 @@ Good Luck, Starfighter.
                       auth_password=os.environ['EMAIL_HOST_PASSWORD'],
                       fail_silently=False,)
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response("Request sent! They will respond if interested.", status=status.HTTP_201_CREATED)
 
 
 

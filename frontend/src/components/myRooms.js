@@ -10,87 +10,11 @@ import {
   TableColumnType,
   TableHeader
 } from "react-bs-datatable";
-
 import axios from 'axios';
 import React from "react";
-
-const IAmAParty = (evt) => {
-        const duration = prompt("\n\nDo you want to let ppl know they can stop by?\nDon't mind making new friends?\n\nEnter the number of hours your would like to be listed as a ppaaarrtaay.\n");
-        const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/i_am_party/', {
-                jwt: jwt['jwt'],
-                number: evt,
-                duration: duration,
-          })
-          .then(res => {
-            const duration_remaining = JSON.parse(res.data)["swap_phrase"];
-	    console.log(duration_remaining);
-          })
-          .catch((error) => {
-            if (error.response) {
-              console.log(error.response);
-              console.log("server responded");
-            } else if (error.request) {
-              console.log("network error");
-            } else {
-              console.log(error);
-            }
-          });
-}
-
-
-const CreateSwapCode = (evt) => {
-        console.log(evt);
-        const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_gen/', {
-                jwt: jwt['jwt'],
-                number: evt,
-          })
-          .then(res => {
-            const phrase = JSON.parse(res.data)["swap_phrase"];
-            alert(`Send this code to your friend if u rly want to trade roomz with them. Direct them to follow the link in the request email, or initial placement email. Have them click EnterSwapCode on the room they are trading to you.\n\nThis code is good for 10mins\nNo un-swapzies.\n\nSwap Code: ${phrase}`);
-          })
-          .catch((error) => {
-            if (error.response) {
-              console.log(error.response);
-              console.log("server responded");
-            } else if (error.request) {
-              console.log("network error");
-            } else {
-              console.log(error);
-            }
-          });
-}
-
-
-const EnterSwapCode = (evt) => {
-        console.log(evt);
-        const code = prompt(`Enter your friends swap code to trade this room with theirs.`);
-        if (code === null) {
-            return;
-        }
-        console.log(code);
-        const jwt = JSON.parse(localStorage.getItem('jwt'));
-        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_it_up/', {
-                jwt: jwt['jwt'],
-                number: evt,
-                swap_code: code
-          })
-          .then(res => {
-            console.log(res.data);
-            window.location = "/rooms"
-          })
-          .catch((error) => {
-            if (error.response) {
-              console.log(error.response);
-              console.log("server responded");
-            } else if (error.request) {
-              console.log("network error");
-            } else {
-              console.log(error);
-            }
-          });
-}
+import { ModalEnterCode, ModalCreateCode } from "./modals.js";
+import Modal from 'react-bootstrap/Modal';
+import { useState } from 'react';
 
 
 const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
@@ -103,48 +27,18 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
       prop: "type",
       title: "Type",
     },
-    //{
-    //  prop: "button",
-    //  cell: (row) => (
-    //    <Button
-    //      variant="outline-info"
-    //      size="sm"
-    //      onClick={(e) => {
-    //        IAmAParty(row.number);
-    //      }}
-    //    >
-    //      IAmAParty
-    //    </Button>
-    //  )
-    //},
     {
       prop: "button",
       cell: (row) => (
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={(e) => {
-            CreateSwapCode(row.number);
-          }}
-        >
-          CreateSwapCode
-        </Button>
+        <ModalCreateCode row={row.number}/>
       )
     },
     {
       prop: "button",
       cell: (row) => (
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={(e) => {
-            EnterSwapCode(row.number);
-          }}
-        >
-          EnterSwapCode
-        </Button>
+        <ModalEnterCode row={row.number}/>
       )
-    }
+    },
   ];
 
 export default class MyRoomsTable extends React.Component {
