@@ -7,25 +7,89 @@ import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
+import Form from 'react-bootstrap/Form';
 
 
 function GuestsCard() {
+  const [phrase, setPhrase] = useState("");
   const [isLoading, setLoading] = useState(false);
   const handleClick = () => setLoading(true);
   const jwt = JSON.parse(localStorage.getItem('jwt'));
   const data = {
       jwt: jwt["jwt"],
   }
+
+  const handleAPICall = (file) => {
+    const guest = {
+        jwt: jwt["jwt"],
+        guest_list: file,
+    }
+    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/guest_upload/', { guest })
+      .then(res => {
+        setPhrase(res.data);
+        console.log("form uploaded");
+        console.log(file);
+        console.log(phrase);
+      })
+      .catch((error) => {
+        if (error.response) {
+          console.log("server responded");
+          console.log(error.response.data);
+          setPhrase("server responded with error. contact placement@take3presents.com");
+        } else if (error.request) {
+          console.log("network error");
+          setPhrase("---Network failed! please try later---");
+        } else {
+          console.log(error);
+        }
+      });
+  };
+
+  const handleSubmit = (evt) => {
+    evt.preventDefault();
+    const formData = new FormData(evt.target),
+    formDataObj = Object.fromEntries(formData.entries())
+
+    console.log(formDataObj.guestListUpload);
+
+    const readUploadedFileAsText = (inputFile) => {
+      const temporaryFileReader = new FileReader();
+    
+      return new Promise((resolve, reject) => {
+        temporaryFileReader.onerror = () => {
+          temporaryFileReader.abort();
+          reject(new DOMException("Problem parsing input file."));
+        };
+    
+        temporaryFileReader.onload = () => {
+          resolve(temporaryFileReader.result);
+        };
+        temporaryFileReader.readAsText(inputFile);
+      });
+    };
+
+    const handleUpload = async (file) => {
+    
+      try {
+        const fileContents = await readUploadedFileAsText(file)
+        handleAPICall(fileContents);
+      } catch (e) {
+        console.warn(e.message)
+      }
+    }
+    handleUpload(formDataObj.guestListUpload);
+  };
+
   useEffect(() => {
     if (isLoading) {
        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { data }).then((res) => {
         console.log(res.data);
         setLoading(false);
+        window.location = "/admin"
       })
       .catch((error) => {
         console.log(error.response);
         setLoading(false);
-        window.location = "/rooms"
       });
     }
   }, [isLoading]);
@@ -35,8 +99,20 @@ function GuestsCard() {
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         ../samples/exampleGuestList.csv 
+         Select a guest list to upload, verify it, load it to database. 
         </Card.Text>
+
+        <Form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
+            </div>
+          <Button variant="primary" type="submit">
+            Upload 
+          </Button>
+        </Form>
+
+        <p></p>
+        <p>{phrase}</p>
 
         <Button
           variant="primary"

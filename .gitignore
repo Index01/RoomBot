@@ -4,6 +4,7 @@ output/*
 secrets.env
 .secret
 frontend/.env.production
+backend/*_latest.csv
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/vim,emacs,python,react
