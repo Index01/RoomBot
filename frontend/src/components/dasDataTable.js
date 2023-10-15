@@ -13,35 +13,7 @@ import {
 import axios from 'axios';
 import React from "react";
 import ModalImage from "react-modal-image";
-
-
-const RequestSwap = (evt) => {
-        const contacts = prompt("Ok fam so rly we can only do so much for you here. We can send the owner of this room an email with your contact info, try to put you in touch, but we cant make them look at their phone or care about trading rooms with you. So. If you have another way of reaching this person go for it.\n\nOnce you are in contact, click the CreateSwapCode button on your room. Send the code and have them enter it.\n\nEnter your email addres or phone number for the room owner to reach you:");
-        if (contacts === null) {
-            return;
-        }
-        console.log(evt);
-        const jwt = JSON.parse(localStorage.getItem('jwt'));
-        const guest = {
-            jwt: jwt["jwt"],
-            number: evt,
-	    contact_info: contacts
-        }
-        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_request/', { guest })
-          .then(res => {
-            console.log(res.data);
-          })
-          .catch((error) => {
-            if (error.response) {
-              console.log(error.response);
-              console.log("server responded");
-            } else if (error.request) {
-              console.log("network error");
-            } else {
-              console.log(error);
-            }
-          });
-}
+import {ModalRequestSwap} from "./modals.js";
 
 
 const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
@@ -70,15 +42,7 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
     {
       prop: "button",
       cell: (row) => (
-	<Button disabled={row.available ? false : true}
-	  variant={row.available ? "outline-primary" : "outline-secondary"}
-          size="sm"
-          onClick={(e) => {
-            RequestSwap(row.number);
-          }}
-        >
-          SendSwapRequest
-        </Button>
+        <ModalRequestSwap row={row}/>
       )
     }
   ];

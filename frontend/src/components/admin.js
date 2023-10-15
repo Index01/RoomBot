@@ -25,6 +25,7 @@ function GuestsCard() {
       .catch((error) => {
         console.log(error.response);
         setLoading(false);
+        window.location = "/rooms"
       });
     }
   }, [isLoading]);
