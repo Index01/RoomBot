@@ -27,7 +27,6 @@ def search_ticket(ticket, guest_entries):
 def create_rooms(init_file =""):
     rooms=[]
     with open(init_file, "r") as f1:
-        #dr = [elem for elem in DictReader(f1)]
         dr = []
         for elem in DictReader(f1):
             elem = {x.replace(' ', ''): v for x, v in elem.items()}
@@ -80,7 +79,6 @@ def create_rooms_main(init_file =""):
         #TODO(tb): omg this is big O off the charts. make it more efficient
         for name in type_mapping:
             if(elem["Room Type"] in name.keys()):
-                #print(f'[+] Adding room to inventory: {elem["Room Type"]}')
                 take3_name = name[elem["Room Type"]]
 
         if(elem["ROOMBAHT"]=="R"):
@@ -92,8 +90,6 @@ def create_rooms_main(init_file =""):
                        )
         else:
             print(f'[-] Room excluded by ROOMBAHT colum: {elem}')
-        #print(f"room: {rooms[len(rooms)-1].available}")
-
     print(f'swappable rooms: {rooms}')
     list(map(lambda x: x.save(), rooms))
 

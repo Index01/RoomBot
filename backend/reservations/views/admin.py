@@ -18,7 +18,8 @@ from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
 from .rooms import validate_jwt
-from ..reporting import dump_guest_rooms
+from ..reporting import dump_guest_rooms, diff_latest
+
 
 
 logging.basicConfig(filename='../output/roombaht_application.md',
@@ -343,16 +344,20 @@ def guest_file_upload(request):
             logging.info(f'guest upload: {data["guest_list"]}')
             rows = data['guest_list'].split('\n')
             
+            diff_count = diff_latest(rows)
+
             #TODO(tb): use an abs path that is for sure reachable
             with open('./guestUpload_latest.csv' , 'w') as fout:
                 for elem in rows:
-                    fout.write(elem+"\n")
-
+                    guest_new = elem.split(",")
+                    existing_ticket = Guest.objects.filter(ticket=guest_new[0])
+                    if(len(existing_ticket)!=1):
+                        fout.write(elem+"\n")
             
-            print(f'rcvd row count: {len(rows)}')
             resp = str(json.dumps({"received_rows": len(rows),
                                    "headers": rows[0] , 
                                    "first_row": rows[1] , 
+                                   "diff": diff_count, 
                                    "status": "Ready to Load...", 
                                    }))
             return Response(resp, status=status.HTTP_201_CREATED)
