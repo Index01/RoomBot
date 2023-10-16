@@ -114,28 +114,32 @@ def create_staff(init_file=None):
             guest=guest,
             is_admin=staff_new['is_admin'])
         staff.save()
-    
+
         print(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
+        print(SEND_MAIL)
         if(SEND_MAIL=="True"):
             print(f'[+] Sending invite for staff member {staff_new["email"]}')
-    
+            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
+            print(f'pass {apppass}')
+
+
             body_text = f"""
                 Congratulations, u have been deemed Staff worthy material.
 
                 Email {staff_new['email']}
                 Admin {otp}
-                
-                login at blahblahblah/login  
+
+                login at blahblahblah/login
                 then go to blahblahbla/admin
                 Good Luck, Starfighter.
-                
+
             """
             send_mail("RoomService RoomBaht",
                       body_text,
                       "placement@take3presents.com",
-                      [guest_new["email"]],
+                      [staff_new["email"]],
                       auth_user="placement@take3presents.com",
-                      auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                      auth_password=apppass,
                       fail_silently=False,)
 
 

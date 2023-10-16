@@ -31,13 +31,13 @@ def read_write_reports():
             print(f'[-] Ticket not placed or excluded: {line}')
             missing.append(f'[-] Ticket not found {line}')
 
-
     with open('../output/diff_dump.md', 'w') as f3:
         for elem in missing:
             f3.write(f"{elem}\n")
 
 def diff_latest(rows):
     diff_count = 0
+
     with open('./diff_latest.csv' , 'w') as diffout:
         guests = Guest.objects.all()
         diffout.write("Things in latest guest list upload but not in the db\n")
@@ -75,7 +75,6 @@ def dump_guest_rooms():
             data = model_to_dict(guest, fields=[field.name for field in guest._meta.fields if field.name!="jwt" and field.name!="invitation"])
             writer.writerow(data)
 
-
     rooms = Room.objects.all()
     with open('../output/room_dump.csv', 'w+') as room_file:
         header = [field.name for field in rooms[0]._meta.fields if field.name!="swap_code" and field.name!="swap_time"]
@@ -85,5 +84,4 @@ def dump_guest_rooms():
             data = model_to_dict(room, fields=[field.name for field in room._meta.fields if field.name!="swap_code" and field.name!="swap_time"])
             writer.writerow(data)
 
-
-
+    print(f'[-] rooms done')

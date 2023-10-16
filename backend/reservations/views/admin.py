@@ -118,7 +118,8 @@ def guest_contact_new(guest_new, otp):
         room.save()
 
     time.sleep(5)
-    if(SEND_MAIL==True):
+    if(SEND_MAIL=="True"):
+        apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
         print(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
 
         body_text = f"""
@@ -131,7 +132,7 @@ Goes without saying, but don't forward this email.
 This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
 Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
 {otp}
-http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/login
+http://rooms.take3presents.com/login
 
 Good Luck, Starfighter.
 
@@ -142,7 +143,7 @@ Good Luck, Starfighter.
                   "placement@take3presents.com",
                   [guest_new["email"]],
                   auth_user="placement@take3presents.com",
-                  auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                  auth_password=apppass,
                   fail_silently=False,)
 
 
@@ -302,7 +303,7 @@ def run_reports(request):
                                    connection=conn)
                 msg.attach_file(secpty_export)
                 #TODO(tb) verify these files
-                msg.attach_file('../output/diff_dump.md')
+                msg.attach_file('../output/diff_latest.csv')
                 msg.attach_file('../output/roombaht_application.md')
                 msg.attach_file('../output/log_script_out.md')
                 msg.attach_file('../output/guest_dump.csv')
@@ -357,9 +358,8 @@ def guest_file_upload(request):
                                    "headers": rows[0] ,
                                    "first_row": rows[1] ,
                                    "diff": diff_count,
-                                   "status": "Ready to Load...",
+                                   "status": "Ready to Load..."
                                    }))
             return Response(resp, status=status.HTTP_201_CREATED)
         else:
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
-
