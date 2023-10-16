@@ -18,7 +18,8 @@ from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
 from .rooms import validate_jwt
-from ..reporting import dump_guest_rooms
+from ..reporting import dump_guest_rooms, diff_latest
+
 
 
 logging.basicConfig(filename='../output/roombaht_application.md',
@@ -117,7 +118,8 @@ def guest_contact_new(guest_new, otp):
         room.save()
 
     time.sleep(5)
-    if(SEND_MAIL==True):
+    if(SEND_MAIL=="True"):
+        apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
         print(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
 
         body_text = f"""
@@ -130,7 +132,7 @@ Goes without saying, but don't forward this email.
 This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
 Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
 {otp}
-http://ec2-3-21-92-196.us-east-2.compute.amazonaws.com:3000/login
+http://rooms.take3presents.com/login
 
 Good Luck, Starfighter.
 
@@ -141,7 +143,7 @@ Good Luck, Starfighter.
                   "placement@take3presents.com",
                   [guest_new["email"]],
                   auth_user="placement@take3presents.com",
-                  auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                  auth_password=apppass,
                   fail_silently=False,)
 
 
@@ -246,37 +248,37 @@ def create_guest_entries(init_file="", init_rooms=""):
 
 
 def validate_admin(data):
-        try:
-            jwt_data=data["jwt"]
-        except KeyError as e:
-            logging.info(f"[-] Missing fields {request.data}")
-            return False
-        email = validate_jwt(jwt_data)
-        print(f"email: {email}, data: {data}")
-        if (email is None):
-            logging.info(f"[-] No guest with that email")
-            return False
-        staff = Staff.objects.filter(email=email)
-        print(f"staff: {staff}")
-        if(len(staff)==0 or staff[0].is_admin!=True):
-            logging.info(f"[-] No admin by that email")
-            return False
-        else:
-            return True
+    try:
+        jwt_data=data["jwt"]
+    except KeyError as e:
+        logging.info(f"[-] Missing fields {request.data}")
+        return False
+    email = validate_jwt(jwt_data)
+    print(f"email: {email}, data: {data}")
+    if (email is None):
+        logging.info(f"[-] No guest with that email")
+        return False
+    staff = Staff.objects.filter(email=email)
+    print(f"staff: {staff}")
+    if(len(staff)==0 or staff[0].is_admin!=True):
+        logging.info(f"[-] No admin by that email")
+        return False
+    else:
+        return True
 
 
 @api_view(['POST'])
 def create_guests(request):
     #guests_csv = "../samples/exampleMainGuestList.csv"
-    guests_csv = "./guestUpload_latest.csv"
+    guests_csv = "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']
     if request.method == 'POST':
         data = request.data["data"]
         if(validate_admin(data)==True):
             Guest.objects.all().delete()
-            create_guest_entries(init_file=guests_csv, 
+            create_guest_entries(init_file=guests_csv,
                                  init_rooms="../samples/exampleMainRoomList.csv")
 
-            return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})), 
+            return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
                                              status=status.HTTP_201_CREATED)
         else:
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
@@ -292,23 +294,23 @@ def run_reports(request):
             logging.info(f'admin emails: {admin_emails}\n sending mail: {SEND_MAIL}')
             dump_guest_rooms()
             if(SEND_MAIL=="True"):
-                
+
                 bod = "Diff dump, roombaht http logs, reservations script log"
                 conn = get_connection()
-                msg = EmailMessage(subject="RoomBaht Logging", 
-                                   body=bod, 
+                msg = EmailMessage(subject="RoomBaht Logging",
+                                   body=bod,
                                    to=[admin.email for admin in admin_emails],
                                    connection=conn)
                 msg.attach_file(secpty_export)
                 #TODO(tb) verify these files
-                msg.attach_file('../output/diff_dump.md')
+                msg.attach_file('../output/diff_latest.csv')
                 msg.attach_file('../output/roombaht_application.md')
                 msg.attach_file('../output/log_script_out.md')
                 msg.attach_file('../output/guest_dump.csv')
                 msg.attach_file('../output/room_dump.csv')
-                
+
                 msg.send()
-            return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})), 
+            return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),
                                            status=status.HTTP_201_CREATED)
         else:
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
@@ -325,9 +327,9 @@ def request_metrics(request):
             rooms_count = len(Room.objects.all())
             rooms_occupied = Room.objects.filter(guest__isnull=False).count();
             resp = str(json.dumps({"guest_count": guest_count,
-                                   "rooms_count": rooms_count, 
-                                   "rooms_occupied": rooms_occupied, 
-                                   "guest_unique": guest_unique, 
+                                   "rooms_count": rooms_count,
+                                   "rooms_occupied": rooms_occupied,
+                                   "guest_unique": guest_unique,
                                    }))
             return Response(resp, status=status.HTTP_201_CREATED)
         else:
@@ -342,20 +344,22 @@ def guest_file_upload(request):
         if(validate_admin(data)==True):
             logging.info(f'guest upload: {data["guest_list"]}')
             rows = data['guest_list'].split('\n')
-            
-            #TODO(tb): use an abs path that is for sure reachable
-            with open('./guestUpload_latest.csv' , 'w') as fout:
-                for elem in rows:
-                    fout.write(elem+"\n")
+            diff_count = diff_latest(rows)
 
-            
-            print(f'rcvd row count: {len(rows)}')
+            #TODO(tb): use an abs path that is for sure reachable
+            with open("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'] , 'w') as fout:
+                for elem in rows:
+                    guest_new = elem.split(",")
+                    existing_ticket = Guest.objects.filter(ticket=guest_new[0])
+                    if(len(existing_ticket)!=1):
+                        fout.write(elem+"\n")
+
             resp = str(json.dumps({"received_rows": len(rows),
-                                   "headers": rows[0] , 
-                                   "first_row": rows[1] , 
-                                   "status": "Ready to Load...", 
+                                   "headers": rows[0] ,
+                                   "first_row": rows[1] ,
+                                   "diff": diff_count,
+                                   "status": "Ready to Load..."
                                    }))
             return Response(resp, status=status.HTTP_201_CREATED)
         else:
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
-

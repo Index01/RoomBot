@@ -27,7 +27,6 @@ def search_ticket(ticket, guest_entries):
 def create_rooms(init_file =""):
     rooms=[]
     with open(init_file, "r") as f1:
-        #dr = [elem for elem in DictReader(f1)]
         dr = []
         for elem in DictReader(f1):
             elem = {x.replace(' ', ''): v for x, v in elem.items()}
@@ -80,7 +79,6 @@ def create_rooms_main(init_file =""):
         #TODO(tb): omg this is big O off the charts. make it more efficient
         for name in type_mapping:
             if(elem["Room Type"] in name.keys()):
-                #print(f'[+] Adding room to inventory: {elem["Room Type"]}')
                 take3_name = name[elem["Room Type"]]
 
         if(elem["ROOMBAHT"]=="R"):
@@ -92,8 +90,6 @@ def create_rooms_main(init_file =""):
                        )
         else:
             print(f'[-] Room excluded by ROOMBAHT colum: {elem}')
-        #print(f"room: {rooms[len(rooms)-1].available}")
-
     print(f'swappable rooms: {rooms}')
     list(map(lambda x: x.save(), rooms))
 
@@ -118,28 +114,32 @@ def create_staff(init_file=None):
             guest=guest,
             is_admin=staff_new['is_admin'])
         staff.save()
-    
+
         print(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
+        print(SEND_MAIL)
         if(SEND_MAIL=="True"):
             print(f'[+] Sending invite for staff member {staff_new["email"]}')
-    
+            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
+            print(f'pass {apppass}')
+
+
             body_text = f"""
                 Congratulations, u have been deemed Staff worthy material.
 
                 Email {staff_new['email']}
                 Admin {otp}
-                
-                login at blahblahblah/login  
+
+                login at blahblahblah/login
                 then go to blahblahbla/admin
                 Good Luck, Starfighter.
-                
+
             """
             send_mail("RoomService RoomBaht",
                       body_text,
                       "placement@take3presents.com",
-                      [guest_new["email"]],
+                      [staff_new["email"]],
                       auth_user="placement@take3presents.com",
-                      auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                      auth_password=apppass,
                       fail_silently=False,)
 
 
