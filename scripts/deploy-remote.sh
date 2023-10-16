@@ -23,14 +23,8 @@ cleanup() {
 [ -e "$FRONTEND_ARTIFACT" ] || problems "unable to find frontend artifact"
 [ -e "$ENV_FILE" ] || problems "unable to find env file"
 
-source /tmp/secrets.env
-export ROOMBAHT_DJANGO_SECRET_KEY
-export ROOMBAHT_DB_PASSWORD
-export ROOMBAHT_DB_HOST
-export ROOMBAHT_EMAIL_HOST_USER
-export ROOMBAHT_EMAIL_HOST_PASSWORD
-export ROOMBAHT_SEND_MAIL
-export DJANGO_SETTINGS_MODULE
+# shellcheck disable=SC1090
+source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
 if [ -d "${BACKEND_DIR}.old" ] ; then
@@ -58,6 +52,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
     -e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
     -e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
+    -e "s%@TEMP@%${ROOMBAHT_TMP}%" \
     "${BACKEND_DIR}/config/roombaht-systemd.conf" \
     > "/etc/systemd/system/roombaht.service"
 systemctl daemon-reload

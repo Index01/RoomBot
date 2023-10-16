@@ -1,15 +1,10 @@
-
-
+import os
 import django
 django.setup()
 from csv import DictReader, DictWriter
 from reservations.models import Guest, Room
 from django.forms.models import model_to_dict
 
-
-#secpty_export = "../samples/main_guest_list_11042022.csv"
-#secpty_export = "directed_fixed.csv"
-secpty_export = "../samples/exampleMainGuestList.csv"
 #ticket_file = "../samples/verify_output.csv"
 ticket_file = "../samples/exampleVerifiedTickets.csv"
 
@@ -18,7 +13,7 @@ secpty_lines = []
 ticket_lines = []
 missing = []
 
-with open(secpty_export, "r") as f1:
+with open("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'], "r") as f1:
     for elem in DictReader(f1):
         secpty_lines.append(elem)
 
@@ -54,7 +49,7 @@ def dump_guest_rooms():
             data = model_to_dict(guest, fields=[field.name for field in guest._meta.fields if field.name!="jwt" and field.name!="invitation"])
             writer.writerow(data)
 
-    
+
     rooms = Room.objects.all()
     with open('../output/room_dump.csv', 'w+') as room_file:
         header = [field.name for field in rooms[0]._meta.fields if field.name!="swap_code" and field.name!="swap_time"]
