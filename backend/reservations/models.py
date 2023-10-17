@@ -22,8 +22,8 @@ class Staff(models.Model):
 
 class Room(models.Model):
     number = models.CharField("Number", max_length=20)
-    name_take3 = models.CharField("Take3Name", max_length=20)
-    name_hotel = models.CharField("HotelName", max_length=20)
+    name_take3 = models.CharField("Take3Name", max_length=50)
+    name_hotel = models.CharField("HotelName", max_length=50)
     available = models.BooleanField("Available", default=True)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
@@ -31,5 +31,3 @@ class Room(models.Model):
 
     def __str__(self):
         return str(self.number)
-
-

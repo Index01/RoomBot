@@ -54,13 +54,13 @@ function GuestsCard() {
 
     const readUploadedFileAsText = (inputFile) => {
       const temporaryFileReader = new FileReader();
-    
+
       return new Promise((resolve, reject) => {
         temporaryFileReader.onerror = () => {
           temporaryFileReader.abort();
           reject(new DOMException("Problem parsing input file."));
         };
-    
+
         temporaryFileReader.onload = () => {
           resolve(temporaryFileReader.result);
         };
@@ -69,7 +69,7 @@ function GuestsCard() {
     };
 
     const handleUpload = async (file) => {
-    
+
       try {
         const fileContents = await readUploadedFileAsText(file)
         handleAPICall(fileContents);
@@ -99,7 +99,7 @@ function GuestsCard() {
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         Select a guest list to upload, verify it, load it to database. 
+         Select a guest list to upload, verify it, load it to database.
         </Card.Text>
 
         <Form onSubmit={handleSubmit}>
@@ -107,7 +107,7 @@ function GuestsCard() {
               <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
             </div>
           <Button variant="primary" type="submit">
-            Upload 
+            Upload
           </Button>
         </Form>
 
@@ -156,8 +156,6 @@ function ReportCard() {
         <Card.Title>Run the following reports:</Card.Title>
         <ListGroup variant="flush">
           <ListGroup.Item>../output/diff_dump.md</ListGroup.Item>
-          <ListGroup.Item>../output/roombaht_application.md</ListGroup.Item>
-          <ListGroup.Item>../output/log_script_out.md</ListGroup.Item>
           <ListGroup.Item>../output/guest_dump.csv</ListGroup.Item>
           <ListGroup.Item>../output/room_dump.csv</ListGroup.Item>
         </ListGroup>

@@ -39,8 +39,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('number', models.CharField(max_length=20, verbose_name='Number')),
-                ('name_take3', models.CharField(max_length=20, verbose_name='Take3Name')),
-                ('name_hotel', models.CharField(max_length=20, verbose_name='HotelName')),
+                ('name_take3', models.CharField(max_length=50, verbose_name='Take3Name')),
+                ('name_hotel', models.CharField(max_length=50, verbose_name='HotelName')),
                 ('available', models.BooleanField(default=True, verbose_name='Available')),
                 ('swap_code', models.CharField(blank=True, max_length=200, null=True, verbose_name='SwapCode')),
                 ('swap_time', models.DateTimeField(blank=True, null=True)),

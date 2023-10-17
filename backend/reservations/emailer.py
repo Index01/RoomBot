@@ -1,11 +1,10 @@
-"""MailChimp 
+"""MailChimp
 2023.10.12 STILL BEING DEVELOPED
 """
 
 import sys
 import os
 
-import environ
 import logging
 import mailchimp_transactional as MailchimpTransactional
 from mailchimp_transactional.api_client import ApiClientError
@@ -15,10 +14,7 @@ logging.basicConfig(stream=sys.stdout,
                     level=os.environlogging.INFO)
 logger = logging.getLogger('EmailerLogger')
 
-env = environ.Env()
-environ.Env.read_env()
-key = env("MAILCHIMP_API")
-mailchimp = MailchimpTransactional.Client(key)
+mailchimp = MailchimpTransactional.Client(os.environ['MAILCHIMP_API'])
 
 
 

@@ -59,23 +59,37 @@ This should ensure proper depdendencies, initialize and run migrations on sqlite
 
 Use `make artifacts` to generate the frontend and backend artifacts.
 
-There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host.
+There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
 
 * `./scripts/provision user 127.0.0.1` is to be run when a host is first created and when any baseline non-application changes are desired. It will execute `./scripts/provision-remote.sh` on the remote host.
 * `./scripts/deploy user 127.0.0.1` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. This includes
   * python `virtualenv` management
   * `nginx` configuration
   * `systemd` for the django bits
+* You can easily view frontend (nginx) and backend (django/wsgi) logs remotely
+  * `./scripts/roombaht_ctl user 127.0.0.1 frontend-log`
+  * `./scripts/roombaht_ctl user 127.0.0.1 backend-log`
+* You can completely wipe the database as well. Helpful during pre-season development and a terrible idea once the gates have opened.
+  * `./scripts/roombaht_ctl user 127.0.0.1 wipe`
 
 # Data Population
 
-*Note* Be careful doing this as there are global-vars-as-config.
+*Note* This data population is meant to run only once after the initial DB migrations are applied. It has slightly different invocation for local dev and remote. This script will create the initial set of rooms and "staff" users. If the script detects that it has already been run on a database, it will ask for a confirmation. Because it does need to wipe the tables and start anew.
 
-Run the `populate_reservations.py` script to add new Rooms and populate with Guests:
+## Local
 
 ```
 source backend/venv/bin/activate
-python populate_reservations.py
+source scripts/dev.env
+python backend/createStaffAndRooms.py samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+```
+
+## Remote
+
+This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name.
+
+```
+./scripts/roombaht_ctl user 127.0.0.1 init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
 ```
 
 # DB Schema

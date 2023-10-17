@@ -1,7 +1,6 @@
 
 import os
 import logging
-import environ
 import random
 import json
 import jwt
@@ -20,16 +19,8 @@ logging.basicConfig(stream=sys.stdout,
 
 logger = logging.getLogger('ViewLogger_rooms')
 
-SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
-
 def validate_jwt(jwt_data):
-    env = environ.Env()
-    environ.Env.read_env()
-    try:
-        key = env("ROOMBAHT_JWT_KEY")
-    except ImproperlyConfigured as e:
-        logger.error("env key fail")
-        return None
+    key = os.environ['ROOMBAHT_JWT_KEY']
 
     try:
         dec = jwt.decode(jwt_data, key, algorithms="HS256")
@@ -222,14 +213,14 @@ Good Luck, Starfighter.
 
         """
 
-        if(SEND_MAIL==True):
+        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
             send_mail("RS Room Trade Request",
                       body_text,
-                      "placement@take3presents.com",
+                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
                       [swap_req_email],
                       auth_user="placement@take3presents.com",
                       auth_password=os.environ['EMAIL_HOST_PASSWORD'],
-                      fail_silently=False,)
+                      fail_silently=False)
 
         return Response("Request sent! They will respond if interested.", status=status.HTTP_201_CREATED)
 

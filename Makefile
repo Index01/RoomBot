@@ -1,6 +1,7 @@
 frontend_build:
 	docker build -t roombaht:latest frontend/
 	docker run -u node \
+		-e REACT_APP_API_ENDPOINT=$(shell ./scripts/secrets show REACT_APP_API_ENDPOINT) \
 		-v $(shell pwd)/frontend:/src \
 		-v $(shell pwd)/build:/build \
 		roombaht:latest build

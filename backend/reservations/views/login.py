@@ -4,7 +4,6 @@ import logging
 import jwt
 import datetime
 import json
-import environ
 import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -21,18 +20,10 @@ logging.basicConfig(stream=sys.stdout,
 
 logger = logging.getLogger('ViewLogger_login')
 
-SEND_MAIL = os.environ.get('ROOMBAHT_SEND_MAIL', False)
-
 @api_view(['POST'])
 def login(request):
     if request.method == 'POST':
-        env = environ.Env()
-        environ.Env.read_env()
-        try:
-            key = env("ROOMBAHT_JWT_KEY")
-        except ImproperlyConfigured as e:
-            logger.error("jwt env key missing")
-            return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
+        key = os.environ['ROOMBAHT_JWT_KEY']
 
         data = request.data["guest"]
         logger.debug(f'data: {data}')
@@ -96,14 +87,14 @@ def login_reset(request):
 
         logger.debug(f'sending email to {guest_email.email}')
         body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
-        if(SEND_MAIL==True):
+        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
             send_mail("RS Roombaht Password Reset",
                       body_text,
-                      "placement@take3presents.com",
+                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
                       [guest_email.email],
                       auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
                       auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
-                      fail_silently=False,)
+                      fail_silently=False)
 
 
         logger.info(f"[+] User pass reset and sent: {data['email']}")
