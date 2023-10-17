@@ -1,9 +1,13 @@
-
+import argparse
+import logging
 import os
 import random
+import termios
+import tty
 import string
-import django
+import sys
 
+import django
 django.setup()
 from reservations.models import Guest, Room, Staff
 from django.core.mail import send_mail
@@ -12,11 +16,27 @@ from django.forms.models import model_to_dict
 from csv import DictReader, DictWriter
 import time
 
+logging.basicConfig(stream=sys.stdout,
+                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+
+logger = logging.getLogger('createStaffAndRooms')
+
+def getch():
+    def _getch():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+    return _getch()
 
 def search_ticket(ticket, guest_entries):
     while(len(guest_entries)>0):
         guest = guest_entries.pop()
-        print(f'guest.ticket: {guest.ticket}, ticket: {ticket}')
+        logger.debug(f'guest.ticket: {guest.ticket}, ticket: {ticket}')
         if(guest.ticket == ticket):
             return True
         else:
@@ -89,8 +109,9 @@ def create_rooms_main(init_file =""):
                              )
                        )
         else:
-            print(f'[-] Room excluded by ROOMBAHT colum: {elem}')
-    print(f'swappable rooms: {rooms}')
+            logger.debug(f'[-] Room excluded by ROOMBAHT colum: {elem}')
+
+    logger.debug(f'swappable rooms: {rooms}')
     list(map(lambda x: x.save(), rooms))
 
 
@@ -115,13 +136,11 @@ def create_staff(init_file=None):
             is_admin=staff_new['is_admin'])
         staff.save()
 
-        print(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
-        print(SEND_MAIL)
-        if(SEND_MAIL=="True"):
-            print(f'[+] Sending invite for staff member {staff_new["email"]}')
-            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
-            print(f'pass {apppass}')
+        logger.info(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
 
+        if(SEND_MAIL=="True"):
+            logger.debug(f'[+] Sending invite for staff member {staff_new["email"]}')
+            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
 
             body_text = f"""
                 Congratulations, u have been deemed Staff worthy material.
@@ -145,18 +164,37 @@ def create_staff(init_file=None):
 
 
 SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
-def main():
+def main(args):
+
+    if len(Room.objects.all()) > 0 or \
+       len(Staff.objects.all()) > 0 or \
+       len(Guest.objects.all()) > 0:
+        if not args['force']:
+            print('Overwrite data? [y/n]')
+            if getch().lower() != 'y':
+                raise Exception('user said nope')
+        else:
+            logger.warning('Overwriting data at user request!')
 
     Room.objects.all().delete()
-    create_rooms_main(init_file='../samples/exampleMainRoomList.csv')
-
-
     Staff.objects.all().delete()
-    create_staff(init_file="../samples/exampleMainStaffList.csv")
+    Guest.objects.all().delete()
 
-
-
-
+    create_rooms_main(init_file=args['rooms_file'])
+    create_staff(init_file=args['staff_file'])
 
 if __name__=="__main__":
-    main()
+    parser = argparse.ArgumentParser(usage=('like db fixtures but not'),
+                                     description='create staff and rooms')
+    parser.add_argument('rooms_file',
+                        help='Path to Rooms CSV file')
+    parser.add_argument('staff_file',
+                        help='Path to Staff CSV file')
+    parser.add_argument('--force',
+                        dest='force',
+                        help='Force overwriting',
+                        action='store_true',
+                        default=False)
+
+    args = vars(parser.parse_args())
+    main(args)

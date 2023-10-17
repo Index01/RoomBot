@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPTDIR=$( cd "${0%/*}" && pwd)
+ROOTDIR="${SCRIPTDIR%/*}"
+ENV_FILE="${ROOTDIR}/secrets.env"
+
+problems() {
+    2>&1 echo "Error: $*"
+    exit 1
+}
+
+cleanup() {
+    if [ -e "$ENV_FILE" ] ; then
+	rm "$ENV_FILE"
+    fi
+}
+
+[ -e "${ROOTDIR}/secrets.env" ] && problems "plaintext secrets present"
+
+trap cleanup EXIT
+
+[ $# -lt 3 ] && problems "invalid args"
+
+R_USER="$1"
+R_HOST="$2"
+ACTION="$3"
+shift 3
+
+if [ "$ACTION" == "init" ] ; then
+    ROOM_FILE="$1"
+    STAFF_FILE="$2"
+    shift 2
+    if [ ! -e "$ROOM_FILE" ] ; then
+	problems "room file ${ROOM_FILE} not found"
+    fi
+    if [ ! -e "$STAFF_FILE" ] ; then
+	problems "staff file ${STAFF_FILE} not found"
+    fi
+    "${SCRIPTDIR}/secrets" decrypt
+    scp "$ROOM_FILE" "$STAFF_FILE" "$ENV_FILE" "${SCRIPTDIR}/init-remote.sh" \
+	"${R_USER}@${R_HOST}:/tmp"
+    ROOM_FILE="$(basename "$ROOM_FILE")"
+    STAFF_FILE="$(basename "$STAFF_FILE")"
+    ssh -t "${R_USER}@${R_HOST}" \
+	"sudo bash /tmp/init-remote.sh /tmp/${ROOM_FILE} /tmp/${STAFF_FILE} ; sudo rm /tmp/init-remote.sh"
+elif [ "$ACTION" == "backend-log" ] ; then
+    ssh -t "${R_USER}@${R_HOST}" "sudo journalctl -f -u roombaht"
+elif [ "$ACTION" == "frontend-log" ] ; then
+    ssh -t "${R_USER}@${R_HOST}" "sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
+else
+    problems "invalid usage!"
+fi

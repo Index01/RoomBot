@@ -1,7 +1,6 @@
 
 import os
 import logging
-import environ
 import random
 import json
 import jwt
@@ -23,13 +22,7 @@ logger = logging.getLogger('ViewLogger_rooms')
 SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
 
 def validate_jwt(jwt_data):
-    env = environ.Env()
-    environ.Env.read_env()
-    try:
-        key = env("ROOMBAHT_JWT_KEY")
-    except ImproperlyConfigured as e:
-        logger.error("env key fail")
-        return None
+    key = os.environ['ROOMBAHT_JWT_KEY']
 
     try:
         dec = jwt.decode(jwt_data, key, algorithms="HS256")

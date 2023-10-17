@@ -23,6 +23,8 @@ cleanup() {
 [ -e "$FRONTEND_ARTIFACT" ] || problems "unable to find frontend artifact"
 [ -e "$ENV_FILE" ] || problems "unable to find env file"
 
+trap cleanup EXIT
+
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
@@ -53,8 +55,10 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
     -e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
     -e "s%@TEMP@%${ROOMBAHT_TMP}%" \
+    -e "s/@JWT_KEY@/${ROOMBAHT_JWT_KEY}/" \
     "${BACKEND_DIR}/config/roombaht-systemd.conf" \
     > "/etc/systemd/system/roombaht.service"
+chmod o-rwx "/etc/systemd/system/roombaht.service"
 systemctl daemon-reload
 systemctl stop roombaht
 "${BACKEND_DIR}/venv/bin/python" \

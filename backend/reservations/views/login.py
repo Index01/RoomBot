@@ -4,7 +4,6 @@ import logging
 import jwt
 import datetime
 import json
-import environ
 import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -26,13 +25,7 @@ SEND_MAIL = os.environ.get('ROOMBAHT_SEND_MAIL', False)
 @api_view(['POST'])
 def login(request):
     if request.method == 'POST':
-        env = environ.Env()
-        environ.Env.read_env()
-        try:
-            key = env("ROOMBAHT_JWT_KEY")
-        except ImproperlyConfigured as e:
-            logger.error("jwt env key missing")
-            return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
+        key = os.environ['ROOMBAHT_JWT_KEY']
 
         data = request.data["guest"]
         logger.debug(f'data: {data}')
