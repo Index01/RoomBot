@@ -148,8 +148,7 @@ if DEV_MODE:
     ALLOWED_HOSTS = ["*"] # for testing only
 else:
     ALLOWED_HOSTS = [
-        "localhost:8000",
-        "localhost"
+        os.environ['ROOMBAHT_HOST']
     ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

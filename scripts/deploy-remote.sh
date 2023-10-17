@@ -56,6 +56,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
     -e "s%@TEMP@%${ROOMBAHT_TMP}%" \
     -e "s/@JWT_KEY@/${ROOMBAHT_JWT_KEY}/" \
+    -e "s/@HOST@/${ROOMBAHT_HOST}/" \
     "${BACKEND_DIR}/config/roombaht-systemd.conf" \
     > "/etc/systemd/system/roombaht.service"
 chmod o-rwx "/etc/systemd/system/roombaht.service"
