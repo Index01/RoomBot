@@ -138,9 +138,10 @@ def create_staff(init_file=None):
 
         logger.info(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
 
-        if(SEND_MAIL=="True"):
+        hostname = os.environ['ROOMBAHT_HOST']
+
+        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
             logger.debug(f'[+] Sending invite for staff member {staff_new["email"]}')
-            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
 
             body_text = f"""
                 Congratulations, u have been deemed Staff worthy material.
@@ -148,22 +149,20 @@ def create_staff(init_file=None):
                 Email {staff_new['email']}
                 Admin {otp}
 
-                login at blahblahblah/login
-                then go to blahblahbla/admin
+                login at http://{hostname}/login
+                then go to http://{hostname}/admin
                 Good Luck, Starfighter.
 
             """
             send_mail("RoomService RoomBaht",
                       body_text,
-                      "placement@take3presents.com",
+                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
                       [staff_new["email"]],
-                      auth_user="placement@take3presents.com",
-                      auth_password=apppass,
-                      fail_silently=False,)
+                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
+                      auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
+                      fail_silently=False)
 
 
-
-SEND_MAIL = os.environ['ROOMBAHT_SEND_MAIL']
 def main(args):
 
     if len(Room.objects.all()) > 0 or \
