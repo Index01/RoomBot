@@ -49,6 +49,9 @@ elif [ "$ACTION" == "backend-log" ] ; then
     ssh -t "${R_USER}@${R_HOST}" "sudo journalctl -f -u roombaht"
 elif [ "$ACTION" == "frontend-log" ] ; then
     ssh -t "${R_USER}@${R_HOST}" "sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
+elif [ "$ACTION" == "wipe" ] ; then
+    eval `"${SCRIPTDIR}/secrets" show`
+    ssh "${R_USER}@${R_HOST}" "PGPASSWORD=$ROOMBAHT_DB_PASSWORD psql -h $ROOMBAHT_DB_HOST -U postgres -tAc 'DROP DATABASE roombaht;'"
 else
     problems "invalid usage!"
 fi

@@ -18,7 +18,9 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEV_MODE = os.environ.get('ROOMBAHT_DEV', 'false').lower()
+DEV_MODE = False
+if os.environ.get('ROOMBAHT_DEV', 'false').lower() == 'true':
+    DEV_MODE = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ['ROOMBAHT_DJANGO_SECRET_KEY']
