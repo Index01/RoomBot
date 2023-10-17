@@ -278,22 +278,22 @@ def run_reports(request):
         logger.info(f'Run reports attempt')
         if(validate_admin(data)==True):
             admin_emails = Staff.objects.filter(is_admin=True)
-            logger.info(f'admin emails: {admin_emails}\n sending mail: {SEND_MAIL}')
             dump_guest_rooms()
             if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-
-                bod = "Diff dump, roombaht http logs, reservations script log"
+                logger.info(f'sending admin emails: {admin_emails}')
                 conn = get_connection()
-                msg = EmailMessage(subject="RoomBaht Logging",
-                                   body=bod,
+                msg = EmailMessage(subject="RoomBaht Report",
+                                   body="Diff dump, guest dump, room dump",
                                    to=[admin.email for admin in admin_emails],
                                    connection=conn)
-                msg.attach_file("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
                 #TODO(tb) verify these files
-                msg.attach_file('../output/diff_latest.csv')
-                msg.attach_file('../output/log_script_out.md')
-                msg.attach_file('../output/guest_dump.csv')
-                msg.attach_file('../output/room_dump.csv')
+                msg.attach_file("%s/guest_dump.csv" % os.environ['ROOMBAHT_TMP'])
+                msg.attach_file("%s/room_dump.csv" % os.environ['ROOMBAHT_TMP'])
+                if os.path.exists("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP']):
+                    msg.attach_file("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'])
+
+                if os.path.exists("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']):
+                    msg.attach_file("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
 
                 msg.send()
             return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),

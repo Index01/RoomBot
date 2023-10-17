@@ -156,7 +156,6 @@ function ReportCard() {
         <Card.Title>Run the following reports:</Card.Title>
         <ListGroup variant="flush">
           <ListGroup.Item>../output/diff_dump.md</ListGroup.Item>
-          <ListGroup.Item>../output/log_script_out.md</ListGroup.Item>
           <ListGroup.Item>../output/guest_dump.csv</ListGroup.Item>
           <ListGroup.Item>../output/room_dump.csv</ListGroup.Item>
         </ListGroup>

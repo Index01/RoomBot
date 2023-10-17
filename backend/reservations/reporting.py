@@ -13,7 +13,6 @@ logging.basicConfig(stream=sys.stdout,
 
 logger = logging.getLogger('ReportingLogger')
 
-secpty_export = "../samples/exampleMainGuestList.csv"
 ticket_file = "../samples/exampleVerifiedTickets.csv"
 
 def read_write_reports():
@@ -46,7 +45,7 @@ def read_write_reports():
 def diff_latest(rows):
     diff_count = 0
 
-    with open('./diff_latest.csv' , 'w') as diffout:
+    with open("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'] , 'w') as diffout:
         guests = Guest.objects.all()
         diffout.write("Things in latest guest list upload but not in the db\n")
         for ind, row in enumerate(rows):
@@ -73,7 +72,7 @@ def diff_latest(rows):
 def dump_guest_rooms():
     guests = Guest.objects.all()
     logger.debug(f'[-] dumping guests and room tables')
-    with open('../output/guest_dump.csv', 'w+') as guest_file:
+    with open("%s/guest_dump.csv" % os.environ['ROOMBAHT_TMP'], 'w+') as guest_file:
         header = [field.name for field in guests[0]._meta.fields if field.name!="jwt" and field.name!="invitation"]
         writer = DictWriter(guest_file, fieldnames=header)
         writer.writeheader()
@@ -82,7 +81,7 @@ def dump_guest_rooms():
             writer.writerow(data)
 
     rooms = Room.objects.all()
-    with open('../output/room_dump.csv', 'w+') as room_file:
+    with open("%s/room_dump.csv" % os.environ['ROOMBAHT_TMP'], 'w+') as room_file:
         header = [field.name for field in rooms[0]._meta.fields if field.name!="swap_code" and field.name!="swap_time"]
         writer = DictWriter(room_file, fieldnames=header)
         writer.writeheader()
