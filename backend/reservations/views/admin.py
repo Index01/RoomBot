@@ -26,7 +26,6 @@ logging.basicConfig(stream=sys.stdout,
 
 logger = logging.getLogger('ViewLogger_rooms')
 
-SEND_MAIL = os.environ.get('ROOMBAHT_SEND_MAIL', False)
 RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
 
 def assign_room(type_purchased):
@@ -110,7 +109,7 @@ def guest_contact_new(guest_new, otp):
         room.save()
 
     time.sleep(5)
-    if(SEND_MAIL=="True"):
+    if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
         apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
         logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
 
@@ -281,7 +280,7 @@ def run_reports(request):
             admin_emails = Staff.objects.filter(is_admin=True)
             logger.info(f'admin emails: {admin_emails}\n sending mail: {SEND_MAIL}')
             dump_guest_rooms()
-            if(SEND_MAIL=="True"):
+            if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
 
                 bod = "Diff dump, roombaht http logs, reservations script log"
                 conn = get_connection()
