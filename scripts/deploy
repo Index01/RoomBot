@@ -17,11 +17,19 @@ cleanup() {
     fi
 }
 
+usage() {
+    echo "deploy <username> <hostname>"
+    echo
+    echo "this script will deploy the most recently built (local) artifact to the remote host"
+    echo "it will perform migrations, restart services, and not make you a martini"
+    exit 1
+}
+
 [ -e "${ROOTDIR}/secrets.env" ] && problems "plaintext secrets present"
 
 trap cleanup EXIT
 
-[ $# == 2 ] || problems "invalid args"
+[ $# == 2 ] || usage
 
 R_USER="$1"
 R_HOST="$2"

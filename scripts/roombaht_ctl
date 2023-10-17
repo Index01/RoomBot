@@ -17,11 +17,20 @@ cleanup() {
     fi
 }
 
+usage() {
+    echo "roombaht_ctl <user> <hostname> init <rooms dot csv> <staff dot csv>"
+    echo "                             -f         force wipe, otherwise asks"
+    echo
+    echo "roombaht_ctl <user> <hostname> frontend-log"
+    echo "roombaht_ctl <user> <hostname> backend-log"
+    echo "roombaht_ctl <user> <hostname> wipe"
+}
+
 [ -e "${ROOTDIR}/secrets.env" ] && problems "plaintext secrets present"
 
 trap cleanup EXIT
 
-[ $# -lt 3 ] && problems "invalid args"
+[ $# -lt 3 ] && ( usage ; exit 1 )
 
 R_USER="$1"
 R_HOST="$2"
@@ -50,8 +59,17 @@ elif [ "$ACTION" == "backend-log" ] ; then
 elif [ "$ACTION" == "frontend-log" ] ; then
     ssh -t "${R_USER}@${R_HOST}" "sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
 elif [ "$ACTION" == "wipe" ] ; then
+    echo "This will completely wipe the database and it will be super annoying to get it back."
+    echo "Are you sure? [y/n]"
+    read -n -s -n 1 answer
+    if [ "$answer" != "y" ] ; then
+	problems "user said no"
+    fi
     eval `"${SCRIPTDIR}/secrets" show`
     ssh "${R_USER}@${R_HOST}" "PGPASSWORD=$ROOMBAHT_DB_PASSWORD psql -h $ROOMBAHT_DB_HOST -U postgres -tAc 'DROP DATABASE roombaht;'"
+elif [ "$ACTION" == "help" ] ; then
+    usage
 else
-    problems "invalid usage!"
+    usage
+    exit 1
 fi

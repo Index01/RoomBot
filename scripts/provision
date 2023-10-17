@@ -8,7 +8,15 @@ problems() {
     exit 1
 }
 
-[ $# == 2 ] || problems "invalid args"
+usage() {
+    echo "provision <username> <hostname>"
+    echo
+    echo "this script will ensure a remote host is able to have the local artifacts"
+    echo "deployed. it is safe to run multiple times."
+    exit 1
+}
+
+[ $# == 2 ] || usage
 
 R_USER="$1"
 R_HOST="$2"
