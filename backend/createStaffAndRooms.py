@@ -44,74 +44,32 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
-def create_rooms(init_file =""):
+def create_rooms_main(rooms_file ="", is_hardrock=False):
     rooms=[]
-    with open(init_file, "r") as f1:
-        dr = []
-        for elem in DictReader(f1):
-            elem = {x.replace(' ', ''): v for x, v in elem.items()}
-            elem = {x: v.replace(' ', '') for x, v in elem.items() if type(v)==str}
-            dr.append(elem)
-
-    for elem in dr:
-        rooms.append(Room(name_take3=elem['Take3Name'],
-                          name_hotel=elem['HotelName'],
-                          number=elem['Number'],
-                          )
-                    )
-    list(map(lambda x: x.save(), rooms))
+    rooms_rows = []
+    with open(rooms_file, "r") as rfile:
+        for row in DictReader(rfile):
+            stripd = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in row.items() if type(k)==str and type(v)==str}
+            rooms_rows.append(stripd)
 
 
-def create_rooms_main(init_file =""):
-    dr = None
-    # {hotel_name: take3_name}
-    type_mapping = [
-           {"Hearing Accessible King": "Standard Room (1 King Bed)"},
-           {"Queen": "Standard Room (2 Queen Beds)"},
-           {"Executive Suite": "Knew Management Suite (1 King Bed)"},
-           {"Accessible Queen": "Standard Room (2 Queen Beds)"},
-           {"Hearing Accessible Queen": "Standard Room (2 Queen Beds)"},
-           {"King": "Standard Room (1 King Bed)"},
-           {"Smoking Executive Suite": "Knew Management Suite (1 King Bed)"},
-           {"Smoking Queen": "Standard Room (2 Queen Beds)"},
-           {"Smoking King": "Standard Room (1 King Bed)"},
-           {"Smoking Accessible Queen": "Standard Room (2 Queen Beds)"},
-           {"Lakeview King": "Lakeview Standard Room (1 King Bed)"},
-           {"Lakeview Queen": "Lakeview Standard Room (2 Queen Beds)"},
-           {"Accessible King": "Standard Room (1 King Bed)"},
-           {"2 Queen Accessible Sierra Suite": "Babyface Suite (2 Queen Beds)"},
-           {"2 Queen Sierra Suite": "Babyface Suite (2 Queen Beds)"},
-           {"Wedding Office": "IGNORE"},
-           {"Chapel": "IGNORE"},
-           {"1 King Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Lakeview 1 King Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Accessible 1 King Lakeview Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Tahoe Suite": "Clavae Suite (1 King Bed)"},
-           {"Smoking 1 King Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Smoking Tahoe Suite": "Clavae Suite (1 King Bed)"},
-           {"Smoking 2 Queen Sierra Suite": "Babyface Suite (2 Queen Beds)"},
-           {"Smoking Lakeview Queen": "Lakeview Standard Room (2 Queen Beds)"},
-    ]
-    rooms=[]
-    with open(init_file, "r") as f1:
-        dr = [elem for elem in DictReader(f1)]
-    for elem in dr:
-        #TODO(tb): omg this is big O off the charts. make it more efficient
-        for name in type_mapping:
-            if(elem["Room Type"] in name.keys()):
-                take3_name = name[elem["Room Type"]]
-
-        if(elem["ROOMBAHT"]=="R"):
-            rooms.append(Room(name_hotel=elem['Room Type'].lstrip(),
-                             number=elem['Room'].lstrip(),
-                             is_available=True,
-                             name_take3=take3_name
-                             )
-                       )
+    for elem in rooms_rows:
+        if(elem["Placed By"]=="Roombaht"):
+            if(is_hardrock):
+                hotel = "Hard Rock"
+            else:
+                hotel = "Ballys"
+            rooms.append(Room(name_take3=elem['Room Type'],
+                              name_hotel=hotel,
+                              number=elem['Room'],
+                              available=True
+                              )
+                        )
         else:
             logger.debug(f'[-] Room excluded by ROOMBAHT colum: {elem}')
 
     logger.debug(f'swappable rooms: {rooms}')
+    print(f'rooms: {rooms}')
     list(map(lambda x: x.save(), rooms))
 
 
@@ -124,6 +82,7 @@ def create_staff(init_file=None):
     for staff_new in dr:
         characters = string.ascii_letters + string.digits + string.punctuation
         otp = ''.join(random.choice(characters) for i in range(10))
+        print(f'staff: {staff_new}')
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],
             ticket=666,
@@ -179,7 +138,7 @@ def main(args):
     Staff.objects.all().delete()
     Guest.objects.all().delete()
 
-    create_rooms_main(init_file=args['rooms_file'])
+    create_rooms_main(rooms_file=args['rooms_file'])
     create_staff(init_file=args['staff_file'])
 
 if __name__=="__main__":

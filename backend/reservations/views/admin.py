@@ -28,18 +28,72 @@ logger = logging.getLogger('ViewLogger_rooms')
 
 RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
 
-def assign_room(type_purchased):
+def assign_room(type_purchased_secpty):
+    types2023RoomList = {
+        'Queen': [
+          'Hard Rock - Standard 2 Queens (50% fee)',
+          'Hard Rock - Lakeview 2 Queens',
+          'Hard Rock - Lakeview 2 Queens (Post Sale)',
+          'Hard Rock - Lakeview Balcony 2 Queens',
+          "Bally's - Standard 2 Queens",
+          "Bally's - Standard 2 Queens (50% fee)",
+          "Bally's - Standard 2 Queens (Direct Sale)",
+          "Bally's - Standard 2 Queens (Post Sale)",
+          "Bally's - Standard 2 Queens (RFP Sale)",
+        ],
+
+        'Queen Sierra Suite': [
+          "Bally's - Sierra 2 Queens Suite",
+        ],
+
+        "King": [
+          'Hard Rock - Standard King',
+          'Hard Rock - Standard King (Post Sale)',
+          'Hard Rock - Standard King (RFP Sale)'
+          'Hard Rock - Lakeview King',
+          'Hard Rock - Lakeview Balcony King',
+          'Hard Rock - Lakeview Balcony King (Post Sale)',
+          'Hard Rock - Balcony King',
+          'Hard Rock - Balcony King (RFP Sale)',
+          "Bally's - Standard King",
+          "Bally's - Standard King (Direct Sale)",
+          "Bally's - Standard King (Post Sale)",
+          "Bally's - Standard King (RFP Sale)",
+        ],
+
+        'King Sierra Suite': [
+          "Bally's - Sierra King Suite",
+          "Bally's - Sierra King Suite (Post Sale)",
+         ],
+
+        'Tahoe Suite': [
+          "Bally's - Tahoe King Suite",
+          "Bally's - Tahoe King Suite (Post Sale)",
+        ],
+
+        "Executive Suite": [
+          "Bally's - Executive King Suite",
+        ],
+
+    }
+    for roomtype in types2023RoomList.items():
+        if(type_purchased_secpty in roomtype[1]):
+            set_room = roomtype[0]
+            break
+        else:
+            set_room = "Room type not found"
+            logger.warn(set_room)
+
     if(RANDOM_ROOMS=="TRUE"):
         rooms = Room.objects.all()
         no_guest=list(filter(lambda x:x.guest==None, rooms))
         for room in no_guest:
-            if(room.name_take3==type_purchased or room.name_hotel==type_purchased):
+            if(room.name_take3 == set_room):
                 logger.info(f"[+] Assigned room number: {room.number}")
-
                 return room
             else:
                 pass
-        logger.warn(f'[-] No room of matching type available. looking for: {type_purchased} remainging inventory:\nTake3names: {[elem.name_take3 for elem in no_guest]}\nHotel names: {[elem.name_hotel for elem in no_guest]}')
+        logger.warn(f'[-] No room of matching type available. looking for: {type_purchased_secpty} remainging inventory:\nTake3names: {[elem.name_take3 for elem in no_guest]}\nHotel names: {[elem.name_hotel for elem in no_guest]}')
         return None
     else:
         # testing purposes
@@ -180,7 +234,7 @@ def guest_contact_update(guest_new, otp):
         logger.debug(f'[*] Email exists, ticket exists, room exists, everything matches entry')
 
 
-def create_guest_entries(init_file="", init_rooms=""):
+def create_guest_entries(init_file=""):
     dr = None
     new_guests=[]
     gl = list(Guest.objects.all())
@@ -195,9 +249,6 @@ def create_guest_entries(init_file="", init_rooms=""):
         dr = []
         for elem in DictReader(f1):
             dr.append(elem)
-    with open(init_rooms, 'r') as f2:
-        black_list = [elem['Ticket ID in SecretParty'] for elem in DictReader(f2) if elem['Ticket ID in SecretParty']!=""]
-    logger.debug(f"blacklistL {black_list}")
 
     characters = string.ascii_letters + string.digits + string.punctuation
 
@@ -210,9 +261,6 @@ def create_guest_entries(init_file="", init_rooms=""):
             guest_new["product"] = "Queen"
 
         if ("Hard Rock" in guest_new["product"]):
-            continue
-        if (guest_new['ticket_code'] in black_list):
-            logger.info(f'[-] Ticket {guest_new["ticket_code"]} {guest_new["first_name"]} {guest_new["last_name"]} excluded by rooms csv column P')
             continue
 
         # If email doesnt exist, send email and create guest
@@ -256,14 +304,12 @@ def validate_admin(data):
 
 @api_view(['POST'])
 def create_guests(request):
-    #guests_csv = "../samples/exampleMainGuestList.csv"
     guests_csv = "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']
     if request.method == 'POST':
         data = request.data["data"]
         if(validate_admin(data)==True):
             Guest.objects.all().delete()
-            create_guest_entries(init_file=guests_csv,
-                                 init_rooms="../samples/exampleMainRoomList.csv")
+            create_guest_entries(init_file=guests_csv)
 
             return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
                                              status=status.HTTP_201_CREATED)
