@@ -126,10 +126,14 @@ def room_list(request):
             elif(len(room['number'])==4):
                 room["floorplans"]=floorplans[int(room["number"][:2])]
             for room_type in room_types:
+                logger.info(f'rt {room_type} t3 {room["name_take3"]}')
                 if(room["name_take3"]==room_type):
                     room['available']=True
+                    logger.info("available true")
+                    break
                 else:
                     room['available']=False
+                    logger.info("available false")
 
         return Response(serializer.data)
 

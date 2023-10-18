@@ -44,7 +44,7 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
-def create_rooms_main(rooms_file =""):
+def create_rooms_main(rooms_file ="", is_hardrock=False):
     rooms=[]
     rooms_rows = []
     with open(rooms_file, "r") as rfile:
@@ -55,10 +55,10 @@ def create_rooms_main(rooms_file =""):
          
     for elem in rooms_rows:
         if(elem["Placed By"]=="Roombaht"):
-            if("Bally's" == elem["Room Type"].split("-")[0].rstrip()):
-                hotel = "Ballys"
-            else:
+            if(is_hardrock):
                 hotel = "Hard Rock"
+            else:
+                hotel = "Ballys"
             rooms.append(Room(name_take3=elem['Room Type'],
                               name_hotel=hotel,
                               number=elem['Room'],
