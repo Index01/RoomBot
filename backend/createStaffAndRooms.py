@@ -44,56 +44,73 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
-def create_rooms_main(init_file =""):
+def create_rooms_main(rooms_file =""):
     rooms=[]
     rooms_rows = []
-    types2023RoomListUnique = {
+    types2023RoomList = {
+        'Queen': [
+          'Hard Rock - Standard 2 Queens (50% fee)',
+          'Hard Rock - Lakeview 2 Queens',
+          'Hard Rock - Lakeview 2 Queens (Post Sale)',
+          'Hard Rock - Lakeview Balcony 2 Queens',
+          "Bally's - Standard 2 Queens",
+          "Bally's - Standard 2 Queens (50% fee)",
+          "Bally's - Standard 2 Queens (Direct Sale)",
+          "Bally's - Standard 2 Queens (Post Sale)",
+          "Bally's - Standard 2 Queens (RFP Sale)",
+        ],
+        
+        'Queen Sierra Suite': [
+          "Bally's - Sierra 2 Queens Suite",
+        ],
+        
         "King": [
-         'Hard Rock - Standard King',
-         'Hard Rock - Standard King (Post Sale)',
-         'Hard Rock - Standard King (RFP Sale)'
-         'Hard Rock - Lakeview King',
-         'Hard Rock - Lakeview Balcony King',
-         'Hard Rock - Lakeview Balcony King (Post Sale)',
-         'Hard Rock - Balcony King',
-         'Hard Rock - Balcony King (RFP Sale)',
-         "Bally's - Standard King",
-         "Bally's - Standard King (Direct Sale)",
-         "Bally's - Standard King (Post Sale)",
-         "Bally's - Standard King (RFP Sale)",
-        ],
-        
-        "Executive Suite": [
-         "Bally's - Executive King Suite",
-        ],
-        
-        'Tahoe Suite': [
-         "Bally's - Tahoe King Suite",
-         "Bally's - Tahoe King Suite (Post Sale)",
+          'Hard Rock - Standard King',
+          'Hard Rock - Standard King (Post Sale)',
+          'Hard Rock - Standard King (RFP Sale)'
+          'Hard Rock - Lakeview King',
+          'Hard Rock - Lakeview Balcony King',
+          'Hard Rock - Lakeview Balcony King (Post Sale)',
+          'Hard Rock - Balcony King',
+          'Hard Rock - Balcony King (RFP Sale)',
+          "Bally's - Standard King",
+          "Bally's - Standard King (Direct Sale)",
+          "Bally's - Standard King (Post Sale)",
+          "Bally's - Standard King (RFP Sale)",
         ],
         
         'King Sierra Suite': [
-         "Bally's - Sierra King Suite",
-         "Bally's - Sierra King Suite (Post Sale)",
-         ]
+          "Bally's - Sierra King Suite",
+          "Bally's - Sierra King Suite (Post Sale)",
+         ],
+        
+        'Tahoe Suite': [
+          "Bally's - Tahoe King Suite",
+          "Bally's - Tahoe King Suite (Post Sale)",
+        ],
+        
+        "Executive Suite": [
+          "Bally's - Executive King Suite",
+        ],
+
     }
 
-    with open(init_file, "r") as f1:
-        for elem in DictReader(f1):
-            elem = {x.lstrip(): v for x, v in elem.items()}
-            elem = {x: v.replace(' ', '') for x, v in elem.items() if type(v)==str}
-            rooms_rows.append(elem)
+    with open(rooms_file, "r") as rfile:
+        for row in DictReader(rfile):
+            stripd = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in row.items() if type(k)==str and type(v)==str}
+            rooms_rows.append(stripd)
 
     for elem in rooms_rows:
-        if(elem["Placed_by"]=="Roombaht"):
+        if(elem["Placed By"]=="Roombaht"):
             for roomtype in types2023RoomList:
                 if(elem["Room Type"] in roomtype[1]):
                     setRoom = roomtype[0]
                 else:
-                    setRoom = None
+                    setRoom = "Room type not found"
+
             rooms.append(Room(name_take3=setRoom,
                               name_hotel=elem['Room Type'],
-                              number=elem['Number'],
+                              number=elem['Room'],
                               available=True
                               )
                         )
@@ -101,6 +118,7 @@ def create_rooms_main(init_file =""):
             logger.debug(f'[-] Room excluded by ROOMBAHT colum: {elem}')
 
     logger.debug(f'swappable rooms: {rooms}')
+    print(f'rooms: {rooms}')
     list(map(lambda x: x.save(), rooms))
 
 
@@ -113,6 +131,7 @@ def create_staff(init_file=None):
     for staff_new in dr:
         characters = string.ascii_letters + string.digits + string.punctuation
         otp = ''.join(random.choice(characters) for i in range(10))
+        print(f'staff: {staff_new}')
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],
             ticket=666,
@@ -168,7 +187,7 @@ def main(args):
     Staff.objects.all().delete()
     Guest.objects.all().delete()
 
-    create_rooms_main(init_file=args['rooms_file'])
+    create_rooms_main(rooms_file=args['rooms_file'])
     create_staff(init_file=args['staff_file'])
 
 if __name__=="__main__":
