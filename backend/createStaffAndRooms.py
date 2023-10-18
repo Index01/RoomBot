@@ -44,70 +44,59 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
-def create_rooms(init_file =""):
-    rooms=[]
-    with open(init_file, "r") as f1:
-        dr = []
-        for elem in DictReader(f1):
-            elem = {x.replace(' ', ''): v for x, v in elem.items()}
-            elem = {x: v.replace(' ', '') for x, v in elem.items() if type(v)==str}
-            dr.append(elem)
-
-    for elem in dr:
-        rooms.append(Room(name_take3=elem['Take3Name'],
-                          name_hotel=elem['HotelName'],
-                          number=elem['Number'],
-                          )
-                    )
-    list(map(lambda x: x.save(), rooms))
-
-
 def create_rooms_main(init_file =""):
-    dr = None
-    # {hotel_name: take3_name}
-    type_mapping = [
-           {"Hearing Accessible King": "Standard Room (1 King Bed)"},
-           {"Queen": "Standard Room (2 Queen Beds)"},
-           {"Executive Suite": "Knew Management Suite (1 King Bed)"},
-           {"Accessible Queen": "Standard Room (2 Queen Beds)"},
-           {"Hearing Accessible Queen": "Standard Room (2 Queen Beds)"},
-           {"King": "Standard Room (1 King Bed)"},
-           {"Smoking Executive Suite": "Knew Management Suite (1 King Bed)"},
-           {"Smoking Queen": "Standard Room (2 Queen Beds)"},
-           {"Smoking King": "Standard Room (1 King Bed)"},
-           {"Smoking Accessible Queen": "Standard Room (2 Queen Beds)"},
-           {"Lakeview King": "Lakeview Standard Room (1 King Bed)"},
-           {"Lakeview Queen": "Lakeview Standard Room (2 Queen Beds)"},
-           {"Accessible King": "Standard Room (1 King Bed)"},
-           {"2 Queen Accessible Sierra Suite": "Babyface Suite (2 Queen Beds)"},
-           {"2 Queen Sierra Suite": "Babyface Suite (2 Queen Beds)"},
-           {"Wedding Office": "IGNORE"},
-           {"Chapel": "IGNORE"},
-           {"1 King Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Lakeview 1 King Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Accessible 1 King Lakeview Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Tahoe Suite": "Clavae Suite (1 King Bed)"},
-           {"Smoking 1 King Sierra Suite": "Babyface Suite (1 King Bed)"},
-           {"Smoking Tahoe Suite": "Clavae Suite (1 King Bed)"},
-           {"Smoking 2 Queen Sierra Suite": "Babyface Suite (2 Queen Beds)"},
-           {"Smoking Lakeview Queen": "Lakeview Standard Room (2 Queen Beds)"},
-    ]
     rooms=[]
-    with open(init_file, "r") as f1:
-        dr = [elem for elem in DictReader(f1)]
-    for elem in dr:
-        #TODO(tb): omg this is big O off the charts. make it more efficient
-        for name in type_mapping:
-            if(elem["Room Type"] in name.keys()):
-                take3_name = name[elem["Room Type"]]
+    rooms_rows = []
+    types2023RoomListUnique = {
+        "King": [
+         'Hard Rock - Standard King',
+         'Hard Rock - Standard King (Post Sale)',
+         'Hard Rock - Standard King (RFP Sale)'
+         'Hard Rock - Lakeview King',
+         'Hard Rock - Lakeview Balcony King',
+         'Hard Rock - Lakeview Balcony King (Post Sale)',
+         'Hard Rock - Balcony King',
+         'Hard Rock - Balcony King (RFP Sale)',
+         "Bally's - Standard King",
+         "Bally's - Standard King (Direct Sale)",
+         "Bally's - Standard King (Post Sale)",
+         "Bally's - Standard King (RFP Sale)",
+        ],
+        
+        "Executive Suite": [
+         "Bally's - Executive King Suite",
+        ],
+        
+        'Tahoe Suite': [
+         "Bally's - Tahoe King Suite",
+         "Bally's - Tahoe King Suite (Post Sale)",
+        ],
+        
+        'King Sierra Suite': [
+         "Bally's - Sierra King Suite",
+         "Bally's - Sierra King Suite (Post Sale)",
+         ]
+    }
 
-        if(elem["ROOMBAHT"]=="R"):
-            rooms.append(Room(name_hotel=elem['Room Type'].lstrip(),
-                             number=elem['Room'].lstrip(),
-                             available=True,
-                             name_take3=take3_name
-                             )
-                       )
+    with open(init_file, "r") as f1:
+        for elem in DictReader(f1):
+            elem = {x.lstrip(): v for x, v in elem.items()}
+            elem = {x: v.replace(' ', '') for x, v in elem.items() if type(v)==str}
+            rooms_rows.append(elem)
+
+    for elem in rooms_rows:
+        if(elem["Placed_by"]=="Roombaht"):
+            for roomtype in types2023RoomList:
+                if(elem["Room Type"] in roomtype[1]):
+                    setRoom = roomtype[0]
+                else:
+                    setRoom = None
+            rooms.append(Room(name_take3=setRoom,
+                              name_hotel=elem['Room Type'],
+                              number=elem['Number'],
+                              available=True
+                              )
+                        )
         else:
             logger.debug(f'[-] Room excluded by ROOMBAHT colum: {elem}')
 
