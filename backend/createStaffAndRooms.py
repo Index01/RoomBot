@@ -47,69 +47,20 @@ def search_ticket(ticket, guest_entries):
 def create_rooms_main(rooms_file =""):
     rooms=[]
     rooms_rows = []
-    types2023RoomList = {
-        'Queen': [
-          'Hard Rock - Standard 2 Queens (50% fee)',
-          'Hard Rock - Lakeview 2 Queens',
-          'Hard Rock - Lakeview 2 Queens (Post Sale)',
-          'Hard Rock - Lakeview Balcony 2 Queens',
-          "Bally's - Standard 2 Queens",
-          "Bally's - Standard 2 Queens (50% fee)",
-          "Bally's - Standard 2 Queens (Direct Sale)",
-          "Bally's - Standard 2 Queens (Post Sale)",
-          "Bally's - Standard 2 Queens (RFP Sale)",
-        ],
-        
-        'Queen Sierra Suite': [
-          "Bally's - Sierra 2 Queens Suite",
-        ],
-        
-        "King": [
-          'Hard Rock - Standard King',
-          'Hard Rock - Standard King (Post Sale)',
-          'Hard Rock - Standard King (RFP Sale)'
-          'Hard Rock - Lakeview King',
-          'Hard Rock - Lakeview Balcony King',
-          'Hard Rock - Lakeview Balcony King (Post Sale)',
-          'Hard Rock - Balcony King',
-          'Hard Rock - Balcony King (RFP Sale)',
-          "Bally's - Standard King",
-          "Bally's - Standard King (Direct Sale)",
-          "Bally's - Standard King (Post Sale)",
-          "Bally's - Standard King (RFP Sale)",
-        ],
-        
-        'King Sierra Suite': [
-          "Bally's - Sierra King Suite",
-          "Bally's - Sierra King Suite (Post Sale)",
-         ],
-        
-        'Tahoe Suite': [
-          "Bally's - Tahoe King Suite",
-          "Bally's - Tahoe King Suite (Post Sale)",
-        ],
-        
-        "Executive Suite": [
-          "Bally's - Executive King Suite",
-        ],
-
-    }
-
     with open(rooms_file, "r") as rfile:
         for row in DictReader(rfile):
             stripd = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in row.items() if type(k)==str and type(v)==str}
             rooms_rows.append(stripd)
 
+         
     for elem in rooms_rows:
         if(elem["Placed By"]=="Roombaht"):
-            for roomtype in types2023RoomList:
-                if(elem["Room Type"] in roomtype[1]):
-                    setRoom = roomtype[0]
-                else:
-                    setRoom = "Room type not found"
-
-            rooms.append(Room(name_take3=setRoom,
-                              name_hotel=elem['Room Type'],
+            if("Bally's" == elem["Room Type"].split("-")[0].rstrip()):
+                hotel = "Ballys"
+            else:
+                hotel = "Hard Rock"
+            rooms.append(Room(name_take3=elem['Room Type'],
+                              name_hotel=hotel,
                               number=elem['Room'],
                               available=True
                               )
