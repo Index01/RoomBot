@@ -104,7 +104,7 @@ def create_rooms_main(init_file =""):
         if(elem["ROOMBAHT"]=="R"):
             rooms.append(Room(name_hotel=elem['Room Type'].lstrip(),
                              number=elem['Room'].lstrip(),
-                             available=True,
+                             is_available=True,
                              name_take3=take3_name
                              )
                        )

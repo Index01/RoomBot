@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+FOLDER="1ItFFYhcHdFTiTAM8277olo4JDvSrvGLV"
+
+set -e
+
+SCRIPTDIR=$( cd "${0%/*}" && pwd)
+ROOTDIR="${SCRIPTDIR%/*}"
+
+LAYOUTS_DIR="${ROOTDIR}/frontend/public/layouts"
+TMPDIR="$(mktemp -d)"
+
+cleanup() {
+    if [ -d "$TMPDIR" ] ; then
+	rm -rf "$TMPDIR"
+    fi
+}
+
+problems() {
+    2>&1 echo "Error: $*"
+    exit 1
+}
+
+trap cleanup EXIT
+
+if [ $# == 1 ] ; then
+    if [ -d "$1" ] ; then
+	echo "Using images from ${1}"
+	cp -vr "${1}/"* "$TMPDIR"
+    else
+	problems "${1} is not a directory"
+    fi
+    shift
+else
+    "${ROOTDIR}/backend/venv/bin/gdown" -O "$TMPDIR" --folder "$FOLDER"
+    if [ "$(ls -l "$TMPDIR" | wc -l)" == 0 ] ; then
+	problems "Nothing downloaded??"
+    fi
+fi
+
+if [ -d "$LAYOUTS_DIR" ] ; then
+    rm -rf "$LAYOUTS_DIR"
+fi
+if [ ! -d "$LAYOUTS_DIR" ] ; then
+    mkdir -p "$LAYOUTS_DIR"
+fi
+
+for image in "${TMPDIR}/"*.png ; do
+    SRCFILE="$(basename "$image")"
+    DESTFILE="$(sed -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
+    THUMBFILE="${DESTFILE%.*}_thumb.png"
+    cp "${TMPDIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
+    echo "Fetched ${SRCFILE} as ${DESTFILE}"
+    convert "${TMPDIR}/${SRCFILE}" -format png -thumbnail 100x100 "${LAYOUTS_DIR}/${THUMBFILE}"
+    echo "Generated thumbnail ${THUMBFILE}"
+done

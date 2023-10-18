@@ -1,7 +1,14 @@
+.PHONY = frontend_build frontend_dev frontend_archive backend_dev backend_archive archive
+ifdef DEV
+	API_ENDPOINT := "http://localhost:8000/"
+else
+	API_ENDPOINT := $(shell ./scripts/secrets show REACT_APP_API_ENDPOINT)
+endif
+
 frontend_build:
 	docker build -t roombaht:latest frontend/
 	docker run -u node \
-		-e REACT_APP_API_ENDPOINT=$(shell ./scripts/secrets show REACT_APP_API_ENDPOINT) \
+		-e REACT_APP_API_ENDPOINT=$(API_ENDPOINT) \
 		-v $(shell pwd)/frontend:/src \
 		-v $(shell pwd)/build:/build \
 		roombaht:latest build

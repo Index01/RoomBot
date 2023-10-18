@@ -147,7 +147,7 @@ def room_reserve(request):
         try:
             guest = Guest.objects.filter(email=email)
             room = Room.objects.filter(number=room_number)
-            room.update(available=False, guest=guest[0])
+            room.update(is_available=False, guest=guest[0])
             room[0].save()
         except IndexError as e:
             return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)

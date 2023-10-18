@@ -9,7 +9,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ('number', 'name_take3', 'name_hotel', 'available', 'guest')
+        fields = ('number', 'name_take3', 'name_hotel', 'is_available', 'guest')
 
 
 class GuestSerializer(serializers.ModelSerializer):

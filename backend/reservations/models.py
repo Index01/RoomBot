@@ -6,6 +6,7 @@ class Guest(models.Model):
     ticket = models.CharField("Ticket", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
+    notes = models.TextField(blank=True, verbose_name='RoomNotes')
     room_number = models.CharField("RoomNumber", max_length=20)
 
     def __str__(self):
@@ -24,9 +25,16 @@ class Room(models.Model):
     number = models.CharField("Number", max_length=20)
     name_take3 = models.CharField("Take3Name", max_length=50)
     name_hotel = models.CharField("HotelName", max_length=50)
-    available = models.BooleanField("Available", default=True)
+    is_available = models.BooleanField("Available", default=True)
+    is_swappable = models.BooleanField("IsSwappable", default=True)
+    is_smoking = models.BooleanField("SmokingRoom", default=False)
+    is_lakeview = models.BooleanField("LakeviewRoom", default=False)
+    is_ada = models.BooleanField("ADA", default=False)
+    is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
+    notes = models.TextField(blank=True, verbose_name='RoomNotes')
+    sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20)
     guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):

@@ -1,4 +1,5 @@
 # RS RoomBot Application!
+
 It sweeps, it mops. It swaps rooms for a few hundred guests at conference style events.
 Facilitates participants trading accomodations and answering the critical question of, "where the party at".
 
@@ -24,13 +25,18 @@ Configuration is handled through environment variables, which are stored encrypt
 
 * `make` (a classic)
 * Docker configured in a way that networking and files work
-* python 3.8
+* python 3.8 w/`virtualenv`
+* A variety of "system packages" (note package names may vary on non-Linux)
+  * `build-essential`
+  * `imagemagik`
+  * `libpq-dev`
+  * `python3-dev`
 * no not believin' in yo self
 
 ## Frontend
 
 ```
-$ REACT_ROOMBAHT_API_ENDPOINT="http://localhost:8000/" make frontend_dev
+$ DEV=true make frontend_dev
 ```
 
 This should build a docker image, use it to generate the react static, and then start react in dev mode listening on port 3000.
@@ -90,6 +96,15 @@ This script will handle secrets and moving files to the remote host for you. Rem
 
 ```
 ./scripts/roombaht_ctl user 127.0.0.1 init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+```
+
+## Images
+
+Images are kinda like data? There is a script that will either work based on an existing downloaded folder (i.e. if you have GDrive setup on a computer) or will attempt to use `gdown` to fetch the folder magially. It will then generate thumbnails and put the images in the right place. Not these images will _not_ end up in the git repo.
+
+```
+./scripts/fetch-images
+./scripts/fetch-images /path/to/gdrive/images
 ```
 
 # DB Schema
