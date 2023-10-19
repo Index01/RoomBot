@@ -52,6 +52,9 @@ export default class BasicVis extends React.Component {
           <Col>
               <div className="card-subtitle mb-2 text-muted">Room Occupied: {this.state.metrics.rooms_occupied}</div>
           </Col>
+          <Col>
+              <div className="card-subtitle mb-2 text-muted">Room Swappable: {this.state.metrics.rooms_swappable}</div>
+          </Col>
         </Row>
       </Container>
     )

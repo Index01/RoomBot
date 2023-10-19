@@ -14,9 +14,8 @@ from django.core.mail import send_mail
 from django.core.mail import EmailMessage, get_connection
 from django.forms.models import model_to_dict
 from django.utils.dateparse import parse_date
-from csv import DictReader, DictWriter
-from reservations.helpers import phrasing
-import time
+from reservations.helpers import phrasing, ingest_csv
+from datetime import datetime
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -46,27 +45,34 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
+def real_date(a_date):
+    day, date = a_date.split('-')
+    month, day = date.lstrip().split('/')
+    return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
+
 def create_rooms_main(rooms_file, is_hardrock=False):
     rooms=[]
-    rooms_rows = []
-    with open(rooms_file, "r") as rfile:
-        for row in DictReader(rfile):
-            stripd = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in row.items() if type(k)==str and type(v)==str}
-            rooms_rows.append(stripd)
+    _rooms_fields, rooms_rows = ingest_csv(rooms_file)
 
     if(is_hardrock):
         hotel = "Hard Rock"
     else:
         hotel = "Ballys"
 
-    logger.debug("read in %s rooms for %s", len(rooms_rows), hotel)
+    logger.info("read in %s rooms for %s", len(rooms_rows), hotel)
 
     for elem in rooms_rows:
-
         a_room = Room(name_take3=elem['Room Type'],
                       name_hotel=hotel,
                       number=elem['Room']
                       )
+
+        # these things are always going to be consistent per room
+        if elem['Check-in Date'] != '':
+            a_room.check_in = real_date(elem['Check-in Date'])
+
+        if elem['Check-out Date'] != '':
+            a_room.check_out = real_date(elem['Check-out Date'])
 
         features = elem['Room Features (Accesbility, Lakeview, Smoking)(not visible externally)'].lower()
         if 'hearing accessible' in features:
@@ -81,32 +87,50 @@ def create_rooms_main(rooms_file, is_hardrock=False):
         if 'smoking' in features:
             a_room.is_smoking = True
 
-        if elem['Placed By'] == 'Roombaht':
-            a_room.is_available = True
-            a_room.is_swappable = True
-
         if len(elem['Room Notes']) > 0:
             a_room.notes = elem['Room Notes']
 
-        if len(elem['Guest Restriction Notes']) > 0:
-            a_room.guest_notes = elem['Guest Restriction Notes']
+        if elem['Changeable'] == '' or \
+           'yes' in elem['Changeable'].lower():
+            a_room.is_swappable = True
+
+        if elem['Placed By'] == 'Roombaht':
+            a_room.is_available = True
+
+        # the following per-guest stuff gets a bit more complex
+        if elem['First Name (Resident)'] != '':
+            primary_name = elem['First Name (Resident)']
+            if elem['Last Name (Resident)'] == '':
+                logger.warning("No last name for room %s", a_room.number)
+            else:
+                primary_name = "%s %s" % (primary_name, elem['Last Name (Resident)'])
+
+            a_room.primary = primary_name
+
+            if elem['Placed By'] == '':
+                logger.warning("Reserved w/o placer for room %s", a_room.number)
+
+            if elem['Guest Restriction Notes'] != '':
+                a_room.guest_notes = elem['Guest Restriction Notes']
+
+            if elem['Secondary Name'] != '':
+                a_room.secondary = elem['Secondary Name']
+
+            a_room.available = False
 
         if elem['Ticket ID in SecretParty'] != '':
             a_room.sp_ticket_id = elem['Ticket ID in SecretParty']
 
+        room_msg = "Created room %s" % a_room.number
         if a_room.is_swappable:
-            logger.debug("Created swappable room %s", a_room.number)
-        else:
-            logger.debug("Created placed room %s", a_room.number)
+            room_msg += ", swappable"
 
-        if elem['Check-in Date'] != '':
-            a_room.check_in = parse_date(elem['Check-in Date'])
-
-        if elem['Check-out Date'] != '':
-            a_room.check_out = parse_date(elem['Check-out Date'])
+        if not a_room.is_available:
+            room_msg += ", placed"
 
         rooms.append(a_room)
         a_room.save()
+        logger.info(room_msg)
 
     swappable_rooms = [x for x in rooms if x.is_swappable]
     logger.info("created %s rooms of which %s are swappable",
@@ -115,13 +139,9 @@ def create_rooms_main(rooms_file, is_hardrock=False):
 
 
 def create_staff(init_file):
-    dr = None
-    with open(init_file, "r") as f1:
-        dr = []
-        for elem in DictReader(f1):
-            dr.append(elem)
-    for staff_new in dr:
-        characters = string.ascii_letters + string.digits + string.punctuation
+    _staff_fields, staff = ingest_csv(init_file)
+
+    for staff_new in staff:
         otp = phrasing()
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],

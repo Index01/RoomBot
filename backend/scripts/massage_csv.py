@@ -10,14 +10,12 @@ import tty
 from datetime import datetime
 from random import randint
 from names_generator import generate_name
-from lorem_text import lorem
-
-from csv import DictReader, DictWriter
+from lorem_text.lorem import words as lorem_words
 
 # don't judge
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-from reservations.helpers import phrasing
+from reservations.helpers import phrasing, ingest_csv, egest_csv
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -50,7 +48,8 @@ def parse_weights(weights_str):
 def random_placer(guest_names):
     placers = []
     for _num in range(randint(3, 8)):
-        placers.append(guest_names[randint(0, len(guest_names) - 1)])
+        random_name = list(guest_names.keys())[randint(0, len(guest_names) - 1)]
+        placers.append(guest_names[random_name])
 
     def placer():
         return placers[randint(0, len(placers) - 1)]
@@ -67,20 +66,25 @@ def art_room_types():
 
     return art_type
 
-def massage_rooms(input_items, guests, weights):
+def massage_rooms(input_items, maps, weights):
+    name_maps, email_maps, phone_maps = maps
     output_items = []
 
-    guest_names = []
-    for guest in guests:
-        a_name = "%s %s" % (guest['first_name'], guest['last_name'])
-        if a_name not in guest_names:
-            guest_names.append(a_name)
+    guest_names = [x for x, y in name_maps.items()]
 
-    get_placer = random_placer(guest_names)
+    get_placer = random_placer(name_maps)
     art_type = art_room_types()
 
     for item in input_items:
-        new_name_bits = guest_names[randint(0, len(guest_names) - 1)].split(' ')
+        real_name = "%s %s" % (item['First Name (Resident)'], item['Last Name (Resident)'])
+
+        if real_name not in name_maps.keys():
+            new_name = generate_name(style = 'capital')
+            name_maps[real_name] = new_name
+            new_name_bits = new_name.split(' ')
+        else:
+            new_name_bits = name_maps[real_name].split(' ')
+
         new_first_name = new_name_bits[0]
         new_last_name = new_name_bits[1]
 
@@ -94,7 +98,6 @@ def massage_rooms(input_items, guests, weights):
             'Room Owned By (Secret Party)': item['Room Owned By (Secret Party)'],
             'Check-in Date': item['Check-in Date'],
             'Check-out Date': item['Check-out Date'],
-            'Changeable': item['Changeable'],
             'Change Reason': item['Change Reason'],
             'Guest Restriction Notes': item['Guest Restriction Notes'],
             'Placement Team Notes': item['Placement Team Notes'],
@@ -103,31 +106,90 @@ def massage_rooms(input_items, guests, weights):
             'Ticket ID in SecretParty': item['Ticket ID in SecretParty']
         }
 
-        if randint(1, 100) <= weights.get('placed', 10):
-            new_item['Placed By'] = get_placer()
-            new_item['First Name (Resident)'] = new_first_name
-            new_item['Last Name (Resident)'] = new_last_name
-            if randint(1,100) <= weights.get('secondary', 50):
-                new_item['Secondary Name'] = guest_names[randint(0, len(guest_names) - 1)]
-        else:
-            new_item['Placed By'] = 'Roombaht'
+        # straight anonymization of pii
+        if weights is None:
+            if item['Placed By'] != '' and item['Placed By'] != 'Roombaht':
+                if item['Placed By'] not in name_maps:
+                    new_placer = generate_name(style = 'capital')
+                    name_maps[item['Placed By']] = new_placer
+                    new_item['Placed By'] = new_placer
+                else:
+                    new_item['Placed By'] = name_maps[item['Placed By']]
 
+            if item['First Name (Resident)'] != '':
+                new_item['First Name (Resident)'] = new_first_name
+            if item['Last Name (Resident)'] != '':
+                new_item['Last Name (Resident)'] = new_last_name
 
-        if randint(1, 100) <= weights.get('art', 5):
-            new_item['Art Room'] = 'Yes'
-            new_item['Art Name / Placed Name'] = phrasing()
-            new_item['Art Room Type'] = art_type()
+            if item['Secondary Name'] != '':
+                if item['Secondary Name'] not in name_maps:
+                    new_secondary = generate_name(style = 'capital')
+                    name_maps[item['Secondary Name']] = new_secondary
+                    new_item['Secondary Name'] = new_secondary
+                else:
+                    new_item['Secondary Name'] = name_maps[item['Secondary Name']]
+
+            if item['Art Room'].lower() == 'yes':
+                new_item['Art Room'] = item['Art Room']
+                new_item['Art Name / Placed Name'] = phrasing()
+                new_item['Art Room Type'] = art_type()
+
+            if item['Changeable'] != '':
+                if 'yes' in item['Changeable'].lower():
+                    new_item['Changeable'] = 'Yes'
+                else:
+                    new_item['Changeable'] = 'No'
+
+            if 'Placed By' not in new_item:
+                new_item['Placed By'] = 'Roombaht'
+
+        # add some randomness here for more test data
         else:
-            new_item['Art Room'] = 'No'
+            if randint(1, 100) <= weights.get('placed', 10):
+                new_item['Placed By'] = get_placer()
+                new_item['First Name (Resident)'] = new_first_name
+                new_item['Last Name (Resident)'] = new_last_name
+                if randint(1,100) <= weights.get('secondary', 50):
+                    new_item['Secondary Name'] = guest_names[randint(0, len(guest_names) - 1)]
+
+            if randint(1, 100) <= weights.get('art', 5):
+                if 'Placed By' not in new_item:
+                    new_item['Placed By'] = get_placer()
+
+                new_item['Art Room'] = 'Yes'
+                new_item['Art Name / Placed Name'] = phrasing()
+                new_item['Art Room Type'] = art_type()
+            else:
+                new_item['Art Room'] = 'No'
+
+            if 'Placed By' in new_item:
+                if randint(1, 100) <= weights.get('changeable', 50):
+                    new_item['Changeable'] = 'Yes'
+                else:
+                    new_item['Changeable'] = 'No'
+            else:
+                new_item['Placed By'] = 'Roombaht'
+
 
         output_items.append(new_item)
 
     return output_items
 
+def random_phone():
+    def ph():
+        return randint(1,9)
+
+    return "(%s%s%s) %s%s%s-%s%s%s%s" % (
+        ph(), ph(), ph(),
+        ph(), ph(), ph(),
+        ph(), ph(), ph(), ph()
+    )
+
 def massage_guests(input_items):
     output_items = []
     name_maps = {}
     email_maps = {}
+    phone_maps = {}
 
     for item in input_items:
         a_name = "%s %s" % (item['first_name'], item['last_name'])
@@ -136,6 +198,7 @@ def massage_guests(input_items):
         new_first_name = new_name_bits[0]
         new_last_name = new_name_bits[1]
         new_email = "%s.%s@noop.com" % (new_first_name.lower(), new_last_name.lower())
+        new_phone = random_phone()
 
         if a_name not in name_maps:
             name_maps[a_name] = "%s %s" % (new_first_name, new_last_name)
@@ -143,6 +206,8 @@ def massage_guests(input_items):
         if new_email not in email_maps:
             email_maps[item['email']] = new_email
 
+        if new_phone not in phone_maps:
+            phone_maps[item['phone']] = new_phone
 
     # actually anonymize
     for item in input_items:
@@ -153,8 +218,7 @@ def massage_guests(input_items):
             'ticket_code': item['ticket_code'],
             'last_name': new_last_name,
             'first_name': new_first_name,
-            'email': new_email,
-            'phone': "", #anon
+            'email': email_maps[item['email']],
             'type': item['type'],
             'product': item['product'],
             'purchase_date': item['purchase_date'],
@@ -162,39 +226,17 @@ def massage_guests(input_items):
         }
 
         if item['transferred_from'] != '':
-            new_item['transferred_from'] = name_maps[a_name]
-            new_item['transferred_from_email'] = email_maps[item['email']]
+            new_item['transferred_from'] = name_maps[item['transferred_from']]
+            new_item['transferred_from_email'] = email_maps[item['transferred_from_email']]
             new_item['transferred_from_code'] = item['transferred_from_code']
 
         if item['transferred_to'] != '':
-            new_item['transferred_to'] = name_maps[a_name]
-            new_item['transferred_to_email'] = email_maps[item['email']]
+            new_item['transferred_to'] = name_maps[item['transferred_to']]
+            new_item['transferred_to_email'] = email_maps[item['transferred_to_email']]
 
         output_items.append(new_item)
 
-    return output_items
-
-def ingest(filename):
-    if not os.path.exists(filename):
-        raise Exception("input file %s not found" % filename)
-
-    input_dict = []
-    input_items = []
-    with open(filename, "r") as input_handle:
-        input_dict = DictReader(input_handle, skipinitialspace=True)
-        input_fields = [k.lstrip().rstrip() for k in input_dict.fieldnames if type(k)==str]
-        for elem in input_dict:
-            strip_elem = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in elem.items() if type(k)==str and type(v)==str}
-            input_items.append(strip_elem)
-
-    return input_fields, input_items
-
-def egest(items, fields, filename):
-    with open(filename, 'w') as output_handle:
-        output_dict = DictWriter(output_handle, fieldnames=fields)
-        output_dict.writeheader()
-        for elem in items:
-            output_dict.writerow(elem)
+    return [name_maps, email_maps, phone_maps], output_items
 
 def check_dest(filename, force):
     if os.path.exists(filename):
@@ -218,16 +260,18 @@ def main(args):
     check_dest(dest_guest_list, args['force'])
     check_dest(dest_room_list, args['force'])
 
-    weights = parse_weights(args['weights'])
+    weights = None
+    if args['random']:
+        weights = parse_weights(args['weights'])
 
-    guest_fields, original_guests = ingest(src_guest_list)
-    room_fields, original_rooms = ingest(src_room_list)
+    guest_fields, original_guests = ingest_csv(src_guest_list)
+    room_fields, original_rooms = ingest_csv(src_room_list)
 
-    anon_guests = massage_guests(original_guests)
-    anon_rooms = massage_rooms(original_rooms, anon_guests, weights)
+    maps, anon_guests = massage_guests(original_guests)
+    anon_rooms = massage_rooms(original_rooms, maps, weights)
 
-    egest(anon_guests, guest_fields, dest_guest_list)
-    egest(anon_rooms, room_fields, dest_room_list)
+    egest_csv(anon_guests, guest_fields, dest_guest_list)
+    egest_csv(anon_rooms, room_fields, dest_room_list)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(usage=('at least it has builtin help'),
@@ -245,6 +289,10 @@ if __name__ == "__main__":
                         default=False)
     parser.add_argument('--weights',
                         help='optional csv/kv weights for randomly filled fields. see readme.')
+    parser.add_argument('--random',
+                        help='Make weighted random changes to rooms',
+                        action='store_true',
+                        default=False)
     cli_args = vars(parser.parse_args())
 
     main(cli_args)

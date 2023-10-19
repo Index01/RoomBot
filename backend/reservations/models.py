@@ -6,7 +6,6 @@ class Guest(models.Model):
     ticket = models.CharField("Ticket", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
-    notes = models.TextField(blank=True, verbose_name='GuestNotes')
     room_number = models.CharField("RoomNumber", max_length=20)
 
     def __str__(self):
@@ -38,6 +37,7 @@ class Room(models.Model):
     notes = models.TextField(blank=True, verbose_name='RoomNotes')
     guest_notes = models.TextField(blank=True, verbose_name='GuestNotes')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20)
+    primary = models.CharField("PrimaryContact", max_length=50)
     secondary = models.CharField("SecondaryContact", max_length=50)
     guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 

@@ -109,16 +109,7 @@ Images are kinda like data? There is a script that will either work based on an 
 
 ## Data Sanitization
 
-There is a script which will take live data from the room list spreadsheet and a Secret Party export and appropriately anonymize it. For the room list, some randomness is applied, and there are configurable weights. All guests and placers listed in the room list will be sourced from the original room list.
-
-For the room list, the following changes are made
-
-* The first and last name are changed
-* Placers (art and manual room) are selected from a randomly generated group
-* All blank `Placed By` fields are replaced with `Roombaht`
-* Placed rooms are randomly generated, ignoring original selections (weight name `placed`).
-* Secondary names are randomly added to placed rooms (weight name `secondary`).
-* A random selection of rooms will become art rooms (weight name `art`). Art types are selected from a randomly generated group.
+There is a script which will take live data from the room list spreadsheet and a Secret Party export and appropriately anonymize it. For the room list, some randomness may be applied, and there are configurable weights. All guests and placers listed in the room list will be sourced from the original room list.
 
 For the guest list, the following changes are made
 
@@ -127,6 +118,18 @@ For the guest list, the following changes are made
   * Duplicate emails (per name) are mapped down to a single email
 * Transfer to / from is mapped to the appropriate names
 * Phone number is randomly generated per name
+
+For the room list, the following changes are made
+
+* The first and last name are changed.
+  * Secondary names, if present, are also changed
+* Placers (art and manual room) are selected from a randomly generated group.
+* All blank `Placed By` fields are replaced with `Roombaht`
+* Optionally, placed rooms may be randomly generated, ignoring original selections (weight name `placed`, default 10%).
+* Optionally, secondary names may be randomly added to placed rooms (weight name `secondary`, default 50%).
+* Art room types are always selected from a randomly generated group.
+* Optionally, a random selection of rooms will become art rooms (weight name `art`, default 5%).
+* Optionally, placed rooms have a chance to be set as changable (weight name `changeable`, default 50%)
 
 ```
 ./backend/scripts/massage_csv.py /tmp/SecretPartyExport.csv /tmp/RoomsSheetExport.csv --weight placed:30,art:10
@@ -143,7 +146,6 @@ Tracks every guest. Every guest the system is aware of will have a room associat
 * `ticket` The Secret Party ticket ID.
 * `invitation` The Secret Party invitation ID.
 * `jwt` The (per user) magical token of hope and wonder and access.
-* `notes` Any notes associated with the guest.
 * `room_number` The room a guest is located in.
 
 ## Staff
@@ -175,5 +177,6 @@ Rooms are where the party is.
 * `notes` General notes about the room.
 * `guest_notes` Rooms specific to the guest in the room.
 * `sp_ticket_id` The Secret Party ticket ID.
+* `primary` The full name of the primary resident in the room.
 * `secondary` The full name of a secondary person in the room.
 * `guest` A mapping to a guest record.

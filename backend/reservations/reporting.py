@@ -7,6 +7,7 @@ django.setup()
 from csv import DictReader, DictWriter
 from reservations.models import Guest, Room
 from django.forms.models import model_to_dict
+from datetime import datetime
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -48,31 +49,42 @@ def diff_latest(rows):
     with open("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'] , 'w') as diffout:
         guests = Guest.objects.all()
         diffout.write("Things in latest guest list upload but not in the db\n")
-        for ind, row in enumerate(rows):
-            guest_new = row.split(',')
-            existing_ticket = Guest.objects.filter(ticket=guest_new[0])
-            # ignore the first and last lines. what could go wrong
-            if(len(existing_ticket)!=1 and ind!=0 and ind!=len(rows)-1):
+        for row in rows:
+            existing_ticket = None
+            try:
+                existing_ticket = Guest.objects.get(ticket=row['ticket_code'])
+            except Guest.DoesNotExist:
+                pass
+
+            if not existing_ticket:
                 diff_count+=1
-                diffout.write(f'{guest_new[0]},{guest_new[1]},{guest_new[2]},{guest_new[3]}\n')
+                diffout.write("%s,%s %s,%s\n" % (row['ticket_code'],
+                                               row['first_name'],
+                                               row['last_name'],
+                                               row['email']))
 
         diffout.write("Things in db but not in most recent guest list upload\n")
         for guest in guests:
-            for ind, row in enumerate(rows):
-                guest_new = row.split(',')
-                if(guest.ticket==guest_new[0]):
+            ticket_found = False
+            for row in rows:
+                if guest.ticket == row['ticket_code']:
+                    ticket_found = True
                     break
-                elif(guest.ticket!=guest_new[0] and ind==len(rows)-1):
-                    diff_count+=1
-                    diffout.write(f'{guest.ticket},{guest.name},{guest.email}\n')
-                else:
-                    continue
+
+            if ticket_found:
+                diff_count+=1
+                diffout.write(f'{guest.ticket},{guest.name},{guest.email}\n')
+
     return diff_count
 
 def dump_guest_rooms():
+    now = datetime.now()
+    ts_suffix = "%s-%s-%s-%s-%s" % (now.day, now.month, now.year, now.hour, now.minute)
+    guest_dump_file = "%s/guest_dump-%s.csv" % (os.environ['ROOMBAHT_TMP'], ts_suffix)
+    room_dump_file = "%s/room_dump-%s.csv" % ( os.environ['ROOMBAHT_TMP'], ts_suffix)
     guests = Guest.objects.all()
     logger.debug(f'[-] dumping guests and room tables')
-    with open("%s/guest_dump.csv" % os.environ['ROOMBAHT_TMP'], 'w+') as guest_file:
+    with open(guest_dump_file, 'w+') as guest_file:
         header = [field.name for field in guests[0]._meta.fields if field.name!="jwt" and field.name!="invitation"]
         writer = DictWriter(guest_file, fieldnames=header)
         writer.writeheader()
@@ -81,7 +93,7 @@ def dump_guest_rooms():
             writer.writerow(data)
 
     rooms = Room.objects.all()
-    with open("%s/room_dump.csv" % os.environ['ROOMBAHT_TMP'], 'w+') as room_file:
+    with open(room_dump_file, 'w+') as room_file:
         header = [field.name for field in rooms[0]._meta.fields if field.name!="swap_code" and field.name!="swap_time"]
         writer = DictWriter(room_file, fieldnames=header)
         writer.writeheader()
@@ -90,3 +102,4 @@ def dump_guest_rooms():
             writer.writerow(data)
 
     logger.debug(f'[-] rooms done')
+    return guest_dump_file, room_dump_file

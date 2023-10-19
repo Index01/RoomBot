@@ -14,6 +14,7 @@ from ..models import Guest
 from ..models import Room
 from ..serializers import *
 from ..helpers import phrasing
+from ..constants import FLOORPLANS
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -80,7 +81,7 @@ def room_list(request):
             return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
 
         logger.info(f"[+] Valid guest viewing rooms: {email}")
-        rooms = Room.objects.all()
+        rooms = Room.objects.filter(is_swappable=True, is_available=True)
         guest_entries = Guest.objects.filter(email=email)
         try:
             room_types = [Room.objects.filter(number=guest.room_number)[0].name_take3 for guest in guest_entries]
@@ -91,29 +92,11 @@ def room_list(request):
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
         data = serializer.data
 
-        floorplans = {
-                3: ["ballys_3rd.png", "ballys_3rd_thumb.png"],
-                4: ["ballys_4th.png", "ballys_4th_thumb.png"],
-                5: ["ballys_5th.png", "ballys_5th_thumb.png"],
-                6: ["ballys_6th.png", "ballys_6th_thumb.png"],
-                7: ["ballys_7th.png", "ballys_7th_thumb.png"],
-                8: ["ballys_8th.png", "ballys_8th_thumb.png"],
-                9: ["ballys_9th.png", "ballys_9th_thumb.png"],
-                10: ["ballys_10th.png", "ballys_10th_thumb.png"],
-                11: ["ballys_11th.png", "ballys_11th_thumb.png"],
-                12: ["ballys_12th.png", "ballys_12th_thumb.png"],
-                13: ["ballys_13th.png", "ballys_13th_thumb.png"],
-                14: ["ballys_14th.png", "ballys_14th_thumb.png"],
-                15: ["ballys_15th.png", "ballys_15th_thumb.png"],
-                16: ["ballys_16th.png", "ballys_16th_thumb.png"],
-                17: ["ballys_17th.png", "ballys_17th_thumb.png"]
-                }
-
         for room in data:
             if(len(room['number'])==3):
-                room["floorplans"]=floorplans[int(room["number"][:1])]
+                room["floorplans"]=FLOORPLANS[int(room["number"][:1])]
             elif(len(room['number'])==4):
-                room["floorplans"]=floorplans[int(room["number"][:2])]
+                room["floorplans"]=FLOORPLANS[int(room["number"][:2])]
             for room_type in room_types:
                 if(room["name_take3"]==room_type):
                     room['available']=True
