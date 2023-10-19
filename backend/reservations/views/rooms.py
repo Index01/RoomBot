@@ -97,7 +97,11 @@ def room_list(request):
         logger.info(f"[+] Valid guest viewing rooms: {email}")
         rooms = Room.objects.all()
         guest_entries = Guest.objects.filter(email=email)
-        room_types = [Room.objects.filter(number=guest.room_number)[0].name_take3 for guest in guest_entries]
+        try:
+            room_types = [Room.objects.filter(number=guest.room_number)[0].name_take3 for guest in guest_entries]
+        except IndexError as w:
+            logger.info(f'[-] No rooms. or guests. rooms: {rooms} guests: {guest_entries[0].room_number}')
+            room_types = ['None']
 
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
         data = serializer.data
@@ -126,14 +130,11 @@ def room_list(request):
             elif(len(room['number'])==4):
                 room["floorplans"]=floorplans[int(room["number"][:2])]
             for room_type in room_types:
-                logger.info(f'rt {room_type} t3 {room["name_take3"]}')
                 if(room["name_take3"]==room_type):
                     room['available']=True
-                    logger.info("available true")
                     break
                 else:
                     room['available']=False
-                    logger.info("available false")
 
         return Response(serializer.data)
 
@@ -254,7 +255,6 @@ def swap_gen(request):
             guest_id = guest_instances[0].id
         except IndexError as e:
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
-        #rooms = Room.objects.filter(guest=guest_id)
         rooms = Room.objects.filter(number=room_num)
         phrase = phrasing()
         for room in rooms:
