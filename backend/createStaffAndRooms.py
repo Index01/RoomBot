@@ -69,7 +69,6 @@ def create_rooms_main(rooms_file ="", is_hardrock=False):
             logger.debug(f'[-] Room excluded by ROOMBAHT colum: {elem}')
 
     logger.debug(f'swappable rooms: {rooms}')
-    print(f'rooms: {rooms}')
     list(map(lambda x: x.save(), rooms))
 
 
@@ -82,7 +81,6 @@ def create_staff(init_file=None):
     for staff_new in dr:
         characters = string.ascii_letters + string.digits + string.punctuation
         otp = ''.join(random.choice(characters) for i in range(10))
-        print(f'staff: {staff_new}')
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],
             ticket=666,
