@@ -43,11 +43,11 @@ def assign_room(type_purchased_secpty):
         no_guest = Room.objects.filter(guest=None, is_available=True)
         for room in no_guest:
             if(room.name_take3 == set_room):
-                logger.info(f"[+] Assigned room number: {room.number}")
+                logger.debug("Found free room of type %s: %s", set_room, room.number)
                 return room
             else:
                 pass
-        logger.warn(f'[-] No room of matching type available. looking for: {type_purchased_secpty} ')
+        logger.debug("No room of type %s available. looking for: %s", set_room, type_purchased_secpty)
         return None
     else:
         # testing purposes
@@ -57,7 +57,7 @@ def assign_room(type_purchased_secpty):
 
 def guest_contact_new(guest_new, otp, email_onboarding=False, room=None):
     ''' Create guest send email '''
-    logger.info(f"[+] Creating guest: {guest_new['first_name']} {guest_new['last_name']}, {guest_new['email']}, {guest_new['ticket_code']}")
+    logger.info("Creating guest: %s %s (%s) %s", guest_new['first_name'], guest_new['last_name'], guest_new['email'], guest_new['ticket_code'])
     existing_ticket = Guest.objects.filter(ticket=guest_new["ticket_code"])
     # verify ticket does not exist
     if(len(existing_ticket)!=0):
@@ -65,7 +65,7 @@ def guest_contact_new(guest_new, otp, email_onboarding=False, room=None):
     if(room is None):
         room = assign_room(guest_new["product"])
     if(room is None):
-        logging.debug("[-] Out of empty rooms")
+        logger.warning("No empty rooms available for %s %s", guest_new['first_name'], guest_new['last_name'])
         return
 
     guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'],
@@ -78,13 +78,13 @@ def guest_contact_new(guest_new, otp, email_onboarding=False, room=None):
     room.guest=guest
     room.is_available = False
     if room.primary != '':
-        logger.warning("room %s alraedy has a name set: %s" % (room.number, room.primary))
+        logger.warning("Room %s already has a name set: %s" % (room.number, room.primary))
     else:
         room.primary=guest.name
 
     room.save()
 
-    logger.info(f"[+] Assigned room number: {room.number}")
+    logger.info("Assigned room type %s (#%s) to %s", room.name_take3, room.number, guest.name)
     if(email_onboarding):
         if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
             time.sleep(5)
@@ -120,29 +120,25 @@ def create_guest_entries(guest_file):
     _guest_fields, guest_rows = ingest_csv(guest_file)
 
     for guest_new in guest_rows:
-        if(guest_new['product'][:3] == "Art"):
-            continue
-
-        if ("Hard Rock" in guest_new["product"]):
-            continue
-
         guest_entries = Guest.objects.filter(email=guest_new["email"])
         trans_code = guest_new['transferred_from_code']
         tix_exist = [guest.ticket for guest in guest_entries if guest.ticket==guest_new['ticket_code']]
 
         # Create with email
         if(len(guest_entries)==0):
-            logger.info(f'Email doesnt exist: {guest_new["email"]} ql: {guest_entries}. Creating new guest contact.')
+            logger.debug("Email doesnt exist: %s. Creating new guest contact", guest_new["email"])
             guest_contact_new(guest_new, phrasing(), email_onboarding=True)
         # Update from ticket transfer
         elif(trans_code!=""):
+            existing_guest = None
             try:
-                existing_guest = Guest.objects.filter(ticket=trans_code)[0]
-            except IndexError as e:
-                logger.warn(f'[-] Ticket transfer but no previous ticket id found')
+                existing_guest = Guest.objects.get(ticket=trans_code)
+            except Guest.DoesNotExist:
+                logger.warning("Ticket transfer (%s) but no previous ticket id found", trans_code)
                 continue
+
             existing_room = Room.objects.get(number = existing_guest.room_number)
-            logger.info(f'Ticket is a transfer. ')
+            logger.debug("Ticket %s is a transfer", trans_code)
             otp = phrasing()
             if(len(guest_entries)==0):
                 guest_contact_new(guest_new, otp, email_onboarding=True, room=existing_room)
@@ -152,7 +148,7 @@ def create_guest_entries(guest_file):
         # Create without email
         else:
             if(len(tix_exist)==0):
-                logger.info(f'Email exists. Creating new ticket.')
+                logger.debug("Email exist: %s Creating new ticket.", guest_new['email'])
                 guest_contact_new(guest_new, phrasing(), email_onboarding=False)
 
 
@@ -249,29 +245,31 @@ def guest_file_upload(request):
         if not validate_admin(data):
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
 
-        logger.debug(f'guest upload: {data["guest_list"]}')
         rows = data['guest_list'].split('\n')
-
         new_guests = []
         guest_fields, guests = ingest_csv(rows)
 
+        # basic input validation, make sure it's the right csv
         if 'ticket_code' not in guest_fields or \
            'ticket_status' not in guest_fields or \
            'product' not in guest_fields:
             return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
 
+        # build a list of products that we actually care about
         room_products = []
         for _take3_product, hotel_products in ROOM_LIST.items():
             for product in hotel_products:
                 room_products.append(product)
 
         for guest in guests:
+            # if we don't know the product, drop it
             if guest['product'] not in room_products:
                 logger.debug("Ticket %s has product we don't care about: %s",
                              guest['ticket_code'],
                              guest['product'])
                 continue
 
+            # if the ticket already is in the system, drop it
             existing_ticket = None
             try:
                 existing_ticket = Guest.objects.get(ticket=guest['ticket_code'])
@@ -284,12 +282,13 @@ def guest_file_upload(request):
 
             new_guests.append(guest)
 
+        # write out the csv for future use
         egest_csv(new_guests,
                   guest_fields,
                   "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
 
-        resp = str(json.dumps({"received_guests": len(guests),
-                               "new_guests": len(new_guests),
+        resp = str(json.dumps({"received_rows": len(guests),
+                               "valid_rows": len(new_guests),
                                "diff": diff_latest(new_guests),
                                "headers": guest_fields,
                                "first_row": new_guests[0],

@@ -19,6 +19,7 @@ def egest_csv(items, fields, filename):
             output_dict.writerow(elem)
 
 def ingest_csv(filename):
+    # turns out DictReader will accept any iterable object
     csv_iter = None
     if isinstance(filename, str):
         if not os.path.exists(filename):

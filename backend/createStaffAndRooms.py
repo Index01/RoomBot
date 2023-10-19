@@ -130,7 +130,7 @@ def create_rooms_main(rooms_file, is_hardrock=False):
 
         rooms.append(a_room)
         a_room.save()
-        logger.info(room_msg)
+        logger.debug(room_msg)
 
     swappable_rooms = [x for x in rooms if x.is_swappable]
     logger.info("created %s rooms of which %s are swappable",
