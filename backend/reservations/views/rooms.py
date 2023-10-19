@@ -59,7 +59,6 @@ def my_rooms(request):
 
         rooms = Room.objects.all()
         rooms_mine = [elem for elem in rooms if elem.guest!=None and elem.guest.email==email]
-        room_nums = [int(room.number) for room in rooms]
 
         response = json.dumps([{"number": int(room.number),
                                 "type": room.name_take3} for room in rooms_mine], indent=2)
