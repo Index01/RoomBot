@@ -155,9 +155,10 @@ function ReportCard() {
       <Card.Body>
         <Card.Title>Run the following reports:</Card.Title>
         <ListGroup variant="flush">
-          <ListGroup.Item>../output/diff_dump.md</ListGroup.Item>
-          <ListGroup.Item>../output/guest_dump.csv</ListGroup.Item>
-          <ListGroup.Item>../output/room_dump.csv</ListGroup.Item>
+          <ListGroup.Item>Diff Dump</ListGroup.Item>
+          <ListGroup.Item>Guest Dump</ListGroup.Item>
+          <ListGroup.Item>Room Dump</ListGroup.Item>
+          <ListGroup.Item>Ballys Export</ListGroup.Item>
         </ListGroup>
 
         <ol className="card-subtitle mb-2 text-muted">
