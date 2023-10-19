@@ -1,4 +1,5 @@
 # RS RoomBot Application!
+
 It sweeps, it mops. It swaps rooms for a few hundred guests at conference style events.
 Facilitates participants trading accomodations and answering the critical question of, "where the party at".
 
@@ -24,13 +25,18 @@ Configuration is handled through environment variables, which are stored encrypt
 
 * `make` (a classic)
 * Docker configured in a way that networking and files work
-* python 3.8
+* python 3.8 w/`virtualenv`
+* A variety of "system packages" (note package names may vary on non-Linux)
+  * `build-essential`
+  * `imagemagik`
+  * `libpq-dev`
+  * `python3-dev`
 * no not believin' in yo self
 
 ## Frontend
 
 ```
-$ REACT_ROOMBAHT_API_ENDPOINT="http://localhost:8000/" make frontend_dev
+$ DEV=true make frontend_dev
 ```
 
 This should build a docker image, use it to generate the react static, and then start react in dev mode listening on port 3000.
@@ -92,15 +98,85 @@ This script will handle secrets and moving files to the remote host for you. Rem
 ./scripts/roombaht_ctl user 127.0.0.1 init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
 ```
 
+## Images
+
+Images are kinda like data? There is a script that will either work based on an existing downloaded folder (i.e. if you have GDrive setup on a computer) or will attempt to use `gdown` to fetch the folder magially. It will then generate thumbnails and put the images in the right place. Not these images will _not_ end up in the git repo.
+
+```
+./scripts/fetch-images
+./scripts/fetch-images /path/to/gdrive/images
+```
+
+## Data Sanitization
+
+There is a script which will take live data from the room list spreadsheet and a Secret Party export and appropriately anonymize it. For the room list, some randomness may be applied, and there are configurable weights. All guests and placers listed in the room list will be sourced from the original room list.
+
+For the guest list, the following changes are made
+
+* The first and last name are changed
+* The email is changed
+  * Duplicate emails (per name) are mapped down to a single email
+* Transfer to / from is mapped to the appropriate names
+* Phone number is randomly generated per name
+
+For the room list, the following changes are made
+
+* The first and last name are changed.
+  * Secondary names, if present, are also changed
+* Placers (art and manual room) are selected from a randomly generated group.
+* All blank `Placed By` fields are replaced with `Roombaht`
+* Optionally, placed rooms may be randomly generated, ignoring original selections (weight name `placed`, default 10%).
+* Optionally, secondary names may be randomly added to placed rooms (weight name `secondary`, default 50%).
+* Art room types are always selected from a randomly generated group.
+* Optionally, a random selection of rooms will become art rooms (weight name `art`, default 5%).
+* Optionally, placed rooms have a chance to be set as changable (weight name `changeable`, default 50%)
+
+```
+./backend/scripts/massage_csv.py /tmp/SecretPartyExport.csv /tmp/RoomsSheetExport.csv --weight placed:30,art:10
+```
+
 # DB Schema
 
-schemaV0.01
+## Guest
 
-```
-[Room]
-|number|take3_name|hotel_name|available|guest|swap_code|swap_time|
+Tracks every guest. Every guest the system is aware of will have a room associated.
 
-[Guest]
-|email|name|jwt|ticket|invite|room_number|
+* `name` The full name of a registered guest.
+* `email` The email of a guest. Ued for login.
+* `ticket` The Secret Party ticket ID.
+* `invitation` The Secret Party invitation ID.
+* `jwt` The (per user) magical token of hope and wonder and access.
+* `room_number` The room a guest is located in.
 
-```
+## Staff
+
+Staff can do staff like things.
+
+* `name` The short name / alias for the staff.
+* `email` The email address for the staff.
+* `is_admin` A boolean that may or may not be set to true.
+* `guest` A mapping to a guest record.
+
+## Room
+
+Rooms are where the party is.
+
+* `number` The room number.
+* `name_take3` The internal name for the room. What a user will see.
+* `name_hotel` The hotel room name.
+* `is_available` Whether or not the room is in any way available.
+* `is_swappable` Whether or not the room is swappable. Must also be available.
+* `is_smoking` Is it a smoking room? Maps from room features.
+* `is_lakeview` Is it a lake view room? Maps from room features.
+* `is_ada` Is it an accessible room? Maps from room features.
+* `is_hearing_accessible` Is the room hearing accessible i.e. does it have visual indicators for alarm conditions. Maps from room features.
+* `swap_code` The code used for swapping a room.
+* `swap_time` The date and time of when the room was swapped.
+* `check_in` The check in date.
+* `check_out` The check out date.
+* `notes` General notes about the room.
+* `guest_notes` Rooms specific to the guest in the room.
+* `sp_ticket_id` The Secret Party ticket ID.
+* `primary` The full name of the primary resident in the room.
+* `secondary` The full name of a secondary person in the room.
+* `guest` A mapping to a guest record.

@@ -33,8 +33,8 @@ const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
       title: "FloorPlan",
       cell: (row) => (
           <ModalImage
-            small={row.floorplans[1]}
-            large={row.floorplans[0]}
+            small={"layouts/" + row.floorplans[1]}
+            large={"layouts/" + row.floorplans[0]}
             alt="Babyface_footprint"
           />
       )

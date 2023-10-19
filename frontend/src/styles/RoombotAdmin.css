@@ -5,7 +5,7 @@
   margin-left: auto;
   margin-right: auto;
   min-width: 500px;
-  width: 60%;
+  width: 80%;
 }
 
 .AppHeader {
@@ -58,7 +58,7 @@
     --bs-accordion-body-padding-x: 1.25rem;
     --bs-accordion-body-padding-y: 1rem;
     --bs-accordion-active-color: var(--bs-primary-text-emphasis);
-    --bs-accordion-active-bg: #a6b5c5; 
+    --bs-accordion-active-bg: #a6b5c5;
 }
 
 .accordion-button {
