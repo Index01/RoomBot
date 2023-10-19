@@ -58,7 +58,7 @@ def phrasing():
         word = word+words[random.randint(0,999)].capitalize()
     return word
 
-def hostname():
+def my_url():
     host = os.environ['ROOMBAHT_HOST']
     port = os.environ.get('ROOMBAHT_PORT', 80)
     schema = os.environ.get('ROOMBAHT_SCHEMA', 'http')

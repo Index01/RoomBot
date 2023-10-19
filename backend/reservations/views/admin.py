@@ -20,7 +20,7 @@ from ..models import Room
 from .rooms import phrasing
 from .rooms import validate_jwt
 from ..reporting import dump_guest_rooms, diff_latest
-from reservations.helpers import ingest_csv, phrasing, egest_csv
+from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url
 from reservations.constants import ROOM_LIST
 
 logging.basicConfig(stream=sys.stdout,
@@ -29,6 +29,37 @@ logging.basicConfig(stream=sys.stdout,
 logger = logging.getLogger('ViewLogger_admin')
 
 RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
+
+def onboarding_email(guest_new, otp):
+    hostname = my_url()
+    if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
+        time.sleep(5)
+        apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
+        logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
+
+        body_text = f"""
+        BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
+
+        After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
+
+        Goes without saying, but don't forward this email.
+
+        This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
+        Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
+        {otp}
+        {my_url}/login
+
+        Good Luck, Starfighter.
+
+        """
+
+        send_mail("RoomService RoomBaht",
+                  body_text,
+                  os.environ['ROOMBAHT_EMAIL_HOST_USER'],
+                  [guest_new["email"]],
+                  auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
+                  auth_password=os.environ['EMAIL_HOST_PASSWORD'],
+                  fail_silently=False)
 
 def assign_room(type_purchased_secpty):
     for roomtype in ROOM_LIST.items():
@@ -86,35 +117,7 @@ def guest_contact_new(guest_new, otp, email_onboarding=False, room=None):
 
     logger.info("Assigned room type %s (#%s) to %s", room.name_take3, room.number, guest.name)
     if(email_onboarding):
-        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-            time.sleep(5)
-            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
-            logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
-
-            body_text = f"""
-                BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
-
-                After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
-
-                Goes without saying, but don't forward this email.
-
-                This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
-                Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
-                {otp}
-                http://rooms.take3presents.com/login
-
-                Good Luck, Starfighter.
-
-            """
-
-            send_mail("RoomService RoomBaht",
-                      body_text,
-                      "placement@take3presents.com",
-                      [guest_new["email"]],
-                      auth_user="placement@take3presents.com",
-                      auth_password=apppass,
-                      fail_silently=False,)
-
+        onboarding_email(guest_new, otp)
 
 def create_guest_entries(guest_file):
     _guest_fields, guest_rows = ingest_csv(guest_file)
@@ -122,11 +125,13 @@ def create_guest_entries(guest_file):
     for guest_new in guest_rows:
         guest_entries = Guest.objects.filter(email=guest_new["email"])
         trans_code = guest_new['transferred_from_code']
-        tix_exist = [guest.ticket for guest in guest_entries if guest.ticket==guest_new['ticket_code']]
+        ticket_code = guest_new['ticket_code']
+
+        tix_exist = [guest.ticket for guest in guest_entries if guest.ticket==ticket_code]
 
         # Create with email
-        if(len(guest_entries)==0):
-            logger.debug("Email doesnt exist: %s. Creating new guest contact", guest_new["email"])
+        if len(guest_entries) == 0:
+            logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_new["email"])
             guest_contact_new(guest_new, phrasing(), email_onboarding=True)
         # Update from ticket transfer
         elif(trans_code!=""):
