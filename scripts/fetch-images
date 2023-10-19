@@ -47,6 +47,9 @@ fi
 for image in "${TMPDIR}/"*.png ; do
     SRCFILE="$(basename "$image")"
     DESTFILE="$(sed -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
+    if grep -q '3th' <<< "$DESTFILE" ; then
+	DESTFILE="${DESTFILE/th/rd}"
+    fi
     THUMBFILE="${DESTFILE%.*}_thumb.png"
     cp "${TMPDIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
     echo "Fetched ${SRCFILE} as ${DESTFILE}"

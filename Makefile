@@ -1,4 +1,7 @@
-.PHONY = frontend_build frontend_dev frontend_archive backend_dev backend_archive archive
+.PHONY = frontend_build frontend_dev frontend_archive \
+	backend_dev backend_archive backend_clean backend_env \
+	archive
+
 ifdef DEV
 	API_ENDPOINT := "http://localhost:8000/"
 else
@@ -19,16 +22,21 @@ frontend_dev: frontend_build
 		-u node \
 		-v $(shell pwd)/frontend/:/app roombaht:latest
 
-backend_dev:
+backend_env:
 	test -d backend/venv || \
 		( mkdir backend/venv && \
 			virtualenv -p python3.8 backend/venv) && \
 		backend/venv/bin/python3 -m pip install --upgrade pip
-	backend/venv/bin/pip install -r backend/requirements.txt --upgrade	
+	backend/venv/bin/pip install \
+		-r backend/requirements.txt \
+		-r backend/requirements-dev.txt \
+		--upgrade
 
-	test -f dev.env || \
-		(scripts/secrets decrypt)
+backend_dev: backend_env
 	./scripts/start_backend_dev.sh
+
+backend_clean:
+	rm -rf backend/db.sqlite3
 
 archive: backend_archive frontend_archive
 

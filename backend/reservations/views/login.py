@@ -12,7 +12,7 @@ from django.core.mail import send_mail
 from ..models import Guest
 from ..models import Room
 from ..models import Staff
-from .rooms import phrasing
+from ..helpers import phrasing
 
 
 logging.basicConfig(stream=sys.stdout,

@@ -107,15 +107,73 @@ Images are kinda like data? There is a script that will either work based on an 
 ./scripts/fetch-images /path/to/gdrive/images
 ```
 
+## Data Sanitization
+
+There is a script which will take live data from the room list spreadsheet and a Secret Party export and appropriately anonymize it. For the room list, some randomness is applied, and there are configurable weights. All guests and placers listed in the room list will be sourced from the original room list.
+
+For the room list, the following changes are made
+
+* The first and last name are changed
+* Placers (art and manual room) are selected from a randomly generated group
+* All blank `Placed By` fields are replaced with `Roombaht`
+* Placed rooms are randomly generated, ignoring original selections (weight name `placed`).
+* Secondary names are randomly added to placed rooms (weight name `secondary`).
+* A random selection of rooms will become art rooms (weight name `art`). Art types are selected from a randomly generated group.
+
+For the guest list, the following changes are made
+
+* The first and last name are changed
+* The email is changed
+  * Duplicate emails (per name) are mapped down to a single email
+* Transfer to / from is mapped to the appropriate names
+* Phone number is randomly generated per name
+
+```
+./backend/scripts/massage_csv.py /tmp/SecretPartyExport.csv /tmp/RoomsSheetExport.csv --weight placed:30,art:10
+```
+
 # DB Schema
 
-schemaV0.01
+## Guest
 
-```
-[Room]
-|number|take3_name|hotel_name|available|guest|swap_code|swap_time|
+Tracks every guest. Every guest the system is aware of will have a room associated.
 
-[Guest]
-|email|name|jwt|ticket|invite|room_number|
+* `name` The full name of a registered guest.
+* `email` The email of a guest. Ued for login.
+* `ticket` The Secret Party ticket ID.
+* `invitation` The Secret Party invitation ID.
+* `jwt` The (per user) magical token of hope and wonder and access.
+* `notes` Any notes associated with the guest.
+* `room_number` The room a guest is located in.
 
-```
+## Staff
+
+Staff can do staff like things.
+
+* `name` The short name / alias for the staff.
+* `email` The email address for the staff.
+* `is_admin` A boolean that may or may not be set to true.
+* `guest` A mapping to a guest record.
+
+## Room
+
+Rooms are where the party is.
+
+* `number` The room number.
+* `name_take3` The internal name for the room. What a user will see.
+* `name_hotel` The hotel room name.
+* `is_available` Whether or not the room is in any way available.
+* `is_swappable` Whether or not the room is swappable. Must also be available.
+* `is_smoking` Is it a smoking room? Maps from room features.
+* `is_lakeview` Is it a lake view room? Maps from room features.
+* `is_ada` Is it an accessible room? Maps from room features.
+* `is_hearing_accessible` Is the room hearing accessible i.e. does it have visual indicators for alarm conditions. Maps from room features.
+* `swap_code` The code used for swapping a room.
+* `swap_time` The date and time of when the room was swapped.
+* `check_in` The check in date.
+* `check_out` The check out date.
+* `notes` General notes about the room.
+* `guest_notes` Rooms specific to the guest in the room.
+* `sp_ticket_id` The Secret Party ticket ID.
+* `secondary` The full name of a secondary person in the room.
+* `guest` A mapping to a guest record.

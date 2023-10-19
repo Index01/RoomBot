@@ -13,7 +13,9 @@ from reservations.models import Guest, Room, Staff
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage, get_connection
 from django.forms.models import model_to_dict
+from django.utils.dateparse import parse_date
 from csv import DictReader, DictWriter
+from reservations.helpers import phrasing
 import time
 
 logging.basicConfig(stream=sys.stdout,
@@ -44,7 +46,7 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
-def create_rooms_main(rooms_file ="", is_hardrock=False):
+def create_rooms_main(rooms_file, is_hardrock=False):
     rooms=[]
     rooms_rows = []
     with open(rooms_file, "r") as rfile:
@@ -52,28 +54,67 @@ def create_rooms_main(rooms_file ="", is_hardrock=False):
             stripd = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in row.items() if type(k)==str and type(v)==str}
             rooms_rows.append(stripd)
 
+    if(is_hardrock):
+        hotel = "Hard Rock"
+    else:
+        hotel = "Ballys"
+
+    logger.debug("read in %s rooms for %s", len(rooms_rows), hotel)
 
     for elem in rooms_rows:
-        if(elem["Placed By"]=="Roombaht"):
-            if(is_hardrock):
-                hotel = "Hard Rock"
-            else:
-                hotel = "Ballys"
-            rooms.append(Room(name_take3=elem['Room Type'],
-                              name_hotel=hotel,
-                              number=elem['Room'],
-                              available=True
-                              )
-                        )
+
+        a_room = Room(name_take3=elem['Room Type'],
+                      name_hotel=hotel,
+                      number=elem['Room']
+                      )
+
+        features = elem['Room Features (Accesbility, Lakeview, Smoking)(not visible externally)'].lower()
+        if 'hearing accessible' in features:
+            a_room.is_hearing_accessible = True
+
+        if 'ada' in features:
+            a_room.is_ada = True
+
+        if 'lakeview' in features:
+            a_room.is_lakeview = True
+
+        if 'smoking' in features:
+            a_room.is_smoking = True
+
+        if elem['Placed By'] == 'Roombaht':
+            a_room.is_available = True
+            a_room.is_swappable = True
+
+        if len(elem['Room Notes']) > 0:
+            a_room.notes = elem['Room Notes']
+
+        if len(elem['Guest Restriction Notes']) > 0:
+            a_room.guest_notes = elem['Guest Restriction Notes']
+
+        if elem['Ticket ID in SecretParty'] != '':
+            a_room.sp_ticket_id = elem['Ticket ID in SecretParty']
+
+        if a_room.is_swappable:
+            logger.debug("Created swappable room %s", a_room.number)
         else:
-            logger.debug(f'[-] Room excluded by ROOMBAHT colum: {elem}')
+            logger.debug("Created placed room %s", a_room.number)
 
-    logger.debug(f'swappable rooms: {rooms}')
-    print(f'rooms: {rooms}')
-    list(map(lambda x: x.save(), rooms))
+        if elem['Check-in Date'] != '':
+            a_room.check_in = parse_date(elem['Check-in Date'])
+
+        if elem['Check-out Date'] != '':
+            a_room.check_out = parse_date(elem['Check-out Date'])
+
+        rooms.append(a_room)
+        a_room.save()
+
+    swappable_rooms = [x for x in rooms if x.is_swappable]
+    logger.info("created %s rooms of which %s are swappable",
+                 len(rooms),
+                 len(swappable_rooms))
 
 
-def create_staff(init_file=None):
+def create_staff(init_file):
     dr = None
     with open(init_file, "r") as f1:
         dr = []
@@ -81,8 +122,7 @@ def create_staff(init_file=None):
             dr.append(elem)
     for staff_new in dr:
         characters = string.ascii_letters + string.digits + string.punctuation
-        otp = ''.join(random.choice(characters) for i in range(10))
-        print(f'staff: {staff_new}')
+        otp = phrasing()
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],
             ticket=666,
@@ -138,8 +178,8 @@ def main(args):
     Staff.objects.all().delete()
     Guest.objects.all().delete()
 
-    create_rooms_main(rooms_file=args['rooms_file'])
-    create_staff(init_file=args['staff_file'])
+    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'])
+    create_staff(args['staff_file'])
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(usage=('like db fixtures but not'),
@@ -153,6 +193,11 @@ if __name__=="__main__":
                         help='Force overwriting',
                         action='store_true',
                         default=False)
+    parser.add_argument('--hard-rock',
+                        dest='hardrock',
+                        action='store_true',
+                        default=False,
+                        help='Not Ballys')
 
     args = vars(parser.parse_args())
     main(args)
