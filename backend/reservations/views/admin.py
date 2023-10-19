@@ -278,8 +278,6 @@ def create_guests(request):
     if request.method == 'POST':
         data = request.data["data"]
         if(validate_admin(data)==True):
-            #NOTE(tb): one call away from a long day
-            #Guest.objects.all().delete()
             create_guest_entries(init_file=guests_csv)
 
             return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
