@@ -24,7 +24,7 @@ from ..reporting import dump_guest_rooms, diff_latest
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
 
-logger = logging.getLogger('ViewLogger_rooms')
+logger = logging.getLogger('ViewLogger_admin')
 
 RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
 
@@ -82,18 +82,20 @@ def assign_room(type_purchased_secpty):
             break
         else:
             set_room = "Room type not found"
-            logger.warn(set_room)
+
 
     if(RANDOM_ROOMS=="TRUE"):
         rooms = Room.objects.all()
-        no_guest=list(filter(lambda x:x.guest==None, rooms))
+        #no_guest=list(filter(lambda x:x.guest==None, rooms))
+        no_guest = Room.objects.filter(guest=None)
         for room in no_guest:
             if(room.name_take3 == set_room):
                 logger.info(f"[+] Assigned room number: {room.number}")
                 return room
             else:
                 pass
-        logger.warn(f'[-] No room of matching type available. looking for: {type_purchased_secpty} remainging inventory:\nTake3names: {[elem.name_take3 for elem in no_guest]}\nHotel names: {[elem.name_hotel for elem in no_guest]}')
+        #logger.warn(f'[-] No room of matching type available. looking for: {type_purchased_secpty} remainging inventory:\nTake3names: {[elem.name_take3 for elem in no_guest]}\nHotel names: {[elem.name_hotel for elem in no_guest]}')
+        logger.warn(f'[-] No room of matching type available. looking for: {type_purchased_secpty} ')
         return None
     else:
         # testing purposes
@@ -142,64 +144,17 @@ def guest_search(arr, low, high, x):
         return None
 
 
-def guest_contact_new(guest_new, otp):
+def guest_contact_new(guest_new, otp, email_onboarding=False, room=None):
     ''' Create guest send email '''
     logger.info(f"[+] Creating guest: {guest_new['first_name']} {guest_new['last_name']}, {guest_new['email']}, {guest_new['ticket_code']}")
     existing_ticket = Guest.objects.filter(ticket=guest_new["ticket_code"])
     # verify ticket does not exist
-    if(len(existing_ticket)==0):
-        room = assign_room(guest_new["product"])
-        if(room is None):
-            return
-
-        guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'],
-            email=guest_new['email'],
-            ticket=guest_new['ticket_code'],
-            jwt=otp,
-            room_number=room.number)
-        guest.save()
-
-        room.guest=guest
-        room.save()
-
-    time.sleep(5)
-    if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-        apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
-        logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
-
-        body_text = f"""
-BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
-
-After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
-
-Goes without saying, but don't forward this email.
-
-This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
-Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
-{otp}
-http://rooms.take3presents.com/login
-
-Good Luck, Starfighter.
-
-        """
-
-        send_mail("RoomService RoomBaht",
-                  body_text,
-                  "placement@take3presents.com",
-                  [guest_new["email"]],
-                  auth_user="placement@take3presents.com",
-                  auth_password=apppass,
-                  fail_silently=False,)
-
-
-def guest_contact_exists(guest_new, otp):
-    ''' Get the ticket numbers
-        if ticket exists copy associated room number and delete the existing entry.
-        create new entry with existing room number or new room num is none previously existed.
-    '''
-    logger.info(f"[+] Guest exists, creating ticket {guest_new['email']} ticket: {guest_new['ticket_code']}")
-    room = assign_room(guest_new["product"])
+    if(len(existing_ticket)!=0):
+        return
     if(room is None):
+        room = assign_room(guest_new["product"])
+    if(room is None):
+        logging.debug("[-] Out of empty rooms")
         return
 
     guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'],
@@ -207,79 +162,94 @@ def guest_contact_exists(guest_new, otp):
         ticket=guest_new['ticket_code'],
         jwt=otp,
         room_number=room.number)
-
     guest.save()
+
     room.guest=guest
-    logger.info(f"[+] Assigned room number: {room.number}")
     room.save()
 
+    logger.info(f"[+] Assigned room number: {room.number}")
+    if(email_onboarding):
+        time.sleep(5)
+        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
+            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
+            logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
 
-def guest_contact_update(guest_new, otp):
-    '''  Email exists and Ticket exists. If existing guest does not match new guest, update existing entry.'''
-    existing_ticket = Guest.objects.filter(ticket=guest_new["ticket_code"])
-    room_num = existing_ticket[0].room_number
-    if(guest_new["email"]!=existing_ticket[0].email):
-        logger.debug(f"update detected - existing: {existing_ticket}, fields: {existing_ticket[0].name},{existing_ticket[0].ticket},{existing_ticket[0].room_number}")
-        existing_ticket.update(
-                              name=guest_new['first_name']+" "+ guest_new['last_name'],
-                              email=guest_new['email'],
-                              ticket=guest_new['ticket_code'],
-                              jwt=otp,
-                              room_number = room_num)
+            body_text = f"""
+                BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
 
+                After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
 
-        logger.debug(f"updated: {existing_ticket}, fields: {existing_ticket[0].name},{existing_ticket[0].ticket},{existing_ticket[0].room_number}")
+                Goes without saying, but don't forward this email.
 
-    else:
-        logger.debug(f'[*] Email exists, ticket exists, room exists, everything matches entry')
+                This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
+                Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
+                {otp}
+                http://rooms.take3presents.com/login
+
+                Good Luck, Starfighter.
+
+            """
+
+            send_mail("RoomService RoomBaht",
+                      body_text,
+                      "placement@take3presents.com",
+                      [guest_new["email"]],
+                      auth_user="placement@take3presents.com",
+                      auth_password=apppass,
+                      fail_silently=False,)
 
 
 def create_guest_entries(init_file=""):
-    dr = None
-    new_guests=[]
-    gl = list(Guest.objects.all())
-    guest_sort(gl)
+    guest_rows = []
+    guests_existing = list(Guest.objects.all())
+    guest_sort(guests_existing)
     try:
-        glen = len(gl)-1
+        glen = len(guests_existing)-1
     except TypeError as e:
         logger.warning(f"No existing guests to show ")
         glen=0
 
     with open(init_file, "r") as f1:
-        dr = []
-        for elem in DictReader(f1):
-            dr.append(elem)
+        for row in DictReader(f1):
+            stripd = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in row.items() if type(k)==str and type(v)==str}
+            guest_rows.append(stripd)
 
     characters = string.ascii_letters + string.digits + string.punctuation
-
-    for guest_new in dr:
-        logger.debug(f'new guest: {guest_new}')
-        guest_entries = Guest.objects.filter(email=guest_new["email"])
-        if ("Directed Sale Room (1 King Bed)" in guest_new["product"]):
-            guest_new["product"] = "King"
-        if ("Directed Sale Room (1 Queen Bed)" in guest_new["product"]):
-            guest_new["product"] = "Queen"
-
+    for guest_new in guest_rows:
+        if(guest_new['product'][:3] == "Art"):
+            continue
         if ("Hard Rock" in guest_new["product"]):
             continue
+        guest_entries = Guest.objects.filter(email=guest_new["email"])
+        trans_code = guest_new['transferred_from_code']
+        tix_exist = [guest.ticket for guest in guest_entries if guest.ticket==guest_new['ticket_code']]
 
-        # If email doesnt exist, send email and create guest
-        if (guest_search(gl, 0, glen, guest_new["email"])==None and len(guest_entries)==0):
-            logger.info(f'Email doesnt exist. Creating new guest contact.')
+        # Create with email
+        if(len(guest_entries)==0):
+            logger.info(f'Email doesnt exist: {guest_new["email"]} ql: {guest_entries}. Creating new guest contact.')
             otp = ''.join(random.choice(characters) for i in range(10))
-            guest_contact_new(guest_new, otp)
-            continue
-
-        # If email does exist. check whether ticket exists. if not, create guest
-        if(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))==0):
+            guest_contact_new(guest_new, otp, email_onboarding=True)
+        # Update from ticket transfer
+        elif(trans_code!=""):
+            try:
+                existing_guest = Guest.objects.filter(ticket=trans_code)[0]
+            except IndexError as e:
+                logger.warn(f'[-] Ticket transfer but no previous ticket id found')
+                continue
+            existing_room = existing_ticket.room
+            logger.info(f'Ticket is a transfer. ')
             otp = ''.join(random.choice(characters) for i in range(10))
-            guest_contact_exists(guest_new, otp)
-
-        # If email does exist. check whether ticket exists. if so, update the guest entry.
-        # This case if for resigning room/tickets to new owner. update operation so secret party export is source of authority.
-        elif(len(Guest.objects.filter(ticket=guest_new["ticket_code"]))!=0):
-            otp = ''.join(random.choice(characters) for i in range(10))
-            guest_contact_update(guest_new, otp)
+            if(len(guest_entries)==0):
+                guest_contact_new(guest_new, otp, email_onboarding=True, room=existing_room)
+            else:
+                guest_contact_new(guest_new, otp, email_onboarding=False, room=existing_room)
+            existing_guest.delete()
+        # Create without email
+        else:
+            if(len(tix_exist)==0):
+                logger.info(f'Email exists. Creating new ticket.')
+                otp = ''.join(random.choice(characters) for i in range(10))
+                guest_contact_new(guest_new, otp, email_onboarding=False)
 
 
 def validate_admin(data):
@@ -308,7 +278,6 @@ def create_guests(request):
     if request.method == 'POST':
         data = request.data["data"]
         if(validate_admin(data)==True):
-            Guest.objects.all().delete()
             create_guest_entries(init_file=guests_csv)
 
             return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
@@ -376,13 +345,14 @@ def guest_file_upload(request):
             rows = data['guest_list'].split('\n')
             diff_count = diff_latest(rows)
 
-            #TODO(tb): use an abs path that is for sure reachable
             with open("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'] , 'w') as fout:
                 for elem in rows:
                     guest_new = elem.split(",")
                     existing_ticket = Guest.objects.filter(ticket=guest_new[0])
                     if(len(existing_ticket)!=1):
                         fout.write(elem+"\n")
+                    else:
+                        logger.warn(f'[-] Ticket from upload already in db: {elem}')
 
             resp = str(json.dumps({"received_rows": len(rows),
                                    "headers": rows[0] ,
