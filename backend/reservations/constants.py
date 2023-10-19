@@ -1,9 +1,9 @@
 ROOM_LIST = {
     'Queen': [
-        'Hard Rock - Standard 2 Queens (50% fee)',
-        'Hard Rock - Lakeview 2 Queens',
-        'Hard Rock - Lakeview 2 Queens (Post Sale)',
-        'Hard Rock - Lakeview Balcony 2 Queens',
+#        'Hard Rock - Standard 2 Queens (50% fee)',
+#        'Hard Rock - Lakeview 2 Queens',
+#        'Hard Rock - Lakeview 2 Queens (Post Sale)',
+#        'Hard Rock - Lakeview Balcony 2 Queens',
         "Bally's - Standard 2 Queens",
         "Bally's - Standard 2 Queens (50% fee)",
         "Bally's - Standard 2 Queens (Direct Sale)",
@@ -16,14 +16,14 @@ ROOM_LIST = {
     ],
 
     "King": [
-        'Hard Rock - Standard King',
-        'Hard Rock - Standard King (Post Sale)',
-        'Hard Rock - Standard King (RFP Sale)'
-        'Hard Rock - Lakeview King',
-        'Hard Rock - Lakeview Balcony King',
-        'Hard Rock - Lakeview Balcony King (Post Sale)',
-        'Hard Rock - Balcony King',
-        'Hard Rock - Balcony King (RFP Sale)',
+#        'Hard Rock - Standard King',
+#        'Hard Rock - Standard King (Post Sale)',
+#        'Hard Rock - Standard King (RFP Sale)'
+#        'Hard Rock - Lakeview King',
+#        'Hard Rock - Lakeview Balcony King',
+#        'Hard Rock - Lakeview Balcony King (Post Sale)',
+#        'Hard Rock - Balcony King',
+#        'Hard Rock - Balcony King (RFP Sale)',
         "Bally's - Standard King",
         "Bally's - Standard King (Direct Sale)",
         "Bally's - Standard King (Post Sale)",
