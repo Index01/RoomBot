@@ -6,7 +6,6 @@ import jwt
 import datetime
 import json
 import string
-import random
 import sys
 
 from csv import DictReader, DictWriter
@@ -18,26 +17,23 @@ from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
-from .rooms import validate_jwt
 from ..reporting import dump_guest_rooms, diff_latest, hotel_export
-from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url
+from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
+import reservations.config as roombaht_config
+from reservations.auth import authenticate_admin, unauthenticated
 
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_admin')
 
-RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
-
 def onboarding_email(guest_new, otp):
-    hostname = my_url()
-    if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-        time.sleep(5)
-        apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
-        logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
+    if not roombaht_config.SEND_ONBOARDING:
+        return
 
-        body_text = f"""
+    hostname = my_url()
+    time.sleep(5)
+    body_text = f"""
         BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
 
         After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
@@ -51,15 +47,10 @@ def onboarding_email(guest_new, otp):
 
         Good Luck, Starfighter.
 
-        """
-
-        send_mail("RoomService RoomBaht",
-                  body_text,
-                  os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                  [guest_new["email"]],
-                  auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                  auth_password=os.environ['EMAIL_HOST_PASSWORD'],
-                  fail_silently=False)
+    """
+    send_email([guest_new["email"]],
+               'RoomService RoomBaht - Account Activation',
+               body_text)
 
 def find_room(room_product):
     room_type = None
@@ -107,8 +98,9 @@ def reconcile_orphan_rooms(guest_rows):
         guest = None
         # first check for a guest entry by sp_ticket_id
         try:
-            guest = Guest.objects.get(ticket = room.sp_ticket_id)
-            logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
+            if room.sp_ticket_id:
+                guest = Guest.objects.get(ticket = room.sp_ticket_id)
+                logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
         except Guest.DoesNotExist:
             pass
 
@@ -217,6 +209,7 @@ def create_guest_entries(guest_rows):
         guest_entries = Guest.objects.filter(email=guest_obj["email"])
         trans_code = guest_obj['transferred_from_code']
         ticket_code = guest_obj['ticket_code']
+        guest_name = f"{guest_obj['first_name']} {guest_obj['last_name']}"
 
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
@@ -232,6 +225,22 @@ def create_guest_entries(guest_rows):
             otp = phrasing()
             guest_update(guest_obj, otp, room)
             onboarding_email(guest_obj, otp)
+        elif trans_code =='' and guest_entries.count() > 0:
+            # There are a few cases that could pop up here
+            # * admins / staff
+            # * people share email addresses and soft-transfer rooms in sp
+            if len([x.ticket for x in guest_entries if x.ticket == ticket_code]) == 0:
+                room = find_room(guest_obj['product'])
+                if not room:
+                    logger.warning("No empty rooms available for %s", guest_entries[0].email)
+                    retries.append(guest_obj)
+                    continue
+
+                logger.debug("assigning room %s to (unassigned ticket/room) %s", room.number, guest_entries[0].email)
+                guest_update(guest_obj, guest_entries[0].jwt, room)
+            else:
+                logger.warning("Not sure how to handle non-transfer, existing user ticket %s", ticket_code)
+
         elif trans_code != "":
             # Transfered ticket...
             existing_guest = None
@@ -269,36 +278,20 @@ def create_guest_entries(guest_rows):
                 # has multiple rooms (email/room uniq)
                 otp = guest_entries[0].jwt
                 guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
+        else:
+            logger.warning("Not sure how to handle ticket %s", ticket_code)
 
     return retries
 
-def validate_admin(data):
-    try:
-        jwt_data=data["jwt"]
-    except KeyError as e:
-        logger.info(f"[-] Missing fields {request.data}")
-        return False
-    email = validate_jwt(jwt_data)
-
-    if (email is None):
-        logger.info(f"[-] No guest with that email")
-        return False
-    staff = Staff.objects.filter(email=email)
-
-    if(len(staff)==0 or staff[0].is_admin!=True):
-        logger.info(f"[-] No admin by that email")
-        return False
-    else:
-        return True
 
 
 @api_view(['POST'])
 def create_guests(request):
-    guests_csv = "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']
+    guests_csv = "%s/guestUpload_latest.csv" % roombaht_config.TEMP_DIR
     if request.method == 'POST':
-        data = request.data["data"]
-        if not validate_admin(data):
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
 
         _guest_fields, guest_rows = ingest_csv(guests_csv)
         # start by seeing if we can address orphaned placed rooms
@@ -306,13 +299,14 @@ def create_guests(request):
         # handle basic ingestion of guests
         retry_rows = create_guest_entries(guest_rows)
         if len(retry_rows) > 0:
-            logger.info("Retrying %s guest rows", len(retry_rows))
+            logger.debug("Retrying %s guest rows", len(retry_rows))
             # retry some guests bc secret party exports are non deterministic
             #  slash non ordered. this will include transfers for which the
             #  original ticket had not been yet entered and also (just in case)
             #  guests that saw rooms unavailable
             create_guest_entries(retry_rows)
 
+        logger.info("guest list uploaded by %s", auth_obj['email'])
         return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
                                              status=status.HTTP_201_CREATED)
 
@@ -320,63 +314,66 @@ def create_guests(request):
 @api_view(['POST'])
 def run_reports(request):
     if request.method == 'POST':
-        data = request.data["data"]
-        logger.info(f'Run reports attempt')
-        if(validate_admin(data)==True):
-            admin_emails = Staff.objects.filter(is_admin=True)
-            guest_dump_file, room_dump_file = dump_guest_rooms()
-            ballys_export_file = hotel_export('Ballys')
-            if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-                logger.info(f'sending admin emails: {admin_emails}')
-                conn = get_connection()
-                msg = EmailMessage(subject="RoomBaht Report",
-                                   body="Diff dump, guest dump, room dump",
-                                   to=[admin.email for admin in admin_emails],
-                                   connection=conn)
-                #TODO(tb) verify these files
-                msg.attach_file(guest_dump_file)
-                msg.attach_file(room_dump_file)
-                msg_attach_file(ballys_export_file)
-                if os.path.exists("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP']):
-                    msg.attach_file("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'])
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
 
-                if os.path.exists("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']):
-                    msg.attach_file("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
+        logger.info("reports being run by %s", auth_obj['email'])
 
-                msg.send()
-            return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),
-                                           status=status.HTTP_201_CREATED)
-        else:
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
+        guest_dump_file, room_dump_file = dump_guest_rooms()
+        ballys_export_file = hotel_export('Ballys')
+        attachments = [
+            guest_dump_file,
+            room_dump_file,
+            ballys_export_file
+        ]
+        if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
+            attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
+
+        if os.path.exists(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv"):
+            attachments.append(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
+
+        send_email(admin_emails,
+                   'RoomService RoomBaht - Report Time',
+                   'Your report(s) are here. *theme song for Brazil plays*',
+                   attachments)
+
+        return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),
+                        status=status.HTTP_201_CREATED)
+
 
 @api_view(['POST'])
 def request_metrics(request):
     if request.method == 'POST':
-        data = request.data["data"]
-        if(validate_admin(data)==True):
-            rooooms = Room.objects.all()
-            guest_unique = len(set([guest.email for guest in Guest.objects.all()]))
-            guest_count = Guest.objects.all().count()
-            rooms_count = rooooms.count()
-            rooms_occupied = rooooms.exclude(is_available=True).count()
-            rooms_swappable = rooooms.exclude(is_swappable=False).count()
-            resp = str(json.dumps({"guest_count": guest_count,
-                                   "rooms_count": rooms_count,
-                                   "rooms_occupied": rooms_occupied,
-                                   "guest_unique": guest_unique,
-                                   "rooms_swappable": rooms_swappable
-                                   }))
-            return Response(resp, status=status.HTTP_201_CREATED)
-        else:
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
+
+        rooooms = Room.objects.all()
+        guest_unique = len(set([guest.email for guest in Guest.objects.all()]))
+        guest_count = Guest.objects.all().count()
+        rooms_count = rooooms.count()
+        rooms_occupied = rooooms.exclude(is_available=True).count()
+        rooms_swappable = rooooms.exclude(is_swappable=False).count()
+        resp = str(json.dumps({"guest_count": guest_count,
+                               "rooms_count": rooms_count,
+                               "rooms_occupied": rooms_occupied,
+                               "guest_unique": guest_unique,
+                               "rooms_swappable": rooms_swappable
+                               }))
+        return Response(resp, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
 def guest_file_upload(request):
     if request.method == 'POST':
-        data = request.data["guest"]
-        if not validate_admin(data):
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        data = request.data
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
+
+        logger.info("guest data uploaded by %s", auth_obj['email'])
 
         rows = data['guest_list'].split('\n')
         new_guests = []
@@ -418,13 +415,17 @@ def guest_file_upload(request):
         # write out the csv for future use
         egest_csv(new_guests,
                   guest_fields,
-                  "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
+                  f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
+
+        first_row = {}
+        if len(new_guests) > 0:
+            first_row = new_guests[0]
 
         resp = str(json.dumps({"received_rows": len(guests),
                                "valid_rows": len(new_guests),
                                "diff": diff_latest(new_guests),
                                "headers": guest_fields,
-                               "first_row": new_guests[0],
+                               "first_row": first_row,
                                "status": "Ready to Load..."
                                }))
 

@@ -10,15 +10,13 @@ import sys
 import django
 django.setup()
 from reservations.models import Guest, Room, Staff
-from django.core.mail import send_mail
-from django.core.mail import EmailMessage, get_connection
 from django.forms.models import model_to_dict
 from django.utils.dateparse import parse_date
-from reservations.helpers import phrasing, ingest_csv, my_url
+from reservations.helpers import phrasing, ingest_csv, my_url, send_email
+import reservations.config as roombaht_config
 from datetime import datetime
 
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('createStaffAndRooms')
 
@@ -213,7 +211,6 @@ def create_staff(init_file):
         otp = phrasing()
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],
-            ticket=666,
             jwt=otp)
         guest.save()
 
@@ -223,14 +220,11 @@ def create_staff(init_file):
             is_admin=staff_new['is_admin'])
         staff.save()
 
-        logger.info(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
+        logger.info("Created staff: %s, admin: %s", staff_new['name'], staff_new['is_admin'])
 
         hostname = my_url()
 
-        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-            logger.debug(f'[+] Sending invite for staff member {staff_new["email"]}')
-
-            body_text = f"""
+        body_text = f"""
                 Congratulations, u have been deemed Staff worthy material.
 
                 Email {staff_new['email']}
@@ -240,14 +234,10 @@ def create_staff(init_file):
                 then go to {hostname}/admin
                 Good Luck, Starfighter.
 
-            """
-            send_mail("RoomService RoomBaht",
-                      body_text,
-                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      [staff_new["email"]],
-                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
-                      fail_silently=False)
+        """
+        send_email([staff_new['email']],
+                    'RoomService RoomBaht - Staff Activation',
+                    body_text)
 
 
 def main(args):

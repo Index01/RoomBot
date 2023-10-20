@@ -3,7 +3,6 @@ import os
 import logging
 import random
 import json
-import jwt
 import datetime
 import sys
 from django.core.mail import send_mail
@@ -15,78 +14,58 @@ from ..models import Room
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
-from reservations.helpers import my_url
+from reservations.helpers import my_url, send_email
+import reservations.config as roombaht_config
+from reservations.auth import authenticate, unauthenticated
 
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_rooms')
-
-def validate_jwt(jwt_data):
-    key = os.environ['ROOMBAHT_JWT_KEY']
-
-    try:
-        dec = jwt.decode(jwt_data, key, algorithms="HS256")
-    except (TypeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError) as e:
-        return None
-
-    dthen = datetime.datetime.fromisoformat(dec["datetime"])
-    dnow = datetime.datetime.utcnow()
-
-    if (dnow - dthen > datetime.timedelta(days=1)):
-        return None
-    else:
-        return dec["email"]
-
 
 @api_view(['POST'])
 def my_rooms(request):
     if request.method == 'POST':
-        data = request.data
-        try:
-            jwt_data=data["jwt"]
-        except KeyError as e:
-            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
 
-        email = validate_jwt(jwt_data)
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
+        email = auth_obj['email']
 
         try:
-            guest_instances = Guest.objects.filter(email=email)
-            guest_id = guest_instances[0].id
-        except IndexError as e:
+            _guest_instances = Guest.objects.filter(email=email)
+        except IndexError:
             return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
 
         rooms = Room.objects.all()
-        rooms_mine = [elem for elem in rooms if elem.guest!=None and elem.guest.email==email]
+        rooms_mine = [elem for elem in rooms if elem.guest is not None and elem.guest.email==email]
 
         response = json.dumps([{"number": int(room.number),
                                 "type": room.name_take3} for room in rooms_mine], indent=2)
 
-        logger.debug(f'my_rooms: {rooms_mine}')
+        logger.debug("rooms for user %s: %s", email, rooms_mine)
         return Response(response)
 
 
 @api_view(['POST'])
 def room_list(request):
     if request.method == 'POST':
-        req = request.data
-        try:
-            jwt_data=req["jwt"]
-        except KeyError as e:
-            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        email = validate_jwt(jwt_data)
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
 
-        logger.info(f"[+] Valid guest viewing rooms: {email}")
-        rooms = Room.objects.filter(is_swappable=True, is_available=True)
+        email = auth_obj['email']
+        logger.debug("Valid guest %s viewing rooms", email)
+        # we want to bubble up any room that is swappable, available,
+        #  and does not have a guest associated. the display layer
+        #  will handle the per-room-type filtering
+        rooms = Room.objects \
+                    .filter(is_swappable=True, is_available=False) \
+                    .exclude(guest=None)
         guest_entries = Guest.objects.filter(email=email)
         try:
             room_types = [Room.objects.filter(number=guest.room_number)[0].name_take3 for guest in guest_entries]
-        except IndexError as w:
-            logger.info(f'[-] No rooms. or guests. rooms: {rooms} guests: {guest_entries[0].room_number}')
+        except IndexError:
+            logger.debug("No room types available for guest %s", email)
             room_types = ['None']
 
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
@@ -110,18 +89,13 @@ def room_list(request):
 @api_view(['POST'])
 def room_reserve(request):
     if request.method == 'POST':
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
+
         #TODO(tb): there is prolly a more standard way of doing this. serializer probs tho.
         data = request.data['guest']
         logger.debug(f'data: {data}')
-        try:
-            jwt_data=data["jwt"]['jwt']
-            room_number = data["number"]
-        except KeyError as e:
-            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-
-        email = validate_jwt(jwt_data)
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
 
         try:
             guest = Guest.objects.filter(email=email)
@@ -135,6 +109,9 @@ def room_reserve(request):
 
 @api_view(['PUT', 'DELETE'])
 def room_detail(request, pk):
+    auth_obj = authenticate(request)
+    if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
     try:
         room = Room.objects.get(pk=pk)
     except Room.DoesNotExist:
@@ -156,17 +133,18 @@ def room_detail(request, pk):
 @api_view(['POST'])
 def swap_request(request):
     if request.method == 'POST':
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
+        requester_email = auth_obj['email']
+
         data = request.data["guest"]
         try:
-            jwt_data=data["jwt"]
             room_num=data["number"]
             msg=data["contact_info"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        requester_email = validate_jwt(jwt_data)
-        if (requester_email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
-        swap_req = Room.objects.filter(number=room_num)
+        swap_req = Room.objects.filter(number=room_num) \
 
         try:
             swap_req_email = swap_req[0].guest.email
@@ -192,14 +170,9 @@ Good Luck, Starfighter.
 
         """
 
-        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-            send_mail("RS Room Trade Request",
-                      body_text,
-                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      [swap_req_email],
-                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      auth_password=os.environ['EMAIL_HOST_PASSWORD'],
-                      fail_silently=False)
+        send_email([swap_req_email],
+                   'RoomService RoomBaht - Room Swap Request',
+                   body_text)
 
         return Response("Request sent! They will respond if interested.", status=status.HTTP_201_CREATED)
 
@@ -208,28 +181,28 @@ Good Luck, Starfighter.
 @api_view(['POST'])
 def swap_gen(request):
     if request.method == 'POST':
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
+        email = auth_obj['email']
+
         data = request.data
         logger.debug(f"data_swap_gen: {data}")
         try:
-            jwt_data=data["jwt"]
-            room_num=data["number"]
+            room_num=data["number"]["row"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        email = validate_jwt(jwt_data)
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
+
         try:
             guest_instances = Guest.objects.filter(email=email)
             guest_id = guest_instances[0].id
         except IndexError as e:
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
-        rooms = Room.objects.filter(number=room_num)
-        phrase = phrasing()
-        for room in rooms:
-            if(str(room_num) == str(room.number) ):
-                room.swap_code=phrase
-                room.swap_time=datetime.datetime.utcnow()
-                room.save()
+        room = Room.objects.get(number=room_num)
+        phrase=phrasing()
+        room.swap_code=phrase
+        room.swap_time=datetime.datetime.utcnow()
+        room.save()
 
         logger.info(f"[+] Swap phrase generated {phrase}")
         response = json.dumps({"swap_phrase": phrase}, indent=2)
@@ -239,19 +212,20 @@ def swap_gen(request):
 @api_view(['POST'])
 def swap_it_up(request):
     if request.method == 'POST':
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
+        email = auth_obj['email']
+
         data = request.data
         try:
-            jwt_data=data["jwt"]
             room_num=data["number"]
             swap_req=data["swap_code"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
             logger.error(f"Missing fields")
-        email = validate_jwt(jwt_data)
 
         logger.info(f"[+] Swap attempt {data}")
-        if (email is None):
-            return Response("Invalid jwt", status=status.HTTP_400_BAD_REQUEST)
         try:
             guest_instances = Guest.objects.filter(email=email)
             guest_id = guest_instances[0].id

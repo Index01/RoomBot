@@ -6,9 +6,10 @@ import sys
 from datetime import datetime
 from csv import DictReader, DictWriter
 from django.core.mail import EmailMessage, get_connection
+import reservations.config as roombaht_config
 
 logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+                    level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('Helpers')
 
@@ -41,9 +42,6 @@ def ingest_csv(filename):
 
     return input_fields, input_items
 
-def is_dev():
-    return os.environ.get('ROOMBAHT_DEV', 'FALSE').lower() == 'true'
-
 def phrasing():
     words = None
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -60,15 +58,59 @@ def phrasing():
     return word
 
 def my_url():
-    host = os.environ['ROOMBAHT_HOST']
-    port = os.environ.get('ROOMBAHT_PORT', 80)
-    schema = os.environ.get('ROOMBAHT_SCHEMA', 'http')
-
+    port = roombaht_config.URL_PORT
     if port not in (80, 443):
         port = ":%s" % port
 
-    return "%s://%s%s" % (schema, host, port)
+    return "%s://%s%s" % (
+        roombaht_config.URL_SCHEMA,
+        roombaht_config.URL_HOST,
+        port
+    )
 
 def ts_suffix():
     now = datetime.now()
     return "%s-%s-%s-%s-%s" % (now.day, now.month, now.year, now.hour, now.minute)
+
+def send_email(addresses, subject, body, attachments=[]):
+    if not roombaht_config.SEND_MAIL:
+        logger.info("Would have sent email to %s, subject: %s", ','.join(addresses), subject)
+        return
+
+    real_addresses = []
+    for address in addresses:
+        if not roombaht_config.DEV:
+            # normal production email sending
+            real_addresses.append(address)
+        else:
+            # development mode is a bit more special
+            if '@noop.com' not in address:
+                # always send to normal emails
+                real_addresses.append(address)
+            else:
+                if roombaht_config.DEV_MAIL != '':
+                    # if the ROOMBAHT_DEV_MAIL var is set then insert the address part
+                    #   of the @noop.com email address as a suffix and treat as normal
+                    email_address, _email_host = address.split('@')
+                    dev_address, dev_host = roombaht_config.DEV_MAIL.split('@')
+                    real_addresses.append(f"{dev_address}+{email_address}@{dev_host}")
+                else:
+                    # otherwise just pretend to send the email
+                    logger.debug("Would have sent email to %s, subject: %s", address, subject)
+                    return
+
+    msg = EmailMessage(subject=subject,
+                       body=body,
+                       to=real_addresses,
+                       connection = get_connection())
+
+    for attachment in attachments:
+        if os.path.exists(attachment):
+            msg.attach_file(attachment)
+        else:
+            logger.warning("attachment %s not found sending email to %s",
+                           attachment, ','.join(addresses))
+
+    logger.info("Sending email to %s, subject: %s", ','.join(real_addresses), subject)
+
+    msg.send()

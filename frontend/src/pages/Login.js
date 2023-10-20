@@ -22,7 +22,7 @@ class SubmitForm extends React.Component {
             window.location = "/login"
         }
         else{
-            axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/login/', { guest })
+            axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/login/', guest )
             .then(res=>{
                 window.localStorage.setItem('jwt', res.data);
                 console.log(res);

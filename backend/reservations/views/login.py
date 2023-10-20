@@ -12,21 +12,17 @@ from django.core.mail import send_mail
 from ..models import Guest
 from ..models import Room
 from ..models import Staff
-from ..helpers import phrasing
+from ..helpers import phrasing, send_email
+import reservations.config as roombaht_config
 
-
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_login')
 
 @api_view(['POST'])
 def login(request):
     if request.method == 'POST':
-        key = os.environ['ROOMBAHT_JWT_KEY']
-
-        data = request.data["guest"]
-        logger.debug(f'data: {data}')
+        data = request.data
 
         logger.info(f"[+] User login attempt: {data['email']}")
         try:
@@ -38,13 +34,14 @@ def login(request):
         guest_email = guests.filter(email=email)
         staff = Staff.objects.all()
         staff_email = staff.filter(email=email)
-
+        jwt_key = roombaht_config.JWT_KEY
         # Check if login attempt is admin
         for admin in staff_email:
             if data['jwt'] == admin.guest.jwt:
                 resp = jwt.encode({"email":admin.email,
                                    "datetime":str(datetime.datetime.utcnow())},
-                                   key, algorithm="HS256")
+                                   jwt_key,
+                                  algorithm="HS256")
                 logger.debug(f'returning: {resp}')
                 logger.info(f"[+] Admin login succes. sending resp")
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
@@ -55,7 +52,7 @@ def login(request):
             if data['jwt'] == guest.jwt:
                 resp = jwt.encode({"email":guest.email,
                                    "datetime":str(datetime.datetime.utcnow())},
-                                   key, algorithm="HS256")
+                                   jwt_key, algorithm="HS256")
                 logger.debug(f'returning: {resp}')
                 logger.info(f"[+] User login succes. sending resp")
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
@@ -85,17 +82,11 @@ def login_reset(request):
             logger.info(f"[-] User reset failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
 
-        logger.debug(f'sending email to {guest_email.email}')
         body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
-        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-            send_mail("RS Roombaht Password Reset",
-                      body_text,
-                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      [guest_email.email],
-                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
-                      fail_silently=False)
 
+        send_email([guest_email.email],
+                   'RoomService RoomBaht - Password Reset',
+                   body_text
+                   )
 
-        logger.info(f"[+] User pass reset and sent: {data['email']}")
         return Response(status=status.HTTP_201_CREATED)
