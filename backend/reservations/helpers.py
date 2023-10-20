@@ -96,6 +96,7 @@ def send_email(addresses, subject, body, attachments=[]):
                 else:
                     # otherwise just pretend to send the email
                     logger.debug("Would have sent email to %s, subject: %s", address, subject)
+                    return
 
     msg = EmailMessage(subject=subject,
                        body=body,
