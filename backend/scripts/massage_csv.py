@@ -12,6 +12,8 @@ from random import randint
 from names_generator import generate_name
 from lorem_text.lorem import words as lorem_words
 
+from backend.reservations.ingest_models import SecretPartyGuestIngest, RoomPlacementListIngest
+
 # don't judge
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -241,9 +243,12 @@ def main(args):
 
     guest_fields, original_guests = ingest_csv(src_guest_list)
     room_fields, original_rooms = ingest_csv(src_room_list)
+    # validate the csv ingests
+    original_guests_valid = [SecretPartyGuestIngest(**guest) for guest in original_guests]
+    original_rooms_valid = [RoomPlacementListIngest(**room) for room in original_rooms]
 
-    maps, anon_guests = massage_guests(original_guests)
-    anon_rooms = massage_rooms(original_rooms, maps, weights)
+    maps, anon_guests = massage_guests(original_guests_valid)
+    anon_rooms = massage_rooms(original_rooms_valid, maps, weights)
 
     egest_csv(anon_guests, guest_fields, dest_guest_list)
     egest_csv(anon_rooms, room_fields, dest_room_list)
