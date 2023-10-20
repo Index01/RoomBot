@@ -98,8 +98,9 @@ def reconcile_orphan_rooms(guest_rows):
         guest = None
         # first check for a guest entry by sp_ticket_id
         try:
-            guest = Guest.objects.get(ticket = room.sp_ticket_id)
-            logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
+            if room.sp_ticket_id:
+                guest = Guest.objects.get(ticket = room.sp_ticket_id)
+                logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
         except Guest.DoesNotExist:
             pass
 
@@ -208,6 +209,7 @@ def create_guest_entries(guest_rows):
         guest_entries = Guest.objects.filter(email=guest_obj["email"])
         trans_code = guest_obj['transferred_from_code']
         ticket_code = guest_obj['ticket_code']
+        guest_name = f"{guest_obj['first_name']} {guest_obj['last_name']}"
 
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
@@ -224,21 +226,20 @@ def create_guest_entries(guest_rows):
             guest_update(guest_obj, otp, room)
             onboarding_email(guest_obj, otp)
         elif trans_code =='' and guest_entries.count() > 0:
-            # There are a fee cases that could pop up here
+            # There are a few cases that could pop up here
             # * admins / staff
-            # * data corruption
-            # * old transactions
-            for guest in guest_entries:
-                if not guest.room and not guest.ticket_code:
-                    # admin / staff
-                    room = find_room(guest_obj['product'])
-                    if not room:
-                        logger.warning("No empty rooms available for %s", guest.email)
-                        retries.append(guest_obj)
-                        continue
+            # * people share email addresses and soft-transfer rooms in sp
+            if len([x.ticket for x in guest_entries if x.ticket == ticket_code]) == 0:
+                room = find_room(guest_obj['product'])
+                if not room:
+                    logger.warning("No empty rooms available for %s", guest_entries[0].email)
+                    retries.append(guest_obj)
+                    continue
 
-                    logger.debug("Staff can have a room too, as a treat %s", guest.email)
-                    guest_update(guest_obj, guest.jwt, room)
+                logger.debug("assigning room %s to (unassigned ticket/room) %s", room.number, guest_entries[0].email)
+                guest_update(guest_obj, guest_entries[0].jwt, room)
+            else:
+                logger.warning("Not sure how to handle non-transfer, existing user ticket %s", ticket_code)
 
         elif trans_code != "":
             # Transfered ticket...
@@ -277,6 +278,8 @@ def create_guest_entries(guest_rows):
                 # has multiple rooms (email/room uniq)
                 otp = guest_entries[0].jwt
                 guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
+        else:
+            logger.warning("Not sure how to handle ticket %s", ticket_code)
 
     return retries
 
@@ -286,7 +289,6 @@ def create_guest_entries(guest_rows):
 def create_guests(request):
     guests_csv = "%s/guestUpload_latest.csv" % roombaht_config.TEMP_DIR
     if request.method == 'POST':
-        data = request.data["data"]
         auth_obj = authenticate_admin(request)
         if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
             return unauthenticated()
@@ -312,7 +314,6 @@ def create_guests(request):
 @api_view(['POST'])
 def run_reports(request):
     if request.method == 'POST':
-        data = request.data["data"]
         auth_obj = authenticate_admin(request)
         if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
             return unauthenticated()
@@ -367,7 +368,7 @@ def request_metrics(request):
 @api_view(['POST'])
 def guest_file_upload(request):
     if request.method == 'POST':
-        data = request.data["guest"]
+        data = request.data
         auth_obj = authenticate_admin(request)
         if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
             return unauthenticated()
@@ -416,11 +417,15 @@ def guest_file_upload(request):
                   guest_fields,
                   f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
 
+        first_row = {}
+        if len(new_guests) > 0:
+            first_row = new_guests[0]
+
         resp = str(json.dumps({"received_rows": len(guests),
                                "valid_rows": len(new_guests),
                                "diff": diff_latest(new_guests),
                                "headers": guest_fields,
-                               "first_row": new_guests[0],
+                               "first_row": first_row,
                                "status": "Ready to Load..."
                                }))
 
