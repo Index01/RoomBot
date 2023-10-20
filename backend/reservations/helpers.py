@@ -75,6 +75,7 @@ def ts_suffix():
 def send_email(addresses, subject, body, attachments=[]):
     if not roombaht_config.SEND_MAIL:
         logger.info("Would have sent email to %s, subject: %s", ','.join(addresses), subject)
+        return
 
     real_addresses = []
     for address in addresses:
