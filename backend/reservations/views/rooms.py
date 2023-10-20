@@ -15,6 +15,7 @@ from ..models import Room
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
+from reservations.helpers import my_url
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -174,14 +175,14 @@ def swap_request(request):
             return Response("No email found for that room", status=status.HTTP_400_BAD_REQUEST)
 
         logger.info(f"[+] Sending swap req from {requester_email} to {swap_req_email} with msg: {msg}")
-        hostname = os.environ['ROOMBAHT_HOST']
+        hostname = my_url()
         body_text = f"""
 
 Someone would like to trade rooms with you for Room Service. Since rooms are randomly assigned, we built this tool for everyone to trade rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details, then one of you will generate a swap code in Roombaht and send it to the other. Enter the code, switch-aroo magic happens, and you check-in as normal.
 
 Contact info: {msg}
 
-After you have contacted the person asking to trade rooms with you, click this link to create the swap code and trade rooms: http://{hostname}/rooms
+After you have contacted the person asking to trade rooms with you, click this link to create the swap code and trade rooms: {hostname}/rooms
 
 If you have any trouble with that link you can login from the initial email you received from RoomBaht.
 

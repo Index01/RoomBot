@@ -6,7 +6,7 @@ class Guest(models.Model):
     ticket = models.CharField("Ticket", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
-    room_number = models.CharField("RoomNumber", max_length=20)
+    room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
 
     def __str__(self):
         return self.name

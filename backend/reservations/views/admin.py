@@ -47,7 +47,7 @@ def onboarding_email(guest_new, otp):
         This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
         Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
         {otp}
-        {my_url}/login
+        {hostname}/login
 
         Good Luck, Starfighter.
 
@@ -104,18 +104,29 @@ def reconcile_orphan_rooms(guest_rows):
                        .exclude(primary='')
     logger.debug("Attempting to reconcile %s orphan rooms", orphan_rooms.count())
     for room in orphan_rooms:
-        # first check for a guest entry by room number
         guest = None
+        # first check for a guest entry by sp_ticket_id
         try:
-            guest = Guest.objects.get(room_number = room.number)
+            guest = Guest.objects.get(ticket = room.sp_ticket_id)
+            logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
         except Guest.DoesNotExist:
             pass
 
-        # then check for a guest by name
-        try:
-            guest = Guest.objects.get(name = room.primary)
-        except Guest.DoesNotExist:
-            pass
+        if not guest:
+            # then check for a guest entry by room number
+            try:
+                guest = Guest.objects.get(room_number = room.number)
+                logger.info("Found guest %s by room_number in DB for orphan room %s", guest.email, room.number)
+            except Guest.DoesNotExist:
+                pass
+
+        if not guest:
+            # then check for a guest by name
+            try:
+                guest = Guest.objects.get(name = room.primary)
+                logger.info("Found guest %s by name in DB for orphan room %s", guest.email, room.number)
+            except Guest.DoesNotExist:
+                pass
 
         if guest:
             # we found one, how lovely. associate room with it.
@@ -126,14 +137,13 @@ def reconcile_orphan_rooms(guest_rows):
             elif room.primary == '':
                 room.primary = guest.name
 
-            logger.debug("Found guest %s in DB for orphan room %s", guest.email, room.number)
             room.save()
         else:
             # then check the guest list
             guest_obj = get_guest_obj(room.primary)
             if guest_obj:
                 # we have one, that's nice
-                logger.debug("Found guest %s in CSV for orphan room %s",
+                logger.info("Found guest %s in CSV for orphan room %s",
                              guest_obj['email'], room.number)
                 otp = phrasing()
                 guest_update(guest_obj, otp, room)
@@ -142,37 +152,55 @@ def reconcile_orphan_rooms(guest_rows):
                 logger.warning("Unable to find guest %s for orphan room %s",
                                room.primary, room.number)
 
-def guest_remove(guest):
-    guest_rooms = Room.objects.filter(guest=guest)
-    if guest_rooms.count() > 0:
-        raise Exception("Not removing guest %s as it would orphan rooms %s" % \
-                        ( guest.email, ','.join([x.number for x in guest_rooms])))
-
-    guest.delete()
-    logger.debug("Removed guest %s, ticket %s", guest.email, guest.ticket)
-
-def guest_update(guest_dict, otp, room):
-    # define our new guest object
-    guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}",
-                  ticket=guest_dict['ticket_code'],
-                  jwt=otp,
-                  email=guest_dict['email'],
-                  room_number=room.number)
-
-    existing_ticket = None
+def guest_update(guest_dict, otp, room, og_guest=None):
+    ticket_code = guest_dict['ticket_code']
+    email = guest_dict['email']
+    guest = None
+    guest_changed = False
     try:
-        existing_ticket = Guest.objects.get(ticket=guest.ticket)
+        # placed rooms may already have records
+        # also sometimes people transfer rooms to themselves
+        #   because why the frak not
+        guest = Guest.objects.get(ticket=ticket_code,
+                                  email=email)
+        logger.debug("Found existing ticket %s for %s", ticket_code, email)
+        if guest.room_number:
+            if guest.room_number == room.number:
+                logger.debug("Existing guest %s already associated with room %s",
+                             email,
+                             room.number)
+            else:
+                logger.warning("Existing guest %s not moving from %s to %s",
+                               email,
+                               guest.room_number,
+                               room.number)
+        else:
+            logger.debug("Existing guest %s assigned to %s", email, room.number)
+            guest.room_number = room.number
+            guest_changed = True
     except Guest.DoesNotExist:
-        pass
+        # but most of the time the guest does not exist yet
+        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}",
+                      ticket=guest_dict['ticket_code'],
+                      jwt=otp,
+                      email=email,
+                      room_number=room.number)
+        logger.debug("New guest %s in room %s", email, room.number)
+        guest_changed = True
 
-    if existing_ticket:
-        logger.warning("Ticket %s already exists when creating user %s",
-                       guest.ticket,
-                       guest.email)
-        return
+    # save guest (if needed) and then...
+    if guest_changed:
+        guest.save()
 
-    # save guest and then...
-    guest.save()
+    # unassociated original owner (if present)
+    if room.guest:
+        if room.guest != og_guest:
+            logger.warning("Unexpected original owner %s for room %s", room.guest.email, room.number)
+
+        room.guest.room_number = None
+        logger.debug("Removing original owner %s for room %s", room.guest.email, room.number)
+        room.guest.save()
+
     # update room
     room.guest = guest
     room.is_available = False
@@ -182,12 +210,9 @@ def guest_update(guest_dict, otp, room):
         room.primary=guest.name
 
     room.save()
-    logger.info("New ticket %s - %s in %s",
-                guest.ticket,
-                guest.email,
-                guest.room_number)
 
 def create_guest_entries(guest_rows):
+    retries = []
     for guest_obj in guest_rows:
         guest_entries = Guest.objects.filter(email=guest_obj["email"])
         trans_code = guest_obj['transferred_from_code']
@@ -198,7 +223,9 @@ def create_guest_entries(guest_rows):
             otp = phrasing()
             room = find_room(guest_obj['product'])
             if not room:
+                # sometimes this happens due to room transfers not being complete. hence the retry.
                 logger.warning("No empty rooms available for %s", guest_obj['email'])
+                retries.append(guest_obj)
                 continue
 
             logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj["email"])
@@ -212,7 +239,10 @@ def create_guest_entries(guest_rows):
             try:
                 existing_guest = Guest.objects.get(ticket=trans_code)
             except Guest.DoesNotExist:
-                logger.warning("Ticket transfer (%s) but no previous guest found!", trans_code)
+                # sometimes this happens due to transfers showing up earlier in the sp export than
+                # the origial ticket. hence the retry.
+                logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
+                retries.append(guest_obj)
                 continue
 
             existing_room = Room.objects.get(number = existing_guest.room_number)
@@ -225,7 +255,7 @@ def create_guest_entries(guest_rows):
                              existing_guest.email,
                              guest_obj['email'])
                 otp = phrasing()
-                guest_update(guest_obj, otp, existing_room)
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
                 onboarding_email(guest_obj, otp)
             else:
                 # Transferring to existing guest...
@@ -234,10 +264,13 @@ def create_guest_entries(guest_rows):
                              ticket_code,
                              existing_guest.email,
                              guest_obj['email'])
-                guest_update(guest_obj, guest_entries[0].jwt, existing_room)
+                # i think this will result in every jwt field being the same? guest entries
+                # are kept around as part of transfers (ticket/email uniq) and when someone
+                # has multiple rooms (email/room uniq)
+                otp = guest_entries[0].jwt
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
 
-            guest_remove(existing_guest)
-
+    return retries
 
 def validate_admin(data):
     try:
@@ -268,8 +301,17 @@ def create_guests(request):
             return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
 
         _guest_fields, guest_rows = ingest_csv(guests_csv)
+        # start by seeing if we can address orphaned placed rooms
         reconcile_orphan_rooms(guest_rows)
-        create_guest_entries(guest_rows)
+        # handle basic ingestion of guests
+        retry_rows = create_guest_entries(guest_rows)
+        if len(retry_rows) > 0:
+            logger.info("Retrying %s guest rows", len(retry_rows))
+            # retry some guests bc secret party exports are non deterministic
+            #  slash non ordered. this will include transfers for which the
+            #  original ticket had not been yet entered and also (just in case)
+            #  guests that saw rooms unavailable
+            create_guest_entries(retry_rows)
 
         return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
                                              status=status.HTTP_201_CREATED)
