@@ -94,6 +94,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             if elem['Placed By'] == 'Roombaht' or \
                (elem['Placed By'] == '' and force_roombaht):
                 room.is_available = True
+                room.is_swappable = True
 
             room_changed = True
 
@@ -121,19 +122,13 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room.notes = elem['Room Notes']
             room_changed = True
 
-        if (elem['Changeable'] == '' or 'yes' in elem['Changeable'].lower()) and \
-           not room.is_swappable:
-            room.is_swappable = True
-            room_changed = True
-        elif elem['Changeable'].lower() == 'no' and room.is_swappable:
-            room.is_swappable = False
-            room_changed = True
-
         # Cannot mark a room as non available based on being set to roombaht
-        #   in spreadsheet if it already actually assigned
+        #   in spreadsheet if it already actually assigned, but you can mark
+        #   a room as non available/swappable if it is not assigned yet
         if elem['Placed By'] == '' and (not room.is_available):
             if not room.guest:
                 room.is_available = False
+                room.is_swappable = False
                 room_changed = True
             else:
                 logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)

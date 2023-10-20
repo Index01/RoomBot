@@ -162,10 +162,12 @@ def guest_update(guest_dict, otp, room, og_guest=None):
                              email,
                              room.number)
             else:
+                # todo ????
                 logger.warning("Existing guest %s not moving from %s to %s",
                                email,
                                guest.room_number,
                                room.number)
+                return
         else:
             logger.debug("Existing guest %s assigned to %s", email, room.number)
             guest.room_number = room.number
