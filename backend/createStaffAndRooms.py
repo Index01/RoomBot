@@ -50,7 +50,7 @@ def real_date(a_date):
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
 
-def create_rooms_main(rooms_file, is_hardrock=False):
+def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
     rooms=[]
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
 
@@ -80,7 +80,7 @@ def create_rooms_main(rooms_file, is_hardrock=False):
                         number=elem['Room']
                         )
 
-            features = elem['Room Features (Accesbility, Lakeview, Smoking)(not visible externally)'].lower()
+            features = elem['Room Features (Accessibility, Lakeview, Smoking)'].lower()
             if 'hearing accessible' in features:
                 room.is_hearing_accessible = True
 
@@ -93,7 +93,8 @@ def create_rooms_main(rooms_file, is_hardrock=False):
             if 'smoking' in features:
                 room.is_smoking = True
 
-            if elem['Placed By'] == 'Roombaht':
+            if elem['Placed By'] == 'Roombaht' or \
+               (elem['Placed By'] == '' and force_roombaht):
                 room.is_available = True
 
             room_changed = True
@@ -273,7 +274,7 @@ def main(args):
         else:
             logger.warning('Updating data in place at user request!')
 
-    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'])
+    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'], force_roombaht=args['blank_is_available'])
     create_staff(args['staff_file'])
 
 if __name__=="__main__":
@@ -298,5 +299,10 @@ if __name__=="__main__":
                         action='store_true',
                         default=False,
                         help='Preserve data, updating rooms in place')
+    parser.add_argument('--blank-placement-is-available',
+                        dest='blank_is_available',
+                        action='store_true',
+                        default=False,
+                        help='When set it treats blank "Placed By" fields as available rooms')
     args = vars(parser.parse_args())
     main(args)

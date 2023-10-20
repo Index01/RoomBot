@@ -384,7 +384,6 @@ def guest_file_upload(request):
 
         # basic input validation, make sure it's the right csv
         if 'ticket_code' not in guest_fields or \
-           'ticket_status' not in guest_fields or \
            'product' not in guest_fields:
             return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
 
