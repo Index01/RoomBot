@@ -3,6 +3,7 @@ import os
 import random
 import sys
 
+from datetime import datetime
 from csv import DictReader, DictWriter
 from django.core.mail import EmailMessage, get_connection
 
@@ -67,3 +68,7 @@ def my_url():
         port = ":%s" % port
 
     return "%s://%s%s" % (schema, host, port)
+
+def ts_suffix():
+    now = datetime.now()
+    return "%s-%s-%s-%s-%s" % (now.day, now.month, now.year, now.hour, now.minute)

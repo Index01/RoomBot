@@ -19,7 +19,7 @@ from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
 from .rooms import validate_jwt
-from ..reporting import dump_guest_rooms, diff_latest
+from ..reporting import dump_guest_rooms, diff_latest, hotel_export
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url
 from reservations.constants import ROOM_LIST
 
@@ -325,6 +325,7 @@ def run_reports(request):
         if(validate_admin(data)==True):
             admin_emails = Staff.objects.filter(is_admin=True)
             guest_dump_file, room_dump_file = dump_guest_rooms()
+            ballys_export_file = hotel_export('Ballys')
             if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
                 logger.info(f'sending admin emails: {admin_emails}')
                 conn = get_connection()
@@ -335,6 +336,7 @@ def run_reports(request):
                 #TODO(tb) verify these files
                 msg.attach_file(guest_dump_file)
                 msg.attach_file(room_dump_file)
+                msg_attach_file(ballys_export_file)
                 if os.path.exists("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP']):
                     msg.attach_file("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'])
 

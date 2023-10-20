@@ -7,7 +7,7 @@ django.setup()
 from csv import DictReader, DictWriter
 from reservations.models import Guest, Room
 from django.forms.models import model_to_dict
-from datetime import datetime
+from reservations.helpers import ts_suffix, egest_csv
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -78,10 +78,8 @@ def diff_latest(rows):
     return diff_count
 
 def dump_guest_rooms():
-    now = datetime.now()
-    ts_suffix = "%s-%s-%s-%s-%s" % (now.day, now.month, now.year, now.hour, now.minute)
-    guest_dump_file = "%s/guest_dump-%s.csv" % (os.environ['ROOMBAHT_TMP'], ts_suffix)
-    room_dump_file = "%s/room_dump-%s.csv" % ( os.environ['ROOMBAHT_TMP'], ts_suffix)
+    guest_dump_file = "%s/guest_dump-%s.csv" % (os.environ['ROOMBAHT_TMP'], ts_suffix())
+    room_dump_file = "%s/room_dump-%s.csv" % ( os.environ['ROOMBAHT_TMP'], ts_suffix())
     guests = Guest.objects.all()
     logger.debug(f'[-] dumping guests and room tables')
     with open(guest_dump_file, 'w+') as guest_file:
@@ -103,3 +101,53 @@ def dump_guest_rooms():
 
     logger.debug(f'[-] rooms done')
     return guest_dump_file, room_dump_file
+
+def hotel_export(hotel):
+    fields = [
+        'room_number',
+        'room_type',
+        'check_in',
+        'check_out',
+        'primary_name',
+        'secondary_name'
+    ]
+    rooms = Room.objects.filter(name_hotel = hotel.capitalize())
+    if rooms.count() == 0:
+        raise Exception("No rooms found for hotel %s" % hotel)
+
+    rows = []
+    for room in rooms:
+        # some validation
+
+        row = {
+            'room_number': room.number,
+            'room_type': room.name_take3,
+            'primary_name': room.primary
+        }
+        if room.check_in and room.check_out:
+            row['check_in'] = room.check_in
+            row['check_out'] = room.check_out
+        elif room.check_in and not room.check_out:
+            logger.warning("Room %s missing check out date", room.number)
+            row['check_in'] = room.check_in
+            row['check_out'] = 'TBD'
+        elif room.check_out and not room.check_in:
+            logger.warning("Room %s missing check in date", room.number)
+            row['check_in'] = 'TBD'
+            row['check_out'] = room.check_out
+        else:
+            row['check_in'] = 'TBD'
+            row['check_out'] = 'TBD'
+
+        if room.secondary != '':
+            row['secondary_name'] = room.secondary
+
+        rows.append(row)
+
+    hotel_export_file = "%s/hotel_%s_export-%s.csv" % (
+        os.environ['ROOMBAHT_TMP'],
+        hotel.lower(),
+        ts_suffix())
+
+    egest_csv(rows, fields, hotel_export_file)
+    return hotel_export_file
