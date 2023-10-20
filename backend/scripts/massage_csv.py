@@ -207,32 +207,37 @@ def massage_guests(input_items):
             email_maps[item['email']] = new_email
 
         if new_phone not in phone_maps:
-            phone_maps[item['phone']] = new_phone
+            try:
+                phone_maps[item['phone']] = new_phone
+            except KeyError as e:
+                pass
 
     # actually anonymize
     for item in input_items:
         a_name = "%s %s" % (item['first_name'], item['last_name'])
         new_first_name, new_last_name = name_maps[a_name].split(' ')
         new_item = {
-            'invitation_code': item['invitation_code'],
             'ticket_code': item['ticket_code'],
             'last_name': new_last_name,
             'first_name': new_first_name,
             'email': email_maps[item['email']],
-            'type': item['type'],
             'product': item['product'],
-            'purchase_date': item['purchase_date'],
-            'ticket_status': item['ticket_status']
+
         }
 
-        if item['transferred_from'] != '':
+        try:
             new_item['transferred_from'] = name_maps[item['transferred_from']]
-            new_item['transferred_from_email'] = email_maps[item['transferred_from_email']]
-            new_item['transferred_from_code'] = item['transferred_from_code']
-
-        if item['transferred_to'] != '':
             new_item['transferred_to'] = name_maps[item['transferred_to']]
             new_item['transferred_to_email'] = email_maps[item['transferred_to_email']]
+            new_item['type'] = item['type'],
+            new_item['invitation_code'] = item['invitation_code'],
+            new_item['purchase_date'] = item['purchase_date'],
+            new_item['ticket_status'] = item['ticket_status']
+            if(item['transferred_from_code'] != ''):
+                new_item['transferred_from_email'] = email_maps[item['transferred_from_email']]
+                new_item['transferred_from_code'] = item['transferred_from_code']
+        except KeyError as e:
+            logger.warn(f'Missing optional columns: {e}')
 
         output_items.append(new_item)
 
