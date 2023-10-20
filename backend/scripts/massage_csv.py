@@ -12,7 +12,7 @@ from random import randint
 from names_generator import generate_name
 from lorem_text.lorem import words as lorem_words
 
-from backend.reservations.ingest_models import SecretPartyGuestIngest, RoomPlacementListIngest
+from reservations.ingest_models import SecretPartyGuestIngest, RoomPlacementListIngest
 
 # don't judge
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
