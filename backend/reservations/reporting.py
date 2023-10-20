@@ -8,45 +8,16 @@ from csv import DictReader, DictWriter
 from reservations.models import Guest, Room
 from django.forms.models import model_to_dict
 from reservations.helpers import ts_suffix, egest_csv
+import reservations.config as roombaht_config
 
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ReportingLogger')
-
-ticket_file = "../samples/exampleVerifiedTickets.csv"
-
-def read_write_reports():
-    secpty_lines = []
-    ticket_lines = []
-    missing = []
-    with open("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'], "r") as f1:
-        for elem in DictReader(f1):
-            secpty_lines.append(elem)
-
-    with open(ticket_file, "r") as f2:
-        for elem in DictReader(f2):
-            ticket_lines.append(elem)
-
-    for line in secpty_lines:
-        ticket = line['ticket_code']
-        for check_row in ticket_lines:
-            if(ticket in check_row['placed'] or ticket in check_row['all_guests']):
-                missing.append(f'[+] Ticket Found in both: {line} {check_row}')
-                continue
-            else:
-                continue
-            logger.debug(f'[-] Ticket not placed or excluded: {line}')
-            missing.append(f'[-] Ticket not found {line}')
-
-    with open('../output/diff_dump.md', 'w') as f3:
-        for elem in missing:
-            f3.write(f"{elem}\n")
 
 def diff_latest(rows):
     diff_count = 0
 
-    with open("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'] , 'w') as diffout:
+    with open(f"{roombaht_config.TEMP_DIR}/diff_latest.csv", 'w') as diffout:
         guests = Guest.objects.all()
         diffout.write("Things in latest guest list upload but not in the db\n")
         for row in rows:
@@ -78,8 +49,8 @@ def diff_latest(rows):
     return diff_count
 
 def dump_guest_rooms():
-    guest_dump_file = "%s/guest_dump-%s.csv" % (os.environ['ROOMBAHT_TMP'], ts_suffix())
-    room_dump_file = "%s/room_dump-%s.csv" % ( os.environ['ROOMBAHT_TMP'], ts_suffix())
+    guest_dump_file = f"{roombaht_config.TEMP_DIR}/guest_dump-{ts_suffix()}.csv"
+    room_dump_file = f"{roombaht_config.TEMP_DIR}/room_dump-{ts_suffix()}.csv"
     guests = Guest.objects.all()
     logger.debug(f'[-] dumping guests and room tables')
     with open(guest_dump_file, 'w+') as guest_file:
@@ -144,10 +115,7 @@ def hotel_export(hotel):
 
         rows.append(row)
 
-    hotel_export_file = "%s/hotel_%s_export-%s.csv" % (
-        os.environ['ROOMBAHT_TMP'],
-        hotel.lower(),
-        ts_suffix())
+    hotel_export_file = f"{roombaht_config.TEMP_DIR}/hotel_{hotel.lower()}_export-{ts_suffix()}.csv"
 
     egest_csv(rows, fields, hotel_export_file)
     return hotel_export_file

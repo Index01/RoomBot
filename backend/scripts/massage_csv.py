@@ -67,7 +67,7 @@ def art_room_types():
     return art_type
 
 def massage_rooms(input_items, maps, weights):
-    name_maps, email_maps, phone_maps = maps
+    name_maps, email_maps = maps
     output_items = []
 
     guest_names = [x for x, y in name_maps.items()]
@@ -93,7 +93,7 @@ def massage_rooms(input_items, maps, weights):
             'Floor': item['Floor'],
             'Room': item['Room'],
             'Room Type': item['Room Type'],
-            'Room Features (Accesbility, Lakeview, Smoking)(not visible externally)': item['Room Features (Accesbility, Lakeview, Smoking)(not visible externally)'],
+            'Room Features (Accessibility, Lakeview, Smoking)': item['Room Features (Accessibility, Lakeview, Smoking)'],
             'Connected To Room': item['Connected To Room'],
             'Room Owned By (Secret Party)': item['Room Owned By (Secret Party)'],
             'Check-in Date': item['Check-in Date'],
@@ -175,21 +175,10 @@ def massage_rooms(input_items, maps, weights):
 
     return output_items
 
-def random_phone():
-    def ph():
-        return randint(1,9)
-
-    return "(%s%s%s) %s%s%s-%s%s%s%s" % (
-        ph(), ph(), ph(),
-        ph(), ph(), ph(),
-        ph(), ph(), ph(), ph()
-    )
-
 def massage_guests(input_items):
     output_items = []
     name_maps = {}
     email_maps = {}
-    phone_maps = {}
 
     for item in input_items:
         a_name = "%s %s" % (item['first_name'], item['last_name'])
@@ -198,7 +187,6 @@ def massage_guests(input_items):
         new_first_name = new_name_bits[0]
         new_last_name = new_name_bits[1]
         new_email = "%s.%s@noop.com" % (new_first_name.lower(), new_last_name.lower())
-        new_phone = random_phone()
 
         if a_name not in name_maps:
             name_maps[a_name] = "%s %s" % (new_first_name, new_last_name)
@@ -206,37 +194,24 @@ def massage_guests(input_items):
         if new_email not in email_maps:
             email_maps[item['email']] = new_email
 
-        if new_phone not in phone_maps:
-            phone_maps[item['phone']] = new_phone
-
     # actually anonymize
     for item in input_items:
         a_name = "%s %s" % (item['first_name'], item['last_name'])
         new_first_name, new_last_name = name_maps[a_name].split(' ')
         new_item = {
-            'invitation_code': item['invitation_code'],
             'ticket_code': item['ticket_code'],
             'last_name': new_last_name,
             'first_name': new_first_name,
             'email': email_maps[item['email']],
-            'type': item['type'],
-            'product': item['product'],
-            'purchase_date': item['purchase_date'],
-            'ticket_status': item['ticket_status']
+            'product': item['product']
         }
 
-        if item['transferred_from'] != '':
-            new_item['transferred_from'] = name_maps[item['transferred_from']]
-            new_item['transferred_from_email'] = email_maps[item['transferred_from_email']]
+        if item['transferred_from_code'] != '':
             new_item['transferred_from_code'] = item['transferred_from_code']
-
-        if item['transferred_to'] != '':
-            new_item['transferred_to'] = name_maps[item['transferred_to']]
-            new_item['transferred_to_email'] = email_maps[item['transferred_to_email']]
 
         output_items.append(new_item)
 
-    return [name_maps, email_maps, phone_maps], output_items
+    return [name_maps, email_maps], output_items
 
 def check_dest(filename, force):
     if os.path.exists(filename):
