@@ -14,14 +14,14 @@ def authenticate(request):
     data = request.data
     try:
         jwt_data=data["jwt"]
-    except KeyError:
-        logger.warning("JWT information missing ip:%s", request.META['REMOTE_ADDR'])
+    except KeyError as e:
+        logger.warning("[-] JWT information missing ip:%s data: %s, e: %s", request.META['REMOTE_ADDR'], data, e)
         return None
 
     try:
         dec = jwt.decode(jwt_data, roombaht_config.JWT_KEY, algorithms="HS256")
     except (TypeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError):
-        logger.warning("Unable to decode jwt ip:%s", request.META['REMOTE_ADDR'])
+        logger.warning("[-] Unable to decode jwt ip:%s", request.META['REMOTE_ADDR'])
         return None
 
     dthen = datetime.datetime.fromisoformat(dec["datetime"])
@@ -29,13 +29,13 @@ def authenticate(request):
 
     email = dec['email']
     if dnow - dthen > datetime.timedelta(days=1):
-        logger.info("JWT has expired email:%s ip:%s", request.META['REMOTE_ADDR'], email)
+        logger.info("[-] JWT has expired email:%s ip:%s", request.META['REMOTE_ADDR'], email)
         return None
 
     try:
         _guest = Guest.objects.filter(email=dec['email'])
     except Guest.DoesNotExist:
-        logger.warning("No guest found. email:%s ip:%s", email, request.META['REMOTE_ADDR'])
+        logger.warning("[-] No guest found. email:%s ip:%s", email, request.META['REMOTE_ADDR'])
 
     return {'email': email, 'admin': False}
 
@@ -48,7 +48,7 @@ def authenticate_admin(request):
     try:
         staff = Staff.objects.get(email=auth_obj['email'])
     except Staff.DoesNotExist:
-        logger.warning("No staff found. email:%s ip:%s", auth_obj['email'], request.META['REMOTE_ADDR'])
+        logger.warning("[-] No staff found. email:%s ip:%s", auth_obj['email'], request.META['REMOTE_ADDR'])
         return None
 
     if staff.is_admin:
@@ -57,4 +57,4 @@ def authenticate_admin(request):
     return auth_obj
 
 def unauthenticated():
-    return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+    return Response("[-] Unauthorized", status=status.HTTP_401_UNAUTHORIZED)

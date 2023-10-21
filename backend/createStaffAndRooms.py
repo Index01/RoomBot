@@ -78,7 +78,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                         number=elem['Room']
                         )
 
-            features = elem['Room Features (Accessibility, Lakeview, Smoking)'].lower()
+            try:
+                features = elem['Room Features (Accessibility, Lakeview, Smoking)'].lower()
+            except KeyError as e:
+                features = []
             if 'hearing accessible' in features:
                 room.is_hearing_accessible = True
 
