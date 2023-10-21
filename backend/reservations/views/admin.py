@@ -6,7 +6,6 @@ import jwt
 import datetime
 import json
 import string
-import random
 import sys
 
 from csv import DictReader, DictWriter
@@ -18,170 +17,298 @@ from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
-from .rooms import validate_jwt
 from ..reporting import dump_guest_rooms, diff_latest, hotel_export
-from reservations.helpers import ingest_csv, phrasing, egest_csv
+from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
+import reservations.config as roombaht_config
+from reservations.auth import authenticate_admin, unauthenticated
 
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_admin')
 
-RANDOM_ROOMS = os.environ.get('RANDOM_ROOMS', True)
+def onboarding_email(guest_new, otp):
+    if not roombaht_config.SEND_ONBOARDING:
+        return
 
-def assign_room(type_purchased_secpty):
-    for roomtype in ROOM_LIST.items():
-        if(type_purchased_secpty in roomtype[1]):
-            set_room = roomtype[0]
-            break
-        else:
-            set_room = "Room type not found"
+    hostname = my_url()
+    time.sleep(5)
+    body_text = f"""
+        BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
 
+        After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
 
-    if(RANDOM_ROOMS=="TRUE"):
-        no_guest = Room.objects.filter(guest=None, is_available=True)
-        for room in no_guest:
-            if(room.name_take3 == set_room):
-                logger.debug("Found free room of type %s: %s", set_room, room.number)
-                return room
-            else:
-                pass
-        logger.debug("No room of type %s available. looking for: %s", set_room, type_purchased_secpty)
-        return None
+        Goes without saying, but don't forward this email.
+
+        This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
+        Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
+        {otp}
+        {hostname}/login
+
+        Good Luck, Starfighter.
+
+    """
+    send_email([guest_new["email"]],
+               'RoomService RoomBaht - Account Activation',
+               body_text)
+
+def find_room(room_product):
+    room_type = None
+    for a_type, a_products in ROOM_LIST.items():
+        for a_product in a_products:
+            if a_product == room_product:
+                room_type = a_type
+                break
+
+    if not room_type:
+        raise Exception("Unable to actually find room type for %s" % room_product)
+
+    available_room = Room.objects \
+                         .filter(is_available=True,
+                                 name_take3=room_type
+                                 ) \
+                         .order_by('?') \
+                         .first()
+
+    if not available_room:
+        logger.debug("No room of type %s available. Product: %s",
+                     room_type,
+                     room_product)
     else:
-        # testing purposes
-        logger.warning(f'test room assigned in create')
-        return Room(number=666)
+        logger.debug("Found free room of type %s: %s",
+                     room_type,
+                     available_room.number)
 
+    return available_room
 
-def guest_contact_new(guest_new, otp, email_onboarding=False, room=None):
-    ''' Create guest send email '''
-    logger.info("Creating guest: %s %s (%s) %s", guest_new['first_name'], guest_new['last_name'], guest_new['email'], guest_new['ticket_code'])
-    existing_ticket = Guest.objects.filter(ticket=guest_new["ticket_code"])
-    # verify ticket does not exist
-    if(len(existing_ticket)!=0):
-        return
-    if(room is None):
-        room = assign_room(guest_new["product"])
-    if(room is None):
-        logger.warning("No empty rooms available for %s %s", guest_new['first_name'], guest_new['last_name'])
-        return
+def reconcile_orphan_rooms(guest_rows):
+    # rooms may be orphaned due to placement changes, data corruption, machine elves
+    def get_guest_obj(name):
+        for guest in guest_rows:
+            if name == f"{guest['first_name']} {guest['last_name']}":
+                return guest
 
-    guest=Guest(name=guest_new['first_name']+" "+guest_new['last_name'],
-        email=guest_new['email'],
-        ticket=guest_new['ticket_code'],
-        jwt=otp,
-        room_number=room.number)
-    guest.save()
+        return None
 
-    room.guest=guest
+    orphan_rooms = Room.objects \
+                       .filter(guest=None, is_available=False) \
+                       .exclude(primary='')
+    logger.debug("Attempting to reconcile %s orphan rooms", orphan_rooms.count())
+    for room in orphan_rooms:
+        guest = None
+        # first check for a guest entry by sp_ticket_id
+        try:
+            if room.sp_ticket_id:
+                guest = Guest.objects.get(ticket = room.sp_ticket_id)
+                logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
+        except Guest.DoesNotExist:
+            pass
+
+        if not guest:
+            # then check for a guest entry by room number
+            try:
+                guest = Guest.objects.get(room_number = room.number)
+                logger.info("Found guest %s by room_number in DB for orphan room %s", guest.email, room.number)
+            except Guest.DoesNotExist:
+                pass
+
+        if not guest:
+            # then check for a guest by name
+            try:
+                guest = Guest.objects.get(name = room.primary)
+                logger.info("Found guest %s by name in DB for orphan room %s", guest.email, room.number)
+            except Guest.DoesNotExist:
+                pass
+
+        if guest:
+            # we found one, how lovely. associate room with it.
+            room.guest = guest
+            if room.primary != guest.name:
+                logger.warning("names do not match for orphan room %s (%s, %s)",
+                               room.number, room.primary, guest.name)
+            elif room.primary == '':
+                room.primary = guest.name
+
+            room.save()
+        else:
+            # then check the guest list
+            guest_obj = get_guest_obj(room.primary)
+            if guest_obj:
+                # we have one, that's nice
+                logger.info("Found guest %s in CSV for orphan room %s",
+                             guest_obj['email'], room.number)
+                otp = phrasing()
+                guest_update(guest_obj, otp, room)
+                onboarding_email(guest_obj, otp)
+            else:
+                logger.warning("Unable to find guest %s for orphan room %s",
+                               room.primary, room.number)
+
+def guest_update(guest_dict, otp, room, og_guest=None):
+    ticket_code = guest_dict['ticket_code']
+    email = guest_dict['email']
+    guest = None
+    guest_changed = False
+    try:
+        # placed rooms may already have records
+        # also sometimes people transfer rooms to themselves
+        #   because why the frak not
+        guest = Guest.objects.get(ticket=ticket_code,
+                                  email=email)
+        logger.debug("Found existing ticket %s for %s", ticket_code, email)
+        if guest.room_number:
+            if guest.room_number == room.number:
+                logger.debug("Existing guest %s already associated with room %s",
+                             email,
+                             room.number)
+            else:
+                # todo ????
+                logger.warning("Existing guest %s not moving from %s to %s",
+                               email,
+                               guest.room_number,
+                               room.number)
+                return
+        else:
+            logger.debug("Existing guest %s assigned to %s", email, room.number)
+            guest.room_number = room.number
+            guest_changed = True
+    except Guest.DoesNotExist:
+        # but most of the time the guest does not exist yet
+        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}",
+                      ticket=guest_dict['ticket_code'],
+                      jwt=otp,
+                      email=email,
+                      room_number=room.number)
+        logger.debug("New guest %s in room %s", email, room.number)
+        guest_changed = True
+
+    # save guest (if needed) and then...
+    if guest_changed:
+        guest.save()
+
+    # unassociated original owner (if present)
+    if room.guest:
+        if room.guest != og_guest:
+            logger.warning("Unexpected original owner %s for room %s", room.guest.email, room.number)
+
+        room.guest.room_number = None
+        logger.debug("Removing original owner %s for room %s", room.guest.email, room.number)
+        room.guest.save()
+
+    # update room
+    room.guest = guest
     room.is_available = False
-    if room.primary != '':
-        logger.warning("Room %s already has a name set: %s" % (room.number, room.primary))
+    if room.primary != '' and room.primary != guest.name:
+        logger.warning("Room %s already has a name set: %s!", room.number, room.primary)
     else:
         room.primary=guest.name
 
     room.save()
 
-    logger.info("Assigned room type %s (#%s) to %s", room.name_take3, room.number, guest.name)
-    if(email_onboarding):
-        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-            time.sleep(5)
-            apppass = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
-            logger.debug(f'[+] Sending invite for guest {guest_new["first_name"]} {guest_new["last_name"]}')
+def create_guest_entries(guest_rows):
+    retries = []
+    for guest_obj in guest_rows:
+        guest_entries = Guest.objects.filter(email=guest_obj["email"])
+        trans_code = guest_obj['transferred_from_code']
+        ticket_code = guest_obj['ticket_code']
+        guest_name = f"{guest_obj['first_name']} {guest_obj['last_name']}"
 
-            body_text = f"""
-                BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
+        if trans_code == '' and guest_entries.count() == 0:
+            # Unknown ticket, no transfer; new user
+            otp = phrasing()
+            room = find_room(guest_obj['product'])
+            if not room:
+                # sometimes this happens due to room transfers not being complete. hence the retry.
+                logger.warning("No empty rooms available for %s", guest_obj['email'])
+                retries.append(guest_obj)
+                continue
 
-                After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
+            logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj["email"])
+            otp = phrasing()
+            guest_update(guest_obj, otp, room)
+            onboarding_email(guest_obj, otp)
+        elif trans_code =='' and guest_entries.count() > 0:
+            # There are a few cases that could pop up here
+            # * admins / staff
+            # * people share email addresses and soft-transfer rooms in sp
+            if len([x.ticket for x in guest_entries if x.ticket == ticket_code]) == 0:
+                room = find_room(guest_obj['product'])
+                if not room:
+                    logger.warning("No empty rooms available for %s", guest_entries[0].email)
+                    retries.append(guest_obj)
+                    continue
 
-                Goes without saying, but don't forward this email.
+                logger.debug("assigning room %s to (unassigned ticket/room) %s", room.number, guest_entries[0].email)
+                guest_update(guest_obj, guest_entries[0].jwt, room)
+            else:
+                logger.warning("Not sure how to handle non-transfer, existing user ticket %s", ticket_code)
 
-                This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
-                Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
-                {otp}
-                http://rooms.take3presents.com/login
-
-                Good Luck, Starfighter.
-
-            """
-
-            send_mail("RoomService RoomBaht",
-                      body_text,
-                      "placement@take3presents.com",
-                      [guest_new["email"]],
-                      auth_user="placement@take3presents.com",
-                      auth_password=apppass,
-                      fail_silently=False,)
-
-
-def create_guest_entries(guest_file):
-    _guest_fields, guest_rows = ingest_csv(guest_file)
-
-    for guest_new in guest_rows:
-        guest_entries = Guest.objects.filter(email=guest_new["email"])
-        trans_code = guest_new['transferred_from_code']
-        tix_exist = [guest.ticket for guest in guest_entries if guest.ticket==guest_new['ticket_code']]
-
-        # Create with email
-        if(len(guest_entries)==0):
-            logger.debug("Email doesnt exist: %s. Creating new guest contact", guest_new["email"])
-            guest_contact_new(guest_new, phrasing(), email_onboarding=True)
-        # Update from ticket transfer
-        elif(trans_code!=""):
+        elif trans_code != "":
+            # Transfered ticket...
             existing_guest = None
+            logger.debug("Ticket %s is a transfer", trans_code)
             try:
                 existing_guest = Guest.objects.get(ticket=trans_code)
             except Guest.DoesNotExist:
-                logger.warning("Ticket transfer (%s) but no previous ticket id found", trans_code)
+                # sometimes this happens due to transfers showing up earlier in the sp export than
+                # the origial ticket. hence the retry.
+                logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
+                retries.append(guest_obj)
                 continue
 
             existing_room = Room.objects.get(number = existing_guest.room_number)
-            logger.debug("Ticket %s is a transfer", trans_code)
-            otp = phrasing()
-            if(len(guest_entries)==0):
-                guest_contact_new(guest_new, otp, email_onboarding=True, room=existing_room)
+
+            if guest_entries.count() == 0:
+                # Transferring to new guest...
+                logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
+                             trans_code,
+                             ticket_code,
+                             existing_guest.email,
+                             guest_obj['email'])
+                otp = phrasing()
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
+                onboarding_email(guest_obj, otp)
             else:
-                guest_contact_new(guest_new, otp, email_onboarding=False, room=existing_room)
-            existing_guest.delete()
-        # Create without email
+                # Transferring to existing guest...
+                logger.debug("Processing transfer %s (%s) from %s to %s",
+                             trans_code,
+                             ticket_code,
+                             existing_guest.email,
+                             guest_obj['email'])
+                # i think this will result in every jwt field being the same? guest entries
+                # are kept around as part of transfers (ticket/email uniq) and when someone
+                # has multiple rooms (email/room uniq)
+                otp = guest_entries[0].jwt
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
         else:
-            if(len(tix_exist)==0):
-                logger.debug("Email exist: %s Creating new ticket.", guest_new['email'])
-                guest_contact_new(guest_new, phrasing(), email_onboarding=False)
+            logger.warning("Not sure how to handle ticket %s", ticket_code)
 
+    return retries
 
-def validate_admin(data):
-    try:
-        jwt_data=data["jwt"]
-    except KeyError as e:
-        logger.info(f"[-] Missing fields {request.data}")
-        return False
-    email = validate_jwt(jwt_data)
-
-    if (email is None):
-        logger.info(f"[-] No guest with that email")
-        return False
-    staff = Staff.objects.filter(email=email)
-
-    if(len(staff)==0 or staff[0].is_admin!=True):
-        logger.info(f"[-] No admin by that email")
-        return False
-    else:
-        return True
 
 
 @api_view(['POST'])
 def create_guests(request):
-    guests_csv = "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']
+    guests_csv = "%s/guestUpload_latest.csv" % roombaht_config.TEMP_DIR
     if request.method == 'POST':
-        data = request.data["data"]
-        if not validate_admin(data):
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
 
-        create_guest_entries(guests_csv)
+        _guest_fields, guest_rows = ingest_csv(guests_csv)
+        # start by seeing if we can address orphaned placed rooms
+        reconcile_orphan_rooms(guest_rows)
+        # handle basic ingestion of guests
+        retry_rows = create_guest_entries(guest_rows)
+        if len(retry_rows) > 0:
+            logger.debug("Retrying %s guest rows", len(retry_rows))
+            # retry some guests bc secret party exports are non deterministic
+            #  slash non ordered. this will include transfers for which the
+            #  original ticket had not been yet entered and also (just in case)
+            #  guests that saw rooms unavailable
+            create_guest_entries(retry_rows)
 
+        logger.info("guest list uploaded by %s", auth_obj['email'])
         return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
                                              status=status.HTTP_201_CREATED)
 
@@ -189,63 +316,66 @@ def create_guests(request):
 @api_view(['POST'])
 def run_reports(request):
     if request.method == 'POST':
-        data = request.data["data"]
-        logger.info(f'Run reports attempt')
-        if(validate_admin(data)==True):
-            admin_emails = Staff.objects.filter(is_admin=True)
-            guest_dump_file, room_dump_file = dump_guest_rooms()
-            ballys_export_file = hotel_export('Ballys')
-            if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-                logger.info(f'sending admin emails: {admin_emails}')
-                conn = get_connection()
-                msg = EmailMessage(subject="RoomBaht Report",
-                                   body="Diff dump, guest dump, room dump",
-                                   to=[admin.email for admin in admin_emails],
-                                   connection=conn)
-                #TODO(tb) verify these files
-                msg.attach_file(guest_dump_file)
-                msg.attach_file(room_dump_file)
-                msg_attach_file(ballys_export_file)
-                if os.path.exists("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP']):
-                    msg.attach_file("%s/diff_latest.csv" % os.environ['ROOMBAHT_TMP'])
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
 
-                if os.path.exists("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP']):
-                    msg.attach_file("%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
+        logger.info("reports being run by %s", auth_obj['email'])
 
-                msg.send()
-            return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),
-                                           status=status.HTTP_201_CREATED)
-        else:
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
+        guest_dump_file, room_dump_file = dump_guest_rooms()
+        ballys_export_file = hotel_export('Ballys')
+        attachments = [
+            guest_dump_file,
+            room_dump_file,
+            ballys_export_file
+        ]
+        if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
+            attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
+
+        if os.path.exists(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv"):
+            attachments.append(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
+
+        send_email(admin_emails,
+                   'RoomService RoomBaht - Report Time',
+                   'Your report(s) are here. *theme song for Brazil plays*',
+                   attachments)
+
+        return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),
+                        status=status.HTTP_201_CREATED)
+
 
 @api_view(['POST'])
 def request_metrics(request):
     if request.method == 'POST':
-        data = request.data["data"]
-        if(validate_admin(data)==True):
-            rooooms = Room.objects.all()
-            guest_unique = len(set([guest.email for guest in Guest.objects.all()]))
-            guest_count = Guest.objects.all().count()
-            rooms_count = rooooms.count()
-            rooms_occupied = rooooms.exclude(is_available=True).count()
-            rooms_swappable = rooooms.exclude(is_swappable=False).count()
-            resp = str(json.dumps({"guest_count": guest_count,
-                                   "rooms_count": rooms_count,
-                                   "rooms_occupied": rooms_occupied,
-                                   "guest_unique": guest_unique,
-                                   "rooms_swappable": rooms_swappable
-                                   }))
-            return Response(resp, status=status.HTTP_201_CREATED)
-        else:
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
+
+        rooooms = Room.objects.all()
+        guest_unique = len(set([guest.email for guest in Guest.objects.all()]))
+        guest_count = Guest.objects.all().count()
+        rooms_count = rooooms.count()
+        rooms_occupied = rooooms.exclude(is_available=True).count()
+        rooms_swappable = rooooms.exclude(is_swappable=False).count()
+        resp = str(json.dumps({"guest_count": guest_count,
+                               "rooms_count": rooms_count,
+                               "rooms_occupied": rooms_occupied,
+                               "guest_unique": guest_unique,
+                               "rooms_swappable": rooms_swappable
+                               }))
+        return Response(resp, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
 def guest_file_upload(request):
     if request.method == 'POST':
-        data = request.data["guest"]
-        if not validate_admin(data):
-            return Response("User not admin", status=status.HTTP_400_BAD_REQUEST)
+        data = request.data
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
+
+        logger.info("guest data uploaded by %s", auth_obj['email'])
 
         rows = data['guest_list'].split('\n')
         new_guests = []
@@ -253,7 +383,6 @@ def guest_file_upload(request):
 
         # basic input validation, make sure it's the right csv
         if 'ticket_code' not in guest_fields or \
-           'ticket_status' not in guest_fields or \
            'product' not in guest_fields:
             return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
 
@@ -273,6 +402,7 @@ def guest_file_upload(request):
 
             # if the ticket already is in the system, drop it
             existing_ticket = None
+
             try:
                 existing_ticket = Guest.objects.get(ticket=guest['ticket_code'])
             except Guest.DoesNotExist:
@@ -287,13 +417,17 @@ def guest_file_upload(request):
         # write out the csv for future use
         egest_csv(new_guests,
                   guest_fields,
-                  "%s/guestUpload_latest.csv" % os.environ['ROOMBAHT_TMP'])
+                  f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
+
+        first_row = {}
+        if len(new_guests) > 0:
+            first_row = new_guests[0]
 
         resp = str(json.dumps({"received_rows": len(guests),
                                "valid_rows": len(new_guests),
                                "diff": diff_latest(new_guests),
                                "headers": guest_fields,
-                               "first_row": new_guests[0],
+                               "first_row": first_row,
                                "status": "Ready to Load..."
                                }))
 

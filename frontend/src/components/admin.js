@@ -15,16 +15,13 @@ function GuestsCard() {
   const [isLoading, setLoading] = useState(false);
   const handleClick = () => setLoading(true);
   const jwt = JSON.parse(localStorage.getItem('jwt'));
-  const data = {
-      jwt: jwt["jwt"],
-  }
 
   const handleAPICall = (file) => {
     const guest = {
         jwt: jwt["jwt"],
         guest_list: file,
     }
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/guest_upload/', { guest })
+    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/guest_upload/', guest )
       .then(res => {
         setPhrase(res.data);
         console.log("form uploaded");
@@ -82,7 +79,7 @@ function GuestsCard() {
 
   useEffect(() => {
     if (isLoading) {
-       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { data }).then((res) => {
+      axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { jwt: jwt['jwt'] }).then((res) => {
         console.log(res.data);
         setLoading(false);
         window.location = "/admin"

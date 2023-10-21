@@ -4,7 +4,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import axios from 'axios';
 import React from "react";
-
+import { Navigate } from "react-router-dom";
 
 export default class BasicVis extends React.Component {
   state = {
@@ -12,10 +12,7 @@ export default class BasicVis extends React.Component {
   }
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    const data = {
-        jwt: jwt["jwt"],
-    }
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/request_metrics/', { data })
+    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/request_metrics/', { jwt: jwt["jwt"] })
       .then((result) => {
         var jresp = JSON.parse(result.data)
         console.log("Data resp");
@@ -25,19 +22,24 @@ export default class BasicVis extends React.Component {
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-          console.log("server responded");
-          console.log(error.response);
-        } else {
-          console.log(error);
-        }
+	  if (error.response.status == '401') {
+	    this.setState({ error: 'auth' });
+          } else if (error.request) {
+            console.log("network error");
+          } else {
+            console.log("unhandled error " + error.response.status + ", " + error.response.data);
+          }
+	}
       });
   }
 
 
   render(){
-    const {metrics} = this.state;
+    let {metrics, error} = this.state;
     return(
       <Container>
+	{error && (<Navigate to="/login" replace={true} />)}
+	{metrics &&
         <Row>
             <p></p>
           <Col>
@@ -55,7 +57,7 @@ export default class BasicVis extends React.Component {
           <Col>
               <div className="card-subtitle mb-2 text-muted">Room Swappable: {this.state.metrics.rooms_swappable}</div>
           </Col>
-        </Row>
+        </Row>}
       </Container>
     )
   }

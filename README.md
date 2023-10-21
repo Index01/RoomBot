@@ -86,7 +86,7 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 
 ```
 source backend/venv/bin/activate
-source scripts/dev.env
+source dev.env
 python backend/createStaffAndRooms.py samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
 ```
 

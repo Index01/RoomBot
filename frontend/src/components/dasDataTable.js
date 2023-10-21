@@ -14,7 +14,7 @@ import axios from 'axios';
 import React from "react";
 import ModalImage from "react-modal-image";
 import {ModalRequestSwap} from "./modals.js";
-
+import { Navigate } from "react-router-dom";
 
 const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
     {
@@ -66,9 +66,22 @@ export default class RoomDataTable extends React.Component {
         this.state.rooms = data
         this.setState({ data  });
       })
+      .catch((error) => {
+        this.setState({errorMessage: error.message});
+        if (error.response) {
+	  if (error.response.status == '401') {
+	    this.setState({ error: 'auth' });
+          } else if (error.request) {
+            console.log("network error");
+          } else {
+            console.log("unhandled error " + error.response.status + ", " + error.response.data);
+          }
+	}
+      });
   }
 
   render(){
+    let {error} = this.state;
     return(
       <DatatableWrapper
         body={this.state.rooms}
@@ -80,6 +93,7 @@ export default class RoomDataTable extends React.Component {
           }
         }}
       >
+	{error && (<Navigate to="/login" replace={true} />)}
         <Row className="mb-4 p-2">
           <Col
             xs={12}

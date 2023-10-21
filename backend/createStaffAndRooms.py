@@ -10,15 +10,13 @@ import sys
 import django
 django.setup()
 from reservations.models import Guest, Room, Staff
-from django.core.mail import send_mail
-from django.core.mail import EmailMessage, get_connection
 from django.forms.models import model_to_dict
 from django.utils.dateparse import parse_date
-from reservations.helpers import phrasing, ingest_csv
+from reservations.helpers import phrasing, ingest_csv, my_url, send_email
+import reservations.config as roombaht_config
 from datetime import datetime
 
-logging.basicConfig(stream=sys.stdout,
-                    level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('createStaffAndRooms')
 
@@ -50,7 +48,7 @@ def real_date(a_date):
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
 
-def create_rooms_main(rooms_file, is_hardrock=False):
+def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
     rooms=[]
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
 
@@ -62,90 +60,152 @@ def create_rooms_main(rooms_file, is_hardrock=False):
     logger.info("read in %s rooms for %s", len(rooms_rows), hotel)
 
     for elem in rooms_rows:
-        a_room = Room(name_take3=elem['Room Type'],
-                      name_hotel=hotel,
-                      number=elem['Room']
-                      )
+        room = None
+        room_changed = False
+        room_action = "Created"
+        try:
+            room = Room.objects.get(number=elem['Room'])
+            room_action = "Updated"
+        except Room.DoesNotExist:
+            # some things are not mutable
+            # * room features
+            # * room number
+            # * hotel
+            # * room type
+            # * initial roombaht based availability
+            room = Room(name_take3=elem['Room Type'],
+                        name_hotel=hotel,
+                        number=elem['Room']
+                        )
 
-        # these things are always going to be consistent per room
+            features = elem['Room Features (Accessibility, Lakeview, Smoking)'].lower()
+            if 'hearing accessible' in features:
+                room.is_hearing_accessible = True
+
+            if 'ada' in features:
+                room.is_ada = True
+
+            if 'lakeview' in features:
+                room.is_lakeview = True
+
+            if 'smoking' in features:
+                room.is_smoking = True
+
+            if elem['Placed By'] == 'Roombaht' or \
+               (elem['Placed By'] == '' and force_roombaht):
+                room.is_available = True
+                room.is_swappable = True
+
+            room_changed = True
+
+        # check-in/check-out are only adjustable via room spreadsheet
         if elem['Check-in Date'] != '':
-            a_room.check_in = real_date(elem['Check-in Date'])
+            check_in_date = real_date(elem['Check-in Date'])
+            if check_in_date != room.check_in:
+                room.check_in = check_in_date
+                room_changed = True
+        elif elem['Check-in Date'] == '' and room.check_in is not None:
+            room.check_in = None
+            room_changed = True
 
         if elem['Check-out Date'] != '':
-            a_room.check_out = real_date(elem['Check-out Date'])
+            check_out_date = real_date(elem['Check-out Date'])
+            if check_out_date != room.check_out:
+                room.check_out = check_out_date
+                room_changed = True
+        elif elem['Check-out Date'] == '' and room.check_out is not None:
+            room.check_out = None
+            room_changed = True
 
-        features = elem['Room Features (Accesbility, Lakeview, Smoking)(not visible externally)'].lower()
-        if 'hearing accessible' in features:
-            a_room.is_hearing_accessible = True
+        # room notes are only adjustable via room spreadsheet
+        if elem['Room Notes'] != room.notes:
+            room.notes = elem['Room Notes']
+            room_changed = True
 
-        if 'ada' in features:
-            a_room.is_ada = True
-
-        if 'lakeview' in features:
-            a_room.is_lakeview = True
-
-        if 'smoking' in features:
-            a_room.is_smoking = True
-
-        if len(elem['Room Notes']) > 0:
-            a_room.notes = elem['Room Notes']
-
-        if elem['Changeable'] == '' or \
-           'yes' in elem['Changeable'].lower():
-            a_room.is_swappable = True
-
-        if elem['Placed By'] == 'Roombaht':
-            a_room.is_available = True
+        # Cannot mark a room as non available based on being set to roombaht
+        #   in spreadsheet if it already actually assigned, but you can mark
+        #   a room as non available/swappable if it is not assigned yet
+        if elem['Placed By'] == '' and (not room.is_available):
+            if not room.guest:
+                room.is_available = False
+                room.is_swappable = False
+                room_changed = True
+            else:
+                logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)
 
         # the following per-guest stuff gets a bit more complex
         if elem['First Name (Resident)'] != '':
             primary_name = elem['First Name (Resident)']
             if elem['Last Name (Resident)'] == '':
-                logger.warning("No last name for room %s", a_room.number)
+                logger.warning("No last name for room %s", room.number)
             else:
-                primary_name = "%s %s" % (primary_name, elem['Last Name (Resident)'])
+                primary_name = f"{primary_name} {elem['Last Name (Resident)']}"
 
-            a_room.primary = primary_name
+            if room.primary != primary_name:
+                room.primary = primary_name
+                room_changed = True
 
             if elem['Placed By'] == '':
-                logger.warning("Reserved w/o placer for room %s", a_room.number)
+                logger.warning("Room %s Reserved w/o placer", room.number)
 
-            if elem['Guest Restriction Notes'] != '':
-                a_room.guest_notes = elem['Guest Restriction Notes']
+            if elem['Guest Restriction Notes'] != room.guest_notes:
+                room.guest_notes = elem['Guest Restriction Notes']
+                room_changed = True
 
-            if elem['Secondary Name'] != '':
-                a_room.secondary = elem['Secondary Name']
+            if elem['Secondary Name'] != room.secondary:
+                room.secondary = elem['Secondary Name']
+                room_changed = True
 
-            a_room.available = False
+            room.available = False
+        elif room.primary != '' and (not room.guest) and room.is_available:
+            # Cannot unassign an already unavailable room
+            room.primary = ''
+            room.guest_notes = ''
+            room.secondary = ''
+            room_changed = True
 
-        if elem['Ticket ID in SecretParty'] != '':
-            a_room.sp_ticket_id = elem['Ticket ID in SecretParty']
+        if elem['Ticket ID in SecretParty'] != room.sp_ticket_id:
+            room.sp_ticket_id = elem['Ticket ID in SecretParty']
+            room_changed = True
 
-        room_msg = "Created room %s" % a_room.number
-        if a_room.is_swappable:
-            room_msg += ", swappable"
+        if room_changed:
+            room_msg = f"{room_action} room {room.number}"
+            if room.is_swappable:
+                room_msg += ", swappable"
 
-        if not a_room.is_available:
-            room_msg += ", placed"
+            if not room.is_available:
+                room_msg += ", placed"
 
-        rooms.append(a_room)
-        a_room.save()
-        logger.debug(room_msg)
+            rooms.append(room)
+            room.save()
+
+            logger.debug(room_msg)
+        else:
+            logger.debug("No changes to room %s", room.number)
 
     swappable_rooms = [x for x in rooms if x.is_swappable]
-    logger.info("created %s rooms of which %s are swappable",
-                 len(rooms),
-                 len(swappable_rooms))
+    logger.info("updated %s rooms of which %s are swappable",
+                len(rooms),
+                len(swappable_rooms))
 
 
 def create_staff(init_file):
     _staff_fields, staff = ingest_csv(init_file)
 
     for staff_new in staff:
+        existing_staff = None
+        try:
+            existing_staff = Staff.objects.get(email = staff_new['email'])
+        except Staff.DoesNotExist:
+            pass
+
+        if existing_staff:
+            logger.debug("Staff %s already exists", existing_staff.email)
+            continue
+
         otp = phrasing()
         guest=Guest(name=staff_new['name'],
             email=staff_new['email'],
-            ticket=666,
             jwt=otp)
         guest.save()
 
@@ -155,50 +215,51 @@ def create_staff(init_file):
             is_admin=staff_new['is_admin'])
         staff.save()
 
-        logger.info(f"[+] Created staff: {staff_new['name']}, {staff_new['email']}, otp: {otp}, isadmin: {staff_new['is_admin']}")
+        logger.info("Created staff: %s, admin: %s", staff_new['name'], staff_new['is_admin'])
 
-        hostname = os.environ['ROOMBAHT_HOST']
+        hostname = my_url()
 
-        if os.environ.get('ROOMBAHT_SEND_MAIL', 'FALSE').lower() == 'true':
-            logger.debug(f'[+] Sending invite for staff member {staff_new["email"]}')
-
-            body_text = f"""
+        body_text = f"""
                 Congratulations, u have been deemed Staff worthy material.
 
                 Email {staff_new['email']}
                 Admin {otp}
 
-                login at http://{hostname}/login
-                then go to http://{hostname}/admin
+                login at {hostname}/login
+                then go to {hostname}/admin
                 Good Luck, Starfighter.
 
-            """
-            send_mail("RoomService RoomBaht",
-                      body_text,
-                      os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      [staff_new["email"]],
-                      auth_user=os.environ['ROOMBAHT_EMAIL_HOST_USER'],
-                      auth_password=os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD'],
-                      fail_silently=False)
+        """
+        send_email([staff_new['email']],
+                    'RoomService RoomBaht - Staff Activation',
+                    body_text)
 
 
 def main(args):
 
-    if len(Room.objects.all()) > 0 or \
-       len(Staff.objects.all()) > 0 or \
-       len(Guest.objects.all()) > 0:
+    if not args['preserve']:
+        if len(Room.objects.all()) > 0 or \
+           len(Staff.objects.all()) > 0 or \
+           len(Guest.objects.all()) > 0:
+            if not args['force']:
+                print('Overwrite data? [y/n]')
+                if getch().lower() != 'y':
+                    raise Exception('user said nope')
+            else:
+                logger.warning('Overwriting data at user request!')
+
+        Room.objects.all().delete()
+        Staff.objects.all().delete()
+        Guest.objects.all().delete()
+    else:
         if not args['force']:
-            print('Overwrite data? [y/n]')
+            print('Update data in place (experimental!) [y/n]')
             if getch().lower() != 'y':
                 raise Exception('user said nope')
         else:
-            logger.warning('Overwriting data at user request!')
+            logger.warning('Updating data in place at user request!')
 
-    Room.objects.all().delete()
-    Staff.objects.all().delete()
-    Guest.objects.all().delete()
-
-    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'])
+    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'], force_roombaht=args['blank_is_available'])
     create_staff(args['staff_file'])
 
 if __name__=="__main__":
@@ -218,6 +279,15 @@ if __name__=="__main__":
                         action='store_true',
                         default=False,
                         help='Not Ballys')
-
+    parser.add_argument('--preserve',
+                        dest='preserve',
+                        action='store_true',
+                        default=False,
+                        help='Preserve data, updating rooms in place')
+    parser.add_argument('--blank-placement-is-available',
+                        dest='blank_is_available',
+                        action='store_true',
+                        default=False,
+                        help='When set it treats blank "Placed By" fields as available rooms')
     args = vars(parser.parse_args())
     main(args)
