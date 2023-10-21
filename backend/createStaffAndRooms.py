@@ -105,6 +105,8 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
 
             if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
                 room.is_special = True
+                room.is_available = False
+                room.is_swappable = False
 
             room_changed = True
 
@@ -153,7 +155,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 primary_name = f"{primary_name} {elem['Last Name (Resident)']}"
 
             if room.primary != primary_name:
-                room.primary = primary_name
+                room.primary = primary_name.capitalize()
                 room_changed = True
 
             if elem['Placed By'] == '':
@@ -164,7 +166,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room_changed = True
 
             if elem['Secondary Name'] != room.secondary:
-                room.secondary = elem['Secondary Name']
+                room.secondary = elem['Secondary Name'].capitalize()
                 room_changed = True
 
             room.available = False
@@ -175,7 +177,12 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room.secondary = ''
             room_changed = True
 
-        if elem['Ticket ID in SecretParty'] != room.sp_ticket_id:
+        if elem['Paying guest?'] == 'Comp' and not room.is_comp:
+            room.is_comp = True
+            room_changed = True
+
+        if elem['Ticket ID in SecretParty'] != room.sp_ticket_id \
+           and elem['Ticket ID in SecretParty'] != 'n/a':
             room.sp_ticket_id = elem['Ticket ID in SecretParty']
             room_changed = True
 
@@ -217,6 +224,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
         else:
             logger.debug("No changes to room %s", room.number)
 
+    total_rooms = 0
+    available_rooms = 0
+    swappable_rooms = 0
+    art_rooms = 0
     for r_counts, counts in rooms.items():
         logger.info("room %s total:%s, available:%s, swappable:%s, art:%s",
                     r_counts,
@@ -225,6 +236,14 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                     counts['swappable'],
                     counts['art'])
 
+        total_rooms += counts['count']
+        available_rooms += counts['available']
+        swappable_rooms += counts['swappable']
+        art_rooms += counts['art']
+
+    logger.info("total:%s, available:%s, placed:%s, swappable:%s, art:%s",
+             total_rooms, available_rooms, total_rooms - available_rooms,
+             swappable_rooms, art_rooms)
 
 def create_staff(init_file):
     _staff_fields, staff = ingest_csv(init_file)

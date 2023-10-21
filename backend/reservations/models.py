@@ -32,6 +32,7 @@ class Room(models.Model):
     is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
     is_art = models.BooleanField("ArtRoom", default=False)
     is_special = models.BooleanField("SpecialRoom", default=False)
+    is_comp = models.BooleanField("CompRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
     check_in = models.DateField(blank=True, null=True)
