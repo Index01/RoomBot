@@ -17,12 +17,11 @@ export function ModalRequestSwap({row}) {
     if (contacts === null) {
         return;
     }
-    const guest = {
+    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_request/', {
         jwt: jwt["jwt"],
         number: row.number,
-	contact_info: contacts
-    }
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_request/', { guest })
+	    contact_info: contacts
+    })
       .then(res => {
         setPhrase(res.data);
       })

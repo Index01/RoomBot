@@ -63,7 +63,8 @@ def room_list(request):
                     .exclude(guest=None)
         guest_entries = Guest.objects.filter(email=email)
         try:
-            room_types = [Room.objects.filter(number=guest.room_number)[0].name_take3 for guest in guest_entries]
+            rt = [guest.room_number for guest in guest_entries if guest.room_number is not None]
+            room_types = [Room.objects.filter(number=room)[0].name_take3 for room in rt]
         except IndexError:
             logger.debug("No room types available for guest %s", email)
             room_types = ['None']
@@ -138,7 +139,7 @@ def swap_request(request):
             return unauthenticated()
         requester_email = auth_obj['email']
 
-        data = request.data["guest"]
+        data = request.data
         try:
             room_num=data["number"]
             msg=data["contact_info"]
