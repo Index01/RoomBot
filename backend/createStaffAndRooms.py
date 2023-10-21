@@ -65,7 +65,6 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
     # validate imported rooms list
-    
     # rooms_import_list = [RoomPlacementListIngest(**r) for r in rooms_rows]
     validation_errors = []
     rooms_import_list = []
@@ -76,7 +75,11 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
         except ValidationError as e:
             print(f"Validation error for row {r}: {e}")
             validation_errors.append(e)
-        
+    if validation_errors:
+        with open("validation_errors.txt", "w") as f:
+            for line in validation_errors:
+                f.write(f"{line}\n")
+    
     if(is_hardrock):
         hotel = "Hard Rock"
     else:
@@ -89,7 +92,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
         room_changed = False
         room_action = "Created"
         try:
-            room = Room.objects.get(number=elem['room'])
+            room = Room.objects.get(number=elem.room)
             room_action = "Updated"
         except Room.DoesNotExist:
             # some things are not mutable
@@ -98,10 +101,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             # * hotel
             # * room type
             # * initial roombaht based availability
-        room = Room(name_take3=elem.room_type,
-                        name_hotel=hotel,
-                      number=elem.room
-                        )
+            room = Room(name_take3=elem.room_type,
+                            name_hotel=hotel,
+                        number=elem.room
+                            )
 
             try:
             	features = elem['room_features'].lower()
@@ -116,8 +119,8 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             if 'smoking' in features:
                 room.is_smoking = True
 
-            if elem['placed_by'] == 'Roombaht' or \
-               (elem['placed_by'] == '' and force_roombaht):
+            if elem.placed_by == 'Roombaht' or \
+                (elem.placed_by == '' and force_roombaht):
                 room.is_available = True
                 room.is_swappable = True
                 room.placed_by_roombot = True
@@ -134,27 +137,25 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
 
         # check-in/check-out are only adjustable via room spreadsheet
         if elem.check_in_date != '':
-            check_in_date = real_date(elem['check_in_date'])
+            check_in_date = real_date(elem.check_in_date)
             if check_in_date != room.check_in:
                 room.check_in = check_in_date
                 room_changed = True
-        elif elem['check_in_date'] == '' and room.check_in is not None:
+        elif elem.check_in_date == '' and room.check_in is not None:
             room.check_in = None
             room_changed = True
 
-        if elem['check_out_date'] != '':
-            check_out_date = real_date(elem['check_out_date'])
+        if elem.check_out_date != '':
+            check_out_date = real_date(elem.check_out_date)
             if check_out_date != room.check_out:
                 room.check_out = check_out_date
                 room_changed = True
-        elif elem['check_out_date'] == '' and room.check_out is not None:
+        elif elem.check_out_date == '' and room.check_out is not None:
             room.check_out = None
             room_changed = True
-
-
         # room notes are only adjustable via room spreadsheet
-        if elem['room_notes'] != room.notes:
-            room.notes = elem['room_notes']
+        if elem.room_notes != room.notes:
+            room.notes = elem.room_notes
             room_changed = True
 
 
@@ -190,11 +191,11 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room_changed = True
 
             if elem.guest_restriction_notes != room.guest_notes:
-                a_room.guest_notes = elem.guest_restriction_notes
+                room.guest_notes = elem.guest_restriction_notes
                 room_changed = True
 
             if elem.secondary_name != room.secondary:
-                a_room.secondary = elem['secondary_name'].title()
+                room.secondary = elem.secondary_name
                 room_changed = True
 
             room.available = False

@@ -39,9 +39,9 @@ class RoomPlacementListIngest(BaseModel):
     """
     placement_verified: Optional[str] = Field(alias='Placement Verified')
     floor: int = Field(alias='Floor')
-    room: str = Field(alias='Room')
+    room: int = Field(alias='Room')
     room_type: str = Field(alias='Room Type')
-    room_features: Optional[str] = Field(alias='Room Features (Accesbility Lakeview Smoking)')
+    room_features: Optional[str] = Field(alias='Room Features (Accessibility, Lakeview, Smoking)')
     connected_to_room: Optional[str] = Field(alias='Connected To Room')
     first_name_resident: Optional[str] = Field(alias='First Name (Resident)')
     last_name_resident: Optional[str] = Field(alias='Last Name (Resident)')
