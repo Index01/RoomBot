@@ -87,6 +87,7 @@ def find_room(room_product):
 
 def reconcile_orphan_rooms(guest_rows):
     # rooms may be orphaned due to placement changes, data corruption, machine elves
+    orphan_tickets = []
     def get_guest_obj(field, value):
         for guest in guest_rows:
             if field == 'name' and value == f"{guest['first_name']} {guest['last_name']}":
@@ -149,6 +150,12 @@ def reconcile_orphan_rooms(guest_rows):
             else:
                 logger.warning("Unable to find guest %s for orphan room %s",
                                room.primary, room.number)
+                continue
+
+        if room.sp_ticket_id:
+            orphan_tickets.append(room.sp_ticket_id)
+
+    return orphan_tickets
 
 def guest_update(guest_dict, otp, room, og_guest=None):
     ticket_code = guest_dict['ticket_code']
@@ -224,16 +231,16 @@ def transfer_chain(ticket, guest_rows, depth=1):
                                          guest_rows,
                                          depth + 1)
                 if len(a_chain) == len(chain):
-                    logger.debug("Unable to find original ticket for %s (depth %s)",
+                    logger.debug("Unable to find recursive ticket for %s (depth %s)",
                                  ticket, depth)
                     return []
 
-                logger.debug("Found original ticket %s for transfer %s",
-                             chain[len(chain) - 1]['ticket'], ticket)
+            logger.debug("Found ticket %s for transfer %s (depth %s)",
+                         chain[len(chain) - 1]['ticket_code'], ticket, depth)
 
     return chain
 
-def create_guest_entries(guest_rows):
+def create_guest_entries(guest_rows, orphan_tickets=[]):
     retries = []
     transferred_tickets = []
     for guest_obj in guest_rows:
@@ -242,7 +249,11 @@ def create_guest_entries(guest_rows):
         ticket_code = guest_obj['ticket_code']
 
         if ticket_code in transferred_tickets:
-            logger.info("Skipping transferred ticket %s", ticket_code)
+            logger.debug("Skipping transferred ticket %s", ticket_code)
+            continue
+
+        if ticket_code in orphan_tickets:
+            logger.debug("Skipping ticket %s from orphaned room", ticket_code)
             continue
 
         if trans_code == '' and guest_entries.count() == 0:
@@ -352,9 +363,9 @@ def create_guests(request):
 
         _guest_fields, guest_rows = ingest_csv(guests_csv)
         # start by seeing if we can address orphaned placed rooms
-        reconcile_orphan_rooms(guest_rows)
+        orphan_tickets = reconcile_orphan_rooms(guest_rows)
         # handle basic ingestion of guests
-        retry_rows = create_guest_entries(guest_rows)
+        retry_rows = create_guest_entries(guest_rows, orphan_tickets)
         if len(retry_rows) > 0:
             logger.debug("Retrying %s guest rows", len(retry_rows))
             # retry some guests bc secret party exports are non deterministic
