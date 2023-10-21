@@ -135,7 +135,7 @@ function ReportCard() {
   }
   useEffect(() => {
     if (isLoading) {
-       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/run_reports/', { data })
+       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/run_reports/', data )
          .then((respText) => {
            console.log(JSON.parse(respText.data).admins);
            setLoading(false);

@@ -63,8 +63,12 @@ def find_room(room_product):
     if not room_type:
         raise Exception("Unable to actually find room type for %s" % room_product)
 
+    # We only auto-assign rooms if these criteria are met
+    #  * must be available
+    #  * must not be art - we should rarely see these as art rooms are almost always placed
     available_room = Room.objects \
                          .filter(is_available=True,
+                                 is_art=False,
                                  name_take3=room_type
                                  ) \
                          .order_by('?') \
@@ -83,9 +87,12 @@ def find_room(room_product):
 
 def reconcile_orphan_rooms(guest_rows):
     # rooms may be orphaned due to placement changes, data corruption, machine elves
-    def get_guest_obj(name):
+    def get_guest_obj(field, value):
         for guest in guest_rows:
-            if name == f"{guest['first_name']} {guest['last_name']}":
+            if field == 'name' and value == f"{guest['first_name']} {guest['last_name']}":
+                return guest
+
+            if field == 'ticket' and value == guest['ticket_code']:
                 return guest
 
         return None
@@ -112,31 +119,30 @@ def reconcile_orphan_rooms(guest_rows):
             except Guest.DoesNotExist:
                 pass
 
-        if not guest:
-            # then check for a guest by name
-            try:
-                guest = Guest.objects.get(name = room.primary)
-                logger.info("Found guest %s by name in DB for orphan room %s", guest.email, room.number)
-            except Guest.DoesNotExist:
-                pass
-
         if guest:
             # we found one, how lovely. associate room with it.
             room.guest = guest
             if room.primary != guest.name:
                 logger.warning("names do not match for orphan room %s (%s, %s)",
                                room.number, room.primary, guest.name)
-            elif room.primary == '':
+                continue
+
+            if room.primary == '':
                 room.primary = guest.name
 
             room.save()
         else:
             # then check the guest list
-            guest_obj = get_guest_obj(room.primary)
+            guest_obj = None
+            if room.sp_ticket_id is not None:
+                guest_obj = get_guest_obj('ticket', room.sp_ticket_id)
+                if guest_obj:
+                    logger.info("Found guest %s by ticket in CSV for orphan room %s",
+                                guest_obj['email'],
+                                room.number)
+
             if guest_obj:
                 # we have one, that's nice
-                logger.info("Found guest %s in CSV for orphan room %s",
-                             guest_obj['email'], room.number)
                 otp = phrasing()
                 guest_update(guest_obj, otp, room)
                 onboarding_email(guest_obj, otp)
@@ -162,16 +168,18 @@ def guest_update(guest_dict, otp, room, og_guest=None):
                              email,
                              room.number)
             else:
-                # todo ????
+                # transfers for placed users
                 logger.warning("Existing guest %s not moving from %s to %s",
                                email,
                                guest.room_number,
                                room.number)
-                return
-        else:
-            logger.debug("Existing guest %s assigned to %s", email, room.number)
-            guest.room_number = room.number
-            guest_changed = True
+
+            return
+
+        logger.debug("Existing guest %s assigned to %s", email, room.number)
+        guest.room_number = room.number
+        guest_changed = True
+
     except Guest.DoesNotExist:
         # but most of the time the guest does not exist yet
         guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}",
@@ -187,7 +195,7 @@ def guest_update(guest_dict, otp, room, og_guest=None):
         guest.save()
 
     # unassociated original owner (if present)
-    if room.guest:
+    if room.guest and og_guest:
         if room.guest != og_guest:
             logger.warning("Unexpected original owner %s for room %s", room.guest.email, room.number)
 
@@ -199,19 +207,43 @@ def guest_update(guest_dict, otp, room, og_guest=None):
     room.guest = guest
     room.is_available = False
     if room.primary != '' and room.primary != guest.name:
-        logger.warning("Room %s already has a name set: %s!", room.number, room.primary)
-    else:
-        room.primary=guest.name
+        logger.warning("Room %s already has a name set: %s, guest %s!",
+                       room.number, room.primary, guest.name)
+
+    room.primary=guest.name
 
     room.save()
 
+def transfer_chain(ticket, guest_rows, depth=1):
+    chain = []
+    for row in guest_rows:
+        if ticket == row['ticket_code']:
+            chain.append(row)
+            if row['transferred_from_code'] != '':
+                a_chain = transfer_chain(row['transferred_from_code'],
+                                         guest_rows,
+                                         depth + 1)
+                if len(a_chain) == len(chain):
+                    logger.debug("Unable to find original ticket for %s (depth %s)",
+                                 ticket, depth)
+                    return []
+
+                logger.debug("Found original ticket %s for transfer %s",
+                             chain[len(chain) - 1]['ticket'], ticket)
+
+    return chain
+
 def create_guest_entries(guest_rows):
     retries = []
+    transferred_tickets = []
     for guest_obj in guest_rows:
         guest_entries = Guest.objects.filter(email=guest_obj["email"])
         trans_code = guest_obj['transferred_from_code']
         ticket_code = guest_obj['ticket_code']
-        guest_name = f"{guest_obj['first_name']} {guest_obj['last_name']}"
+
+        if ticket_code in transferred_tickets:
+            logger.info("Skipping transferred ticket %s", ticket_code)
+            continue
 
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
@@ -246,21 +278,44 @@ def create_guest_entries(guest_rows):
         elif trans_code != "":
             # Transfered ticket...
             existing_guest = None
-            logger.debug("Ticket %s is a transfer", trans_code)
             try:
                 existing_guest = Guest.objects.get(ticket=trans_code)
             except Guest.DoesNotExist:
                 # sometimes this happens due to transfers showing up earlier in the sp export than
-                # the origial ticket. hence the retry.
-                logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
-                retries.append(guest_obj)
-                continue
+                # the origial ticket. so we go through the full set of rows, and then retry if needed
+                chain = transfer_chain(trans_code, guest_rows)
+                if len(chain) == 0:
+                    logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
+                    retries.append(guest_obj)
+                    continue
+                else:
+                    transferred_tickets += [x['ticket_code'] for x in chain]
+                    room = find_room(guest_obj['product'])
+                    email_chain = ','.join([x['email'] for x in chain])
+                    if guest_entries.count() == 0:
+                        logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
+                                     trans_code,
+                                     ticket_code,
+                                     email_chain,
+                                     guest_obj['email'])
+                        otp = phrasing()
+                        guest_update(guest_obj, otp, room)
+                    else:
+                        logger.debug("Processing transfer %s (%s) from %s to %s",
+                                     trans_code,
+                                     ticket_code,
+                                     email_chain,
+                                     guest_obj['email'])
+                        otp = guest_entries[0].jwt
+                        guest_update(guest_obj, otp, room)
+
+                    continue
 
             existing_room = Room.objects.get(number = existing_guest.room_number)
 
             if guest_entries.count() == 0:
                 # Transferring to new guest...
-                logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
+                logger.debug("Processing placed transfer %s (%s) from %s to (new guest) %s",
                              trans_code,
                              ticket_code,
                              existing_guest.email,
@@ -270,7 +325,7 @@ def create_guest_entries(guest_rows):
                 onboarding_email(guest_obj, otp)
             else:
                 # Transferring to existing guest...
-                logger.debug("Processing transfer %s (%s) from %s to %s",
+                logger.debug("Processing placed transfer %s (%s) from %s to %s",
                              trans_code,
                              ticket_code,
                              existing_guest.email,
@@ -341,7 +396,7 @@ def run_reports(request):
                    'Your report(s) are here. *theme song for Brazil plays*',
                    attachments)
 
-        return Response(str(json.dumps({"admins": [admin.email for admin in admin_emails]})),
+        return Response(str(json.dumps({"admins": admin_emails})),
                         status=status.HTTP_201_CREATED)
 
 

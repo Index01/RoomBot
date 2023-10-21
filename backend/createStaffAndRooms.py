@@ -14,6 +14,7 @@ from django.forms.models import model_to_dict
 from django.utils.dateparse import parse_date
 from reservations.helpers import phrasing, ingest_csv, my_url, send_email
 import reservations.config as roombaht_config
+from reservations.constants import ROOM_LIST
 from datetime import datetime
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
@@ -49,7 +50,7 @@ def real_date(a_date):
     return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
 
 def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
-    rooms=[]
+    rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
 
     if(is_hardrock):
@@ -99,6 +100,12 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room.is_available = True
                 room.is_swappable = True
 
+            if elem['Art Room'] == 'Yes':
+                room.is_art = True
+
+            if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
+                room.is_special = True
+
             room_changed = True
 
         # check-in/check-out are only adjustable via room spreadsheet
@@ -137,6 +144,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)
 
         # the following per-guest stuff gets a bit more complex
+        primary_name = None
         if elem['First Name (Resident)'] != '':
             primary_name = elem['First Name (Resident)']
             if elem['Last Name (Resident)'] == '':
@@ -172,24 +180,50 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room_changed = True
 
         if room_changed:
-            room_msg = f"{room_action} room {room.number}"
+            room_msg = f"{room_action} {room.name_take3} room {room.number}"
             if room.is_swappable:
                 room_msg += ", swappable"
 
             if not room.is_available:
-                room_msg += ", placed"
+                room_msg += f", placed ({primary_name})"
 
-            rooms.append(room)
             room.save()
-
             logger.debug(room_msg)
+
+            # build up some ingestion metrics
+            room_count_obj = None
+            if room.name_take3 not in rooms:
+                room_count_obj = {
+                    'count': 1,
+                    'available': 0,
+                    'swappable': 0,
+                    'art': 0
+                }
+            else:
+                room_count_obj = rooms[room.name_take3]
+                room_count_obj['count'] += 1
+
+            if room.is_available:
+                room_count_obj['available'] += 1
+
+            if room.is_swappable:
+                room_count_obj['swappable'] += 1
+
+            if room.is_art:
+                room_count_obj['art'] += 1
+
+            rooms[room.name_take3] = room_count_obj
+
         else:
             logger.debug("No changes to room %s", room.number)
 
-    swappable_rooms = [x for x in rooms if x.is_swappable]
-    logger.info("updated %s rooms of which %s are swappable",
-                len(rooms),
-                len(swappable_rooms))
+    for r_counts, counts in rooms.items():
+        logger.info("room %s total:%s, available:%s, swappable:%s, art:%s",
+                    r_counts,
+                    counts['count'],
+                    counts['available'],
+                    counts['swappable'],
+                    counts['art'])
 
 
 def create_staff(init_file):

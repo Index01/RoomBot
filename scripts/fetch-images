@@ -6,6 +6,9 @@ set -e
 SCRIPTDIR=$( cd "${0%/*}" && pwd)
 ROOTDIR="${SCRIPTDIR%/*}"
 
+PUBLIC_DIR="Lakeview icon removed"
+PRIVATE_DIR="Smoking Version"
+
 LAYOUTS_DIR="${ROOTDIR}/frontend/public/layouts"
 TMPDIR="$(mktemp -d)"
 
@@ -44,6 +47,7 @@ if [ ! -d "$LAYOUTS_DIR" ] ; then
     mkdir -p "$LAYOUTS_DIR"
 fi
 
+# handle public images
 for image in "${TMPDIR}/"*.png ; do
     SRCFILE="$(basename "$image")"
     DESTFILE="$(sed -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
