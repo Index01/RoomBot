@@ -45,18 +45,27 @@ def search_ticket(ticket, guest_entries):
 
 
 def real_date(a_date):
-    day, date = a_date.split('-')
+    date_bits = a_date.split('-')
+    date = None
+    if len(date_bits) == 1:
+        date = date_bits[0]
+    elif len(date_bits) == 2:
+        date = date_bits[1]
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
 
-def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
+def create_rooms_main(args):
+    rooms_file = args['rooms_file']
+    hotel = None
+    if args['hotel_name'] == 'ballys':
+        hotel = "Ballys"
+    elif args['hotel_name'] == 'hardrock':
+        hotel = 'Hard Rock'
+    else:
+        raise Exception(f"Unknown hotel name {args['hotel_name']}specified")
+
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
-
-    if(is_hardrock):
-        hotel = "Hard Rock"
-    else:
-        hotel = "Ballys"
 
     logger.info("read in %s rooms for %s", len(rooms_rows), hotel)
 
@@ -96,7 +105,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room.is_smoking = True
 
             if elem['Placed By'] == 'Roombaht' or \
-               (elem['Placed By'] == '' and force_roombaht):
+               (elem['Placed By'] == '' and args['blank_is_available']):
                 room.is_available = True
                 room.is_swappable = True
                 room.placed_by_roombot = True
@@ -120,6 +129,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
         elif elem['Check-in Date'] == '' and room.check_in is not None:
             room.check_in = None
             room_changed = True
+        elif elem['Check-in Date'] == '' and room.check_in is None:
+            check_in_date = real_date(args['default_check_in'])
+            room.check_in = check_in_date
+            room_changed = True
 
         if elem['Check-out Date'] != '':
             check_out_date = real_date(elem['Check-out Date'])
@@ -128,6 +141,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room_changed = True
         elif elem['Check-out Date'] == '' and room.check_out is not None:
             room.check_out = None
+            room_changed = True
+        elif elem['Check-out Date'] == '' and room.check_out is None:
+            check_out_date = real_date(args['default_check_out'])
+            room.check_out = check_out_date
             room_changed = True
 
         # room notes are only adjustable via room spreadsheet
@@ -320,7 +337,7 @@ def main(args):
         else:
             logger.warning('Updating data in place at user request!')
 
-    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'], force_roombaht=args['blank_is_available'])
+    create_rooms_main(args)
     create_staff(args['staff_file'])
 
 if __name__=="__main__":
@@ -335,11 +352,9 @@ if __name__=="__main__":
                         help='Force overwriting',
                         action='store_true',
                         default=False)
-    parser.add_argument('--hard-rock',
-                        dest='hardrock',
-                        action='store_true',
-                        default=False,
-                        help='Not Ballys')
+    parser.add_argument('--hotel-name',
+                        default="ballys",
+                        help='Specify hotel name (ballys, hardrock)')
     parser.add_argument('--preserve',
                         dest='preserve',
                         action='store_true',
@@ -350,5 +365,9 @@ if __name__=="__main__":
                         action='store_true',
                         default=False,
                         help='When set it treats blank "Placed By" fields as available rooms')
+    parser.add_argument('--default-check-in',
+                        help='Default check in date MM/DD')
+    parser.add_argument('--default-check-out',
+                        help='Default check out date MM/DD')
     args = vars(parser.parse_args())
     main(args)

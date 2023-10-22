@@ -92,7 +92,7 @@ def hotel_export(hotel):
 
         row = {
             'room_number': room.number,
-            'room_type': room.name_take3,
+            'room_type': room.hotel_sku(),
             'primary_name': room.primary
         }
         if room.check_in and room.check_out:
