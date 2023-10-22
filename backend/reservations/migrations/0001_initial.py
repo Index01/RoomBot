@@ -50,6 +50,7 @@ class Migration(migrations.Migration):
                 ('is_art', models.BooleanField(default=False, verbose_name='ArtRoom')),
                 ('is_special', models.BooleanField(default=False, verbose_name='SpecialRoom')),
                 ('is_comp', models.BooleanField(default=False, verbose_name='CompRoom')),
+                ('is_placed', models.BooleanField(default=False, verbose_name='PlacedRoom')),
                 ('swap_code', models.CharField(blank=True, max_length=200, null=True, verbose_name='SwapCode')),
                 ('swap_time', models.DateTimeField(blank=True, null=True)),
                 ('check_in', models.DateField(blank=True, null=True)),

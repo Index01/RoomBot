@@ -17,7 +17,8 @@ ROOM_LIST = {
 
     'Queen Sierra Suite': [
         "Bally's - Sierra 2 Queens Suite",
-        "Bally's - Sierra 2 Queens Suite (Post Sale)"
+        "Bally's - Sierra 2 Queens Suite (Post Sale)",
+        "Bally's - Suite Upgrade from King to Queen (Post)"
     ],
 
     "King": [

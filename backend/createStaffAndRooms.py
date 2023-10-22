@@ -161,6 +161,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             if elem['Placed By'] == '':
                 logger.warning("Room %s Reserved w/o placer", room.number)
 
+            if elem['Placed By'] != 'Roombaht' and elem['Placed By'] != '' and not room.is_placed:
+                room.is_placed = True
+                room_changed = True
+
             if elem['Guest Restriction Notes'] != room.guest_notes:
                 room.guest_notes = elem['Guest Restriction Notes']
                 room_changed = True

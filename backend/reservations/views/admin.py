@@ -57,17 +57,19 @@ class RoomCounts:
                 logger.info("Reunited %s %s orphans", counts['orphan'], room_type)
 
             if counts['shortage'] > 0:
-                logger.warning("%s room shortage! available:%s, allocated:%s, transfer: %s, shortage:%s",
+                logger.warning("%s room short inventory by %s! available:%s, allocated:%s, transfer: %s, orphan: %s",
                                room_type,
+                               counts['shortage'],
                                counts['available'],
                                counts['allocated'],
                                counts['transfer'],
-                               counts['shortage'])
+                               counts['orphan'])
             else:
-                logger.info("%s room was allocated %s, transfer: %s, remaining: %s (of %s available) times",
+                logger.info("%s room allocated: %s, transfer: %s, remaining: %s, orphan: %s (of %s available)",
                             room_type, counts['allocated'],
                             counts['transfer'],
                             Room.objects.filter(name_take3=room_type, is_available=True).count(),
+                            counts['orphan'],
                             counts['available'])
 
 def short_product_code(product):
@@ -180,7 +182,8 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
         try:
             if room.sp_ticket_id:
                 guest = Guest.objects.get(ticket = room.sp_ticket_id)
-                logger.info("Found guest %s by sp_ticket_id in DB for orphan room %s", guest.email, room.number)
+                logger.info("Found guest %s by sp_ticket_id in DB for orphan %s room %s",
+                            guest.email, room.name_take3, room.number)
         except Guest.DoesNotExist:
             pass
 
@@ -188,7 +191,8 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
             # then check for a guest entry by room number
             try:
                 guest = Guest.objects.get(room_number = room.number)
-                logger.info("Found guest %s by room_number in DB for orphan room %s", guest.email, room.number)
+                logger.info("Found guest %s by room_number in DB for orphan %s room %s",
+                            guest.email, room.name_take3, room.number)
             except Guest.DoesNotExist:
                 pass
 
@@ -212,15 +216,21 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
             if room.sp_ticket_id is not None:
                 guest_obj = get_guest_obj('ticket', room.sp_ticket_id)
                 if guest_obj:
-                    logger.info("Found guest %s by ticket %s in CSV for orphan room %s",
+                    logger.info("Found guest %s by ticket %s in CSV for orphan %s room %s",
                                 guest_obj['email'],
                                 room.sp_ticket_id,
+                                room.name_take3,
                                 room.number)
                     # if this is a transfer, need to account for those as well
                     if guest_obj['transferred_from_code'] != '':
                         chain = transfer_chain(guest_obj['transferred_from_code'], guest_rows)
                         if len(chain) > 0:
                             for chain_guest in chain:
+                                # add stubs to represent the transfers
+                                stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".capitalize(),
+                                             email=chain_guest['email'],
+                                             ticket=chain_guest['ticket_code'])
+                                stub.save()
                                 orphan_tickets.append(chain_guest['ticket_code'])
 
 
@@ -231,7 +241,8 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                 onboarding_email(guest_obj, otp)
             else:
                 if room.is_comp:
-                    logger.debug("Ignoring comp'd room %s, guest %s", room.number, room.primary)
+                    logger.debug("Ignoring comp'd %s room %s, guest %s",
+                                 room.name_take3, room.number, room.primary)
                 else:
                     logger.warning("Unable to find guest %s for (non-comp) orphan room %s",
                                    room.primary, room.number)
@@ -287,7 +298,7 @@ def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
 
     except Guest.DoesNotExist:
         # but most of the time the guest does not exist yet
-        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}",
+        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}".capitalize(),
                       ticket=guest_dict['ticket_code'],
                       jwt=otp,
                       email=email,
@@ -336,6 +347,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             logger.debug("Skipping ticket %s from orphan processing", ticket_code)
             continue
 
+        if ticket_code in roombaht_config.IGNORE_TRANSACTIONS:
+            logger.info("Skipping ticket %s as it is on our ignore list", ticket_code)
+            continue
+
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
             room = find_room(guest_obj['product'])
@@ -380,8 +395,21 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
                     continue
 
-                transferred_tickets += [x['ticket_code'] for x in chain]
+                for chain_guest in chain:
+                    # add stub guests
+                    stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".capitalize(),
+                                 email=chain_guest['email'],
+                                 ticket=chain_guest['ticket_code'])
+                    stub.save()
+
+                    transferred_tickets.append(chain_guest['ticket_code'])
+
                 room = find_room(guest_obj['product'])
+
+                if not room:
+                    logger.warning("No empty rooms available for %s", guest_obj['email'])
+                    room_counts.shortage(short_product_code(guest_obj['product']))
+                    continue
 
                 email_chain = ','.join([x['email'] for x in chain])
                 if guest_entries.count() == 0:
@@ -401,6 +429,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     otp = guest_entries[0].jwt
                     guest_update(guest_obj, otp, room, room_counts)
 
+                room_counts.allocated(room.name_take3)
                 room_counts.transfer(room.name_take3)
 
                 continue
@@ -430,6 +459,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 otp = guest_entries[0].jwt
                 guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
 
+            room_counts.allocated(room.name_take3)
             room_counts.transfer(existing_room.name_take3)
 
 
