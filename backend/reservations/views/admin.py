@@ -52,6 +52,7 @@ class RoomCounts:
         self.counts[product]['transfer'] += 1
 
     def output(self):
+        lines = []
         for room_type, counts in self.counts.items():
             if counts['orphan'] > 0:
                 logger.info("Reunited %s %s orphans", counts['orphan'], room_type)
@@ -64,13 +65,13 @@ class RoomCounts:
                                counts['allocated'],
                                counts['transfer'],
                                counts['orphan'])
-            else:
-                logger.info("%s room allocated: %s, transfer: %s, remaining: %s, orphan: %s (of %s available)",
-                            room_type, counts['allocated'],
-                            counts['transfer'],
-                            Room.objects.filter(name_take3=room_type, is_available=True).count(),
-                            counts['orphan'],
-                            counts['available'])
+                remaining = Room.objects.filter(name_take3=room_type, is_available=True).count()
+
+            line = f"{room_type} room allocated: {counts['allocated']}, transfer: {counts['transfer']}, remaining: {remaining}, orphan: {counts['orphan']} (of {counts['available']} available)"
+            logger.info(line)
+            lines.append(line)
+
+        return lines
 
 def short_product_code(product):
     for a_room, a_product in ROOM_LIST.items():
@@ -227,7 +228,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                         if len(chain) > 0:
                             for chain_guest in chain:
                                 # add stubs to represent the transfers
-                                stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".capitalize(),
+                                stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".title(),
                                              email=chain_guest['email'],
                                              ticket=chain_guest['ticket_code'])
                                 stub.save()
@@ -298,7 +299,7 @@ def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
 
     except Guest.DoesNotExist:
         # but most of the time the guest does not exist yet
-        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}".capitalize(),
+        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}".title(),
                       ticket=guest_dict['ticket_code'],
                       jwt=otp,
                       email=email,
@@ -311,7 +312,7 @@ def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
     if guest_changed:
         guest.save()
 
-    if room.primary != '' and room.primary.capitalize() != guest.name.capitalize():
+    if room.primary != '' and room.primary != guest.name:
         logger.warning("Room %s already has a name set: %s, guest %s!",
                        room.number, room.primary, guest.name)
 
@@ -397,7 +398,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                 for chain_guest in chain:
                     # add stub guests
-                    stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".capitalize(),
+                    stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".title(),
                                  email=chain_guest['email'],
                                  ticket=chain_guest['ticket_code'])
                     stub.save()
@@ -483,10 +484,10 @@ def create_guests(request):
         # handle basic ingestion of guests
         create_guest_entries(guest_rows, room_counts, orphan_tickets)
 
-        room_counts.output()
+        lines = room_counts.output()
         logger.info("guest list uploaded by %s", auth_obj['email'])
-        return Response(str(json.dumps({"Creating guests using:": f'{guests_csv}'})),
-                                             status=status.HTTP_201_CREATED)
+        return Response({'csv_file': guests_csv, 'results': lines},
+                        status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

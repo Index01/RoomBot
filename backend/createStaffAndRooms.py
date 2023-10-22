@@ -155,7 +155,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 primary_name = f"{primary_name} {elem['Last Name (Resident)']}"
 
             if room.primary != primary_name:
-                room.primary = primary_name.capitalize()
+                room.primary = primary_name.title()
                 room_changed = True
 
             if elem['Placed By'] == '':
@@ -170,7 +170,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room_changed = True
 
             if elem['Secondary Name'] != room.secondary:
-                room.secondary = elem['Secondary Name'].capitalize()
+                room.secondary = elem['Secondary Name'].title()
                 room_changed = True
 
             room.available = False

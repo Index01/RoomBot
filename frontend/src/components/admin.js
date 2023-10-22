@@ -81,11 +81,11 @@ function GuestsCard() {
     if (isLoading) {
       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { jwt: jwt['jwt'] }).then((res) => {
         console.log(res.data);
-        setLoading(false);
-        window.location = "/admin"
+	setLoading(false);
+	setPhrase("{" + res.data.results.join("\n") + "}");
       })
       .catch((error) => {
-        console.log(error.response);
+          console.log(error);
         setLoading(false);
       });
     }
@@ -109,7 +109,7 @@ function GuestsCard() {
         </Form>
 
         <p></p>
-        <p>{phrase}</p>
+        <Card.Text>{phrase}</Card.Text>
 
         <Button
           variant="primary"
