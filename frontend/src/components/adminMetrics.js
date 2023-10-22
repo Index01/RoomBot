@@ -60,6 +60,16 @@ export default class BasicVis extends React.Component {
               <div className="card-subtitle mb-2 text-muted">Room Swappable: {this.state.metrics.rooms_swappable}</div>
               <div className="card-subtitle mb-2 text-muted">Room RoomBot Placed: {this.state.metrics.rooms_placed_by_roombot}</div>
           </Col>
+          <Col xs lg="4">
+              <div className="card-subtitle mb-2 text-muted">Queens: {this.state.metrics.Queen_unoccupied} unoccupied {this.state.metrics.Queen_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">King: {this.state.metrics.King_unoccupied} unoccupied {this.state.metrics.King_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">KingSierraSuite: {this.state.metrics.King_Sierra_Suite_unoccupied} unoccupied {this.state.metrics.King_Sierra_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">QueenSierraSuite: {this.state.metrics.Queen_Sierra_Suite_unoccupied} unoccupied {this.state.metrics.Queen_Sierra_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">ExecutiveSuite: {this.state.metrics.Executive_Suite_unoccupied} unoccupied {this.state.metrics.Executive_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">TahoeSuite: {this.state.metrics.Tahoe_Suite_unoccupied} unoccupied {this.state.metrics.Tahoe_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">WeddingOffice: {this.state.metrics.Wedding_Office_unoccupied} unoccupied {this.state.metrics.Wedding_Office_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">Chapel: {this.state.metrics.Chapel_unoccupied} unoccupied {this.state.metrics.Chapel_total} total</div>
+          </Col>
         </Row>
       </Container>
     )

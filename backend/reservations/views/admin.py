@@ -372,20 +372,23 @@ def request_metrics(request):
 
         typz = set([room.name_take3 for room in rooooms])
         room_type_totals = dict(zip(typz, [len(rooooms.filter(name_take3=typ)) for typ in typz]))
+        type_totals = {f'{k}_total'.replace(' ', '_'):v for k,v in room_type_totals.items()}
         room_type_unoccupied = dict(zip(typz, [len(rooooms.filter(guest=None, name_take3=typ)) for typ in typz]))
+        type_unocc = {f'{k}_unoccupied'.replace(' ', '_'):v for k,v in room_type_unoccupied.items()}
 
-        resp = str(json.dumps({"guest_count": guest_count,
-                               "guest_unique": guest_unique,
-                               "guest_unplaced": guest_unplaced,
-                               "rooms_count": rooms_count,
-                               "rooms_occupied": rooms_occupied,
-                               "rooms_swappable": rooms_swappable,
-                               "rooms_available": rooms_available,
-                               "rooms_placed_by_roombot": rooms_placed_by_roombot,
-                               "percent_placed": percent_placed,
-                               "type_totals": room_type_totals,
-                               "type_unoccupied": room_type_unoccupied,
-                               }))
+        metrics = {"guest_count": guest_count,
+                   "guest_unique": guest_unique,
+                   "guest_unplaced": guest_unplaced,
+                   "rooms_count": rooms_count,
+                   "rooms_occupied": rooms_occupied,
+                   "rooms_swappable": rooms_swappable,
+                   "rooms_available": rooms_available,
+                   "rooms_placed_by_roombot": rooms_placed_by_roombot,
+                   "percent_placed": percent_placed,
+                   }
+        metrics.update(type_totals)
+        metrics.update(type_unocc)
+        resp = str(json.dumps(metrics))
         return Response(resp, status=status.HTTP_201_CREATED)
 
 
