@@ -5,6 +5,7 @@ import Col from 'react-bootstrap/Col';
 import axios from 'axios';
 import React from "react";
 import { Navigate } from "react-router-dom";
+import ProgressBar from 'react-bootstrap/ProgressBar';
 
 export default class BasicVis extends React.Component {
   state = {
@@ -33,31 +34,33 @@ export default class BasicVis extends React.Component {
       });
   }
 
-
   render(){
     let {metrics, error} = this.state;
+
     return(
       <Container>
-	{error && (<Navigate to="/login" replace={true} />)}
-	{metrics &&
-        <Row>
+	    {error && (<Navigate to="/login" replace={true} />)}
+        <Row className="justify-content-md-center">
+          <Col width="100">
             <p></p>
-          <Col>
+            <ProgressBar animated now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
+            <p></p>
+          </Col>
+        </Row>
+        <Row className="justify-content-md-center">
+          <Col xs lg="4">
               <div className="card-subtitle mb-2 text-muted">Guest Count: {this.state.metrics.guest_count}</div>
-          </Col>
-          <Col>
               <div className="card-subtitle mb-2 text-muted">Guest Unique: {this.state.metrics.guest_unique}</div>
+              <div className="card-subtitle mb-2 text-muted">Guest Unplaced: {this.state.metrics.guest_unplaced}</div>
           </Col>
-          <Col>
+          <Col xs lg="4">
               <div className="card-subtitle mb-2 text-muted">Room Count: {this.state.metrics.rooms_count}</div>
-          </Col>
-          <Col>
               <div className="card-subtitle mb-2 text-muted">Room Occupied: {this.state.metrics.rooms_occupied}</div>
-          </Col>
-          <Col>
+              <div className="card-subtitle mb-2 text-muted">Room Available: {this.state.metrics.rooms_available}</div>
               <div className="card-subtitle mb-2 text-muted">Room Swappable: {this.state.metrics.rooms_swappable}</div>
+              <div className="card-subtitle mb-2 text-muted">Room RoomBot Placed: {this.state.metrics.rooms_placed_by_roombot}</div>
           </Col>
-        </Row>}
+        </Row>
       </Container>
     )
   }

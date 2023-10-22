@@ -39,6 +39,7 @@ class Room(models.Model):
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20)
     primary = models.CharField("PrimaryContact", max_length=50)
     secondary = models.CharField("SecondaryContact", max_length=50)
+    placed_by_roombot = models.BooleanField("PlacedByRoombot", default=False)
     guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):

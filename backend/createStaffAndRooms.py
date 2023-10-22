@@ -98,6 +98,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                (elem['Placed By'] == '' and force_roombaht):
                 room.is_available = True
                 room.is_swappable = True
+                room.placed_by_roombot = True
 
             room_changed = True
 
