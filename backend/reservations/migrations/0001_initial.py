@@ -60,6 +60,7 @@ class Migration(migrations.Migration):
                 ('sp_ticket_id', models.CharField(max_length=20, verbose_name='SecretPartyTicketID', blank=True, null=True)),
                 ('primary', models.CharField(max_length=50, verbose_name='PrimaryContact')),
                 ('secondary', models.CharField(max_length=50, verbose_name='SecondaryContact')),
+                ('placed_by_roombot', models.BooleanField(default=False, verbose_name='PlacedByRoombot')),
                 ('guest', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='reservations.guest')),
             ],
         ),
