@@ -55,11 +55,13 @@ def room_list(request):
 
         email = auth_obj['email']
         logger.debug("Valid guest %s viewing rooms", email)
-        # we want to bubble up any room that is swappable, available,
-        #  and does not have a guest associated. the display layer
-        #  will handle the per-room-type filtering
+        # we want to bubble up any room that is swappable, is not available,
+        #  is not special (chapel, etc), and does have a guest associated.
+        #  the display layer will handle the per-room-type filtering
         rooms = Room.objects \
-                    .filter(is_swappable=True, is_available=False) \
+                    .filter(is_swappable=True,
+                            is_available=False,
+                            is_special=False) \
                     .exclude(guest=None)
         guest_entries = Guest.objects.filter(email=email)
         try:

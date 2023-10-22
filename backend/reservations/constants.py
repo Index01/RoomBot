@@ -9,10 +9,16 @@ ROOM_LIST = {
         "Bally's - Standard 2 Queens (Direct Sale)",
         "Bally's - Standard 2 Queens (Post Sale)",
         "Bally's - Standard 2 Queens (RFP Sale)",
+        "Art Room Bally's - Standard 2 Queens",
+        "Art Room Bally's - Standard 2 Queens (RFP Sale)",
+        "Art Room Bally's - Standard 2 Queens (Direct Sale)",
+        "Art Room Bally's - Standard 2 Queens (Post Sale)"
     ],
 
     'Queen Sierra Suite': [
         "Bally's - Sierra 2 Queens Suite",
+        "Bally's - Sierra 2 Queens Suite (Post Sale)",
+        "Bally's - Suite Upgrade from King to Queen (Post)"
     ],
 
     "King": [
@@ -28,6 +34,7 @@ ROOM_LIST = {
         "Bally's - Standard King (Direct Sale)",
         "Bally's - Standard King (Post Sale)",
         "Bally's - Standard King (RFP Sale)",
+        "Art Room Bally's - Standard King"
     ],
 
     'King Sierra Suite': [

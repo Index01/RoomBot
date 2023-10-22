@@ -14,6 +14,7 @@ from django.forms.models import model_to_dict
 from django.utils.dateparse import parse_date
 from reservations.helpers import phrasing, ingest_csv, my_url, send_email
 import reservations.config as roombaht_config
+from reservations.constants import ROOM_LIST
 from datetime import datetime
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
@@ -49,7 +50,7 @@ def real_date(a_date):
     return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
 
 def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
-    rooms=[]
+    rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
 
     if(is_hardrock):
@@ -100,6 +101,14 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room.is_swappable = True
                 room.placed_by_roombot = True
 
+            if elem['Art Room'] == 'Yes':
+                room.is_art = True
+
+            if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
+                room.is_special = True
+                room.is_available = False
+                room.is_swappable = False
+
             room_changed = True
 
         # check-in/check-out are only adjustable via room spreadsheet
@@ -138,6 +147,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)
 
         # the following per-guest stuff gets a bit more complex
+        primary_name = None
         if elem['First Name (Resident)'] != '':
             primary_name = elem['First Name (Resident)']
             if elem['Last Name (Resident)'] == '':
@@ -146,18 +156,22 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 primary_name = f"{primary_name} {elem['Last Name (Resident)']}"
 
             if room.primary != primary_name:
-                room.primary = primary_name
+                room.primary = primary_name.title()
                 room_changed = True
 
             if elem['Placed By'] == '':
                 logger.warning("Room %s Reserved w/o placer", room.number)
+
+            if elem['Placed By'] != 'Roombaht' and elem['Placed By'] != '' and not room.is_placed:
+                room.is_placed = True
+                room_changed = True
 
             if elem['Guest Restriction Notes'] != room.guest_notes:
                 room.guest_notes = elem['Guest Restriction Notes']
                 room_changed = True
 
             if elem['Secondary Name'] != room.secondary:
-                room.secondary = elem['Secondary Name']
+                room.secondary = elem['Secondary Name'].title()
                 room_changed = True
 
             room.available = False
@@ -168,30 +182,73 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room.secondary = ''
             room_changed = True
 
-        if elem['Ticket ID in SecretParty'] != room.sp_ticket_id:
+        if elem['Paying guest?'] == 'Comp' and not room.is_comp:
+            room.is_comp = True
+            room_changed = True
+
+        if elem['Ticket ID in SecretParty'] != room.sp_ticket_id \
+           and elem['Ticket ID in SecretParty'] != 'n/a':
             room.sp_ticket_id = elem['Ticket ID in SecretParty']
             room_changed = True
 
         if room_changed:
-            room_msg = f"{room_action} room {room.number}"
+            room_msg = f"{room_action} {room.name_take3} room {room.number}"
             if room.is_swappable:
                 room_msg += ", swappable"
 
             if not room.is_available:
-                room_msg += ", placed"
+                room_msg += f", placed ({primary_name})"
 
-            rooms.append(room)
             room.save()
-
             logger.debug(room_msg)
+
+            # build up some ingestion metrics
+            room_count_obj = None
+            if room.name_take3 not in rooms:
+                room_count_obj = {
+                    'count': 1,
+                    'available': 0,
+                    'swappable': 0,
+                    'art': 0
+                }
+            else:
+                room_count_obj = rooms[room.name_take3]
+                room_count_obj['count'] += 1
+
+            if room.is_available:
+                room_count_obj['available'] += 1
+
+            if room.is_swappable:
+                room_count_obj['swappable'] += 1
+
+            if room.is_art:
+                room_count_obj['art'] += 1
+
+            rooms[room.name_take3] = room_count_obj
+
         else:
             logger.debug("No changes to room %s", room.number)
 
-    swappable_rooms = [x for x in rooms if x.is_swappable]
-    logger.info("updated %s rooms of which %s are swappable",
-                len(rooms),
-                len(swappable_rooms))
+    total_rooms = 0
+    available_rooms = 0
+    swappable_rooms = 0
+    art_rooms = 0
+    for r_counts, counts in rooms.items():
+        logger.info("room %s total:%s, available:%s, swappable:%s, art:%s",
+                    r_counts,
+                    counts['count'],
+                    counts['available'],
+                    counts['swappable'],
+                    counts['art'])
 
+        total_rooms += counts['count']
+        available_rooms += counts['available']
+        swappable_rooms += counts['swappable']
+        art_rooms += counts['art']
+
+    logger.info("total:%s, available:%s, placed:%s, swappable:%s, art:%s",
+             total_rooms, available_rooms, total_rooms - available_rooms,
+             swappable_rooms, art_rooms)
 
 def create_staff(init_file):
     _staff_fields, staff = ingest_csv(init_file)

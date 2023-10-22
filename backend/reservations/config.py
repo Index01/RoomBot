@@ -14,3 +14,5 @@ JWT_KEY = os.environ['ROOMBAHT_JWT_KEY']
 SEND_ONBOARDING = os.environ.get('ROOMBAHT_SEND_ONBOARDING', 'false').lower() == 'true'
 
 TEMP_DIR = os.environ.get('ROOMBAHT_TMP', '/tmp')
+
+IGNORE_TRANSACTIONS = os.environ.get('ROOMBAHT_IGNORE_TRANSACTIONS', '').split(',')

@@ -24,3 +24,5 @@ urllib3==1.26.12
 wcwidth==0.2.5
 uwsgi==2.0.22
 psycopg2==2.9.9
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.23.0
