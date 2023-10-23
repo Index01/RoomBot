@@ -14,8 +14,8 @@ class SecretPartyGuestIngest(BaseModel):
     product: str  # product code, eg name of addon for event, or hotel sku
     transferred_from_code: Optional[str] = None
     type: Optional[str] = None
-    
-    
+
+
 class RoomPlacementListIngest(BaseModel):
     """Expected fields in the room spreadsheet
     NOTE: not all of these columns may be used!
@@ -49,4 +49,3 @@ class RoomPlacementListIngest(BaseModel):
     class Config:
         populate_by_name = True  # allows data to be populated in the model by field names, not just aliases
         extra = 'ignore'  # the model will ignore any additional fields not specified in the model during initialization
-
