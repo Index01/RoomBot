@@ -23,6 +23,7 @@ from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_e
 from reservations.constants import ROOM_LIST
 import reservations.config as roombaht_config
 from reservations.auth import authenticate_admin, unauthenticated
+from reservations.ingest_models import SecretPartyGuestIngest
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
@@ -65,8 +66,8 @@ class RoomCounts:
                                counts['allocated'],
                                counts['transfer'],
                                counts['orphan'])
-                remaining = Room.objects.filter(name_take3=room_type, is_available=True).count()
 
+            remaining = Room.objects.filter(name_take3=room_type, is_available=True).count()
             line = f"{room_type} room allocated: {counts['allocated']}, transfer: {counts['transfer']}, remaining: {remaining}, orphan: {counts['orphan']} (of {counts['available']} available)"
             logger.info(line)
             lines.append(line)
@@ -534,7 +535,7 @@ def request_metrics(request):
 
         guest_unique = len(set([guest.email for guest in guessssts]))
         guest_count = Guest.objects.all().count()
-        guest_unplaced = len(guessssts.filter(room=None))
+        guest_unplaced = len(guessssts.filter(room=None, ticket__isnull=True))
  
         rooms_count = rooooms.count()
         rooms_occupied = rooooms.exclude(is_available=True).count()
@@ -550,7 +551,7 @@ def request_metrics(request):
         typz = set([room.name_take3 for room in rooooms])
         room_type_totals = dict(zip(typz, [len(rooooms.filter(name_take3=typ)) for typ in typz]))
         type_totals = {f'{k}_total'.replace(' ', '_'):v for k,v in room_type_totals.items()}
-        room_type_unoccupied = dict(zip(typz, [len(rooooms.filter(guest=None, name_take3=typ)) for typ in typz]))
+        room_type_unoccupied = dict(zip(typz, [len(rooooms.filter(is_available=True, name_take3=typ)) for typ in typz]))
         type_unocc = {f'{k}_unoccupied'.replace(' ', '_'):v for k,v in room_type_unoccupied.items()}
 
         metrics = {"guest_count": guest_count,

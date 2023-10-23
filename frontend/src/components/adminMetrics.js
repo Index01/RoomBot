@@ -49,11 +49,13 @@ export default class BasicVis extends React.Component {
         </Row>
         <Row className="justify-content-md-center">
           <Col xs lg="4">
+              <h5> Guests</h5>
               <div className="card-subtitle mb-2 text-muted">Guest Count: {this.state.metrics.guest_count}</div>
               <div className="card-subtitle mb-2 text-muted">Guest Unique: {this.state.metrics.guest_unique}</div>
               <div className="card-subtitle mb-2 text-muted">Guest Unplaced: {this.state.metrics.guest_unplaced}</div>
           </Col>
           <Col xs lg="4">
+              <h5> Rooms</h5>
               <div className="card-subtitle mb-2 text-muted">Room Count: {this.state.metrics.rooms_count}</div>
               <div className="card-subtitle mb-2 text-muted">Room Occupied: {this.state.metrics.rooms_occupied}</div>
               <div className="card-subtitle mb-2 text-muted">Room Available: {this.state.metrics.rooms_available}</div>
@@ -61,14 +63,15 @@ export default class BasicVis extends React.Component {
               <div className="card-subtitle mb-2 text-muted">Room RoomBot Placed: {this.state.metrics.rooms_placed_by_roombot}</div>
           </Col>
           <Col xs lg="4">
-              <div className="card-subtitle mb-2 text-muted">Queens: {this.state.metrics.Queen_unoccupied} unoccupied {this.state.metrics.Queen_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">King: {this.state.metrics.King_unoccupied} unoccupied {this.state.metrics.King_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">KingSierraSuite: {this.state.metrics.King_Sierra_Suite_unoccupied} unoccupied {this.state.metrics.King_Sierra_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">QueenSierraSuite: {this.state.metrics.Queen_Sierra_Suite_unoccupied} unoccupied {this.state.metrics.Queen_Sierra_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">ExecutiveSuite: {this.state.metrics.Executive_Suite_unoccupied} unoccupied {this.state.metrics.Executive_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">TahoeSuite: {this.state.metrics.Tahoe_Suite_unoccupied} unoccupied {this.state.metrics.Tahoe_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">WeddingOffice: {this.state.metrics.Wedding_Office_unoccupied} unoccupied {this.state.metrics.Wedding_Office_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">Chapel: {this.state.metrics.Chapel_unoccupied} unoccupied {this.state.metrics.Chapel_total} total</div>
+              <h5> Unoccupied</h5>
+              <div className="card-subtitle mb-2 text-muted">Queens: {this.state.metrics.Queen_unoccupied} of {this.state.metrics.Queen_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">King: {this.state.metrics.King_unoccupied} of {this.state.metrics.King_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">KingSierraSuite: {this.state.metrics.King_Sierra_Suite_unoccupied} of {this.state.metrics.King_Sierra_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">QueenSierraSuite: {this.state.metrics.Queen_Sierra_Suite_unoccupied} of {this.state.metrics.Queen_Sierra_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">ExecutiveSuite: {this.state.metrics.Executive_Suite_unoccupied} of {this.state.metrics.Executive_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">TahoeSuite: {this.state.metrics.Tahoe_Suite_unoccupied} of {this.state.metrics.Tahoe_Suite_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">WeddingOffice: {this.state.metrics.Wedding_Office_unoccupied} of {this.state.metrics.Wedding_Office_total} total</div>
+              <div className="card-subtitle mb-2 text-muted">Chapel: {this.state.metrics.Chapel_unoccupied} of {this.state.metrics.Chapel_total} total</div>
           </Col>
         </Row>
       </Container>
