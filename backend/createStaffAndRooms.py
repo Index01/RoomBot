@@ -49,41 +49,45 @@ def real_date(a_date: str, year=None):
     """Convert string date into python date
 
     Args:
-        a_date (str): date string, 
-            expected format: "Mon - 11/7"
+        a_date (str): date string,
+            expected format: "Mon - 11/7", "11/7"
         year (Optional[int]): year, in 4-digit format
             Allows specification of year, otherwise is in current year at runtime
     Returns:
         date: python `date` object
     """
     year = year or datetime.now().year
-    _, date = a_date.split('-')
+    date_bits = a_date.split("-")
+    date = None
+    if len(date_bits) == 1:
+        date = date_bits[0]
+    elif len(date_bits) == 2:
+        date = date_bits[1]
+    else:
+        raise Exception(f"Unexpected date format {a_date}")
+
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (year, month, day))
 
-def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
+def create_rooms_main(args):
+    rooms_file = args['rooms_file']
+    hotel = None
+    if args['hotel_name'] == 'ballys':
+        hotel = "Ballys"
+    elif args['hotel_name'] == 'hardrock':
+        hotel = 'Hard Rock'
+    else:
+        raise Exception(f"Unknown hotel name {args['hotel_name']}specified")
+
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
-    # validate imported rooms list
-    # rooms_import_list = [RoomPlacementListIngest(**r) for r in rooms_rows]
-    validation_errors = []
     rooms_import_list = []
     for r in rooms_rows:
         try:
             room_data = RoomPlacementListIngest(**r)
             rooms_import_list.append(room_data)
         except ValidationError as e:
-            logger.info(f"Validation error for row {r}: {e}")
-            validation_errors.append(e)
-    if validation_errors:
-        with open("validation_errors.txt", "w") as f:
-            for line in validation_errors:
-                f.write(f"{line}\n")
-    
-    if(is_hardrock):
-        hotel = "Hard Rock"
-    else:
-        hotel = "Ballys"
+            logger.warning("Validation error for row %s", e)
 
     logger.info("read in %s rooms for %s", len(rooms_rows), hotel)
 
@@ -101,7 +105,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             # * hotel
             # * room type
             # * initial roombaht based availability
-            room = Room(name_take3=elem.room_type, 
+            room = Room(name_take3=elem.room_type,
                         name_hotel=hotel,
                         number=elem.room)
 
@@ -119,7 +123,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room.is_smoking = True
 
             if elem.placed_by == 'Roombaht' or \
-                (elem.placed_by == '' and force_roombaht):
+               (elem.placed_by == '' and args['blank_is_available']):
                 room.is_available = True
                 room.is_swappable = True
                 room.placed_by_roombot = True
@@ -143,6 +147,10 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
         elif elem.check_in_date == '' and room.check_in is not None:
             room.check_in = None
             room_changed = True
+        elif elem.check_in_date == '' and room.check_in is None:
+            check_in_date = real_date(args['default_check_in'])
+            room.check_in = check_in_date
+            room_changed = True
 
         if elem.check_out_date != '':
             check_out_date = real_date(elem.check_out_date)
@@ -152,6 +160,11 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
         elif elem.check_out_date == '' and room.check_out is not None:
             room.check_out = None
             room_changed = True
+        elif elem.check_out_date == '' and room.check_out is None:
+            check_out_date = real_date(args['default_check_out'])
+            room.check_out = check_out_date
+            room_changed = True
+
         # room notes are only adjustable via room spreadsheet
         if elem.room_notes != room.notes:
             room.notes = elem.room_notes
@@ -176,7 +189,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             if elem.last_name_resident == '':
                 logger.warning("No last name for room %s", room.number)
             else:
-                primary_name = "%s %s" % (primary_name, elem.last_name_resident)
+                primary_name = f"{primary_name} {elem.last_name_resident}"
 
             if room.primary != primary_name:
                 room.primary = primary_name.title()
@@ -194,7 +207,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room_changed = True
 
             if elem.secondary_name != room.secondary:
-                room.secondary = elem.secondary_name
+                room.secondary = elem.secondary_name.title()
                 room_changed = True
 
             room.available = False
@@ -209,12 +222,12 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room.is_comp = True
             room_changed = True
 
-        if (elem.ticket_id_in_secret_party != room.sp_ticket_id 
+        if (elem.ticket_id_in_secret_party != room.sp_ticket_id
             and elem.ticket_id_in_secret_party != 'n/a'):
             room.sp_ticket_id = elem.ticket_id_in_secret_party
             room_changed = True
 
-		# loaded room, check if room_changed
+	# loaded room, check if room_changed
         if room_changed:
             room_msg = f"{room_action} {room.name_take3} room {room.number}"
             if room.is_swappable:
@@ -344,7 +357,7 @@ def main(args):
         else:
             logger.warning('Updating data in place at user request!')
 
-    create_rooms_main(args['rooms_file'], is_hardrock=args['hardrock'], force_roombaht=args['blank_is_available'])
+    create_rooms_main(args)
     create_staff(args['staff_file'])
 
 if __name__=="__main__":
@@ -359,11 +372,9 @@ if __name__=="__main__":
                         help='Force overwriting',
                         action='store_true',
                         default=False)
-    parser.add_argument('--hard-rock',
-                        dest='hardrock',
-                        action='store_true',
-                        default=False,
-                        help='Not Ballys')
+    parser.add_argument('--hotel-name',
+                        default="ballys",
+                        help='Specify hotel name (ballys, hardrock)')
     parser.add_argument('--preserve',
                         dest='preserve',
                         action='store_true',
@@ -374,5 +385,9 @@ if __name__=="__main__":
                         action='store_true',
                         default=False,
                         help='When set it treats blank "Placed By" fields as available rooms')
+    parser.add_argument('--default-check-in',
+                        help='Default check in date MM/DD')
+    parser.add_argument('--default-check-out',
+                        help='Default check out date MM/DD')
     args = vars(parser.parse_args())
     main(args)

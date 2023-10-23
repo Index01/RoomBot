@@ -54,3 +54,30 @@ class Room(models.Model):
 
     def __str__(self):
         return str(self.number)
+
+    def hotel_sku(self):
+        sku = None
+        if self.name_take3 == 'Queen':
+            sku = 'Standard 2 Queens'
+        elif self.name_take3 == 'Queen Sierra Suite':
+            sku = 'Sierra 2 Queens Suite'
+        elif self.name_take3 == 'King':
+            sku = 'Standard King'
+        elif self.name_take3 == 'Queen':
+            sku = 'Standard Queen'
+        elif self.name_take3 == 'King Sierra Suite':
+            sku = 'Sierra King Suite'
+        elif self.name_take3 == 'Tahoe Suite':
+            sku = 'Tahoe King Suite'
+        elif self.name_take3 == 'Executive Suite':
+            sku = 'Executive King Suite'
+        else:
+            sku = self.name_take3
+
+        if self.is_lakeview:
+            sku = f"Lakeview {sku}"
+
+        if self.is_smoking:
+            sku = f"{sku} (Smoking)"
+
+        return sku
