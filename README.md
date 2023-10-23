@@ -28,7 +28,7 @@ Configuration is handled through environment variables, which are stored encrypt
 * `ROOMBAHT_LOGLEVEL` Controls the Python log level. Should be set to one of `ERROR`, `WARNING`, `INFO`, `DEBUG`. Defaults to `INFO` on prod and `DEBUG` on dev.
 * `ROOMBAHT_HOST` is the hostname part of the url to be used when generating our url in emails and wherever else. Defaults to `localhost`.
 * `ROOMBAHT_PORT` is the port part of the url to be used when generating our url in emails and wherever else. Defaults to `80`.
-* `ROOMBAHT_SSCHEMA` is the schema part of the url. Defaults to `http`.
+* `ROOMBAHT_SCHEMA` is the schema part of the url. Defaults to `http`.
 * `ROOMBAHT_TMP` is where we yeet temporary files. Defaults to `/tmp`.
 * `ROOMBAHT_IGNORE_TRANSACTIONS` This is a CSV list of transactionts to not care about.
 * `ROOMBAHT_JWT_KEY` is basically the salt for o ur auth tokens. This must be set, there is no default.
