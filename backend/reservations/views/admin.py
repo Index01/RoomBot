@@ -239,7 +239,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
             if guest_obj:
                 # we have one, that's nice
                 otp = phrasing()
-                guest_update(guest_obj, otp, room, room_counts)
+                guest_update(guest_obj, otp, room)
                 onboarding_email(guest_obj, otp)
             else:
                 if room.is_comp:
@@ -265,7 +265,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
     return orphan_tickets
 
-def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
+def guest_update(guest_dict, otp, room, og_guest=None):
     ticket_code = guest_dict['ticket_code']
     email = guest_dict['email']
     guest = None
@@ -364,7 +364,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
             logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj["email"])
             otp = phrasing()
-            guest_update(guest_obj, otp, room, room_counts)
+            guest_update(guest_obj, otp, room)
             onboarding_email(guest_obj, otp)
             room_counts.allocated(room.name_take3)
         elif trans_code =='' and guest_entries.count() > 0:
@@ -379,7 +379,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     continue
 
                 logger.debug("assigning room %s to (unassigned ticket/room) %s", room.number, guest_entries[0].email)
-                guest_update(guest_obj, guest_entries[0].jwt, room, room_counts)
+                guest_update(guest_obj, guest_entries[0].jwt, room)
                 room_counts.allocated(room.name_take3)
             else:
                 logger.warning("Not sure how to handle non-transfer, existing user ticket %s", ticket_code)
@@ -421,7 +421,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj['email'])
                     otp = phrasing()
-                    guest_update(guest_obj, otp, room, room_counts)
+                    guest_update(guest_obj, otp, room)
                 else:
                     logger.debug("Processing transfer %s (%s) from %s to %s",
                                  trans_code,
@@ -429,7 +429,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj['email'])
                     otp = guest_entries[0].jwt
-                    guest_update(guest_obj, otp, room, room_counts)
+                    guest_update(guest_obj, otp, room)
 
                 room_counts.allocated(room.name_take3)
                 room_counts.transfer(room.name_take3)
@@ -446,7 +446,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                              existing_guest.email,
                              guest_obj['email'])
                 otp = phrasing()
-                guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
                 onboarding_email(guest_obj, otp)
             else:
                 # Transferring to existing guest...
@@ -459,7 +459,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 # are kept around as part of transfers (ticket/email uniq) and when someone
                 # has multiple rooms (email/room uniq)
                 otp = guest_entries[0].jwt
-                guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
 
             room_counts.allocated(room.name_take3)
             room_counts.transfer(existing_room.name_take3)
@@ -536,7 +536,7 @@ def request_metrics(request):
         guest_unique = len(set([guest.email for guest in guessssts]))
         guest_count = Guest.objects.all().count()
         guest_unplaced = len(guessssts.filter(room=None, ticket__isnull=True))
- 
+
         rooms_count = rooooms.count()
         rooms_occupied = rooooms.exclude(is_available=True).count()
         rooms_swappable = rooooms.exclude(is_swappable=False).count()

@@ -1,6 +1,8 @@
 from django.db import models
 
 class Guest(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField("Name", max_length=240)
     email = models.EmailField()
     ticket = models.CharField("Ticket", max_length=20)
@@ -12,6 +14,8 @@ class Guest(models.Model):
         return self.name
 
 class Staff(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField("Name", max_length=240)
     email = models.EmailField()
     is_admin = models.BooleanField("Admin", default=False)
@@ -21,6 +25,8 @@ class Staff(models.Model):
         return f'staff name: {self.name}'
 
 class Room(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     number = models.CharField("Number", max_length=20)
     name_take3 = models.CharField("Take3Name", max_length=50)
     name_hotel = models.CharField("HotelName", max_length=50)
