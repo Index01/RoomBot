@@ -19,6 +19,25 @@ Configuration is handled through environment variables, which are stored encrypt
 * `./scripts/show` display all the env vars in a format suitable for `eval`
 * `./scripts show VAR` display the contents of the desired env var, stripped of quotes
 
+## Settings
+
+* `ROOMBAHT_DEV` Should be set to `true` on dev and never on prod. Controls DB usage and enables some local dev functionality. Defaults to `false`.
+* `ROOMBAHT_DEV_MAIL` if this is set to an email address then any address for the `@noop.com` domain will be converted to be a prefix email. Example `foo@gmail.com` and `bar@noop.com` would convert to `foo+bar@gmail.com`. Helpful for testing room swaps. Defaults to disabled.
+* `ROOMBAHT_SEND_MAIL` Needs to be set to `true` for email to be sent. Defaults to `false`.
+* `ROOMBAHT_SEND_ONBOARDING` Needs to be set to `true` for the onboarding emails to be sent during Secret Party export ingestion. Defaults to `false`.
+* `ROOMBAHT_LOGLEVEL` Controls the Python log level. Should be set to one of `ERROR`, `WARNING`, `INFO`, `DEBUG`. Defaults to `INFO` on prod and `DEBUG` on dev.
+* `ROOMBAHT_HOST` is the hostname part of the url to be used when generating our url in emails and wherever else. Defaults to `localhost`.
+* `ROOMBAHT_PORT` is the port part of the url to be used when generating our url in emails and wherever else. Defaults to `80`.
+* `ROOMBAHT_SCHEMA` is the schema part of the url. Defaults to `http`.
+* `ROOMBAHT_TMP` is where we yeet temporary files. Defaults to `/tmp`.
+* `ROOMBAHT_IGNORE_TRANSACTIONS` This is a CSV list of transactionts to not care about.
+* `ROOMBAHT_JWT_KEY` is basically the salt for o ur auth tokens. This must be set, there is no default.
+* `ROOMBAHT_DJANGO_SECRET_KEY` Might not even be used since we don't use Django sessions?
+* `ROOMBAHT_DB_PASSWORD` This is the postgres password for production. This must be set, there is no default.
+* `ROOMBAHT_DB_HOST` This is the postgres hostname for production. This must be set, there is no default.
+* `ROOMBAHT_EMAIL_HOST_USER` This is the SMTP user and it must be set, there is no default.
+* `ROOMBAHT_EMAIL_HOST_PASSWORD` This is the SMTP password and it must be set, there is no default.
+
 # Local Dev
 
 ## Requirements
