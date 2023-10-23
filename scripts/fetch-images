@@ -48,15 +48,29 @@ if [ ! -d "$LAYOUTS_DIR" ] ; then
 fi
 
 # handle public images
-for image in "${TMPDIR}/"*.png ; do
+for image in "${TMPDIR}/${PUBLIC_DIR}/"*.png ; do
     SRCFILE="$(basename "$image")"
     DESTFILE="$(sed -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
     if grep -q '3th' <<< "$DESTFILE" ; then
 	DESTFILE="${DESTFILE/th/rd}"
     fi
     THUMBFILE="${DESTFILE%.*}_thumb.png"
-    cp "${TMPDIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
+    cp "${TMPDIR}/${PUBLIC_DIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
     echo "Fetched ${SRCFILE} as ${DESTFILE}"
-    convert "${TMPDIR}/${SRCFILE}" -format png -thumbnail 100x100 "${LAYOUTS_DIR}/${THUMBFILE}"
+    convert "${TMPDIR}/${PUBLIC_DIR}/${SRCFILE}" -format png -thumbnail 100x100 "${LAYOUTS_DIR}/${THUMBFILE}"
+    echo "Generated thumbnail ${THUMBFILE}"
+done
+
+# for private images. different filename.
+for image in "${TMPDIR}/${PRIVATE_DIR}/"*.png ; do
+    SRCFILE="$(basename "$image")"
+    DESTFILE="private_$(sed -e 's/ smoking//g' -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
+    if grep -q '3th' <<< "$DESTFILE" ; then
+	DESTFILE="${DESTFILE/th/rd}"
+    fi
+    THUMBFILE="${DESTFILE%.*}_thumb.png"
+    cp "${TMPDIR}/${PRIVATE_DIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
+    echo "Fetched ${PRIVATE_DIR}/${SRCFILE} as ${DESTFILE}"
+    convert "${TMPDIR}/${PRIVATE_DIR}/${SRCFILE}" -format png -thumbnail 100x100 "${LAYOUTS_DIR}/${THUMBFILE}"
     echo "Generated thumbnail ${THUMBFILE}"
 done
