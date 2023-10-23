@@ -11,31 +11,14 @@ class SecretPartyGuestIngest(BaseModel):
     last_name: str
     first_name: str
     email: str
-    product: str  # product code, eg name of addon for event
+    product: str  # product code, eg name of addon for event, or hotel sku
     transferred_from_code: Optional[str] = None
-    transferred_from_email: Optional[str] = None
-    invitation_code: Optional[str] = None
     type: Optional[str] = None
     
     
 class RoomPlacementListIngest(BaseModel):
     """Expected fields in the room spreadsheet
     NOTE: not all of these columns may be used!
-    used downstream:
-        room_type
-        room
-        check_in_date
-        check_out_date
-        room_features
-        room_notes
-        changeable
-        placed_by
-        first_name_resident
-        last_name_resident
-        guest_restriction_notes
-        secondary_name
-        ticket_id_in_secret_party
-        ticket_id_in_secret_party
     """
     placement_verified: Optional[str] = Field(alias='Placement Verified')
     floor: int = Field(alias='Floor')

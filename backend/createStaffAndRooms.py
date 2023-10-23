@@ -73,7 +73,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room_data = RoomPlacementListIngest(**r)
             rooms_import_list.append(room_data)
         except ValidationError as e:
-            print(f"Validation error for row {r}: {e}")
+            logger.info(f"Validation error for row {r}: {e}")
             validation_errors.append(e)
     if validation_errors:
         with open("validation_errors.txt", "w") as f:
@@ -101,13 +101,12 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             # * hotel
             # * room type
             # * initial roombaht based availability
-            room = Room(name_take3=elem.room_type,
-                            name_hotel=hotel,
-                        number=elem.room
-                            )
+            room = Room(name_take3=elem.room_type, 
+                        name_hotel=hotel,
+                        number=elem.room)
 
             try:
-            	features = elem['room_features'].lower()
+                features = elem.room_features.lower()
             except KeyError as e:
                 features = []
             if 'hearing accessible' in features:
@@ -125,7 +124,7 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
                 room.is_swappable = True
                 room.placed_by_roombot = True
 
-            if elem['Art Room'] == 'Yes':
+            if elem.art_room == 'Yes':
                 room.is_art = True
 
             if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
@@ -206,12 +205,12 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room.secondary = ''
             room_changed = True
 
-        if elem['Paying guest?'] == 'Comp' and not room.is_comp:
+        if elem.paying_guest == 'Comp' and not room.is_comp:
             room.is_comp = True
             room_changed = True
 
-        if elem.ticket_id_in_secret_party != room.sp_ticket_id:
-           and elem['Ticket ID in SecretParty'] != 'n/a':
+        if (elem.ticket_id_in_secret_party != room.sp_ticket_id 
+            and elem.ticket_id_in_secret_party != 'n/a'):
             room.sp_ticket_id = elem.ticket_id_in_secret_party
             room_changed = True
 
