@@ -12,12 +12,12 @@ from random import randint
 from names_generator import generate_name
 from lorem_text.lorem import words as lorem_words
 
-from reservations.ingest_models import SecretPartyGuestIngest, RoomPlacementListIngest
 
 # don't judge
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from reservations.helpers import phrasing, ingest_csv, egest_csv
+from reservations.ingest_models import SecretPartyGuestIngest, RoomPlacementListIngest
 
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
@@ -78,7 +78,7 @@ def massage_rooms(input_items, maps, weights):
     art_type = art_room_types()
 
     for item in input_items:
-        real_name = "%s %s" % (item['First Name (Resident)'], item['Last Name (Resident)'])
+        real_name = "%s %s" % (item.first_name_resident, item.last_name_resident)
 
         if real_name not in name_maps.keys():
             new_name = generate_name(style = 'capital')
@@ -91,53 +91,53 @@ def massage_rooms(input_items, maps, weights):
         new_last_name = new_name_bits[1]
 
         new_item = {
-            'Placement Verified': item['Placement Verified'],
-            'Floor': item['Floor'],
-            'Room': item['Room'],
-            'Room Type': item['Room Type'],
-            'Room Features (Accessibility, Lakeview, Smoking)': item['Room Features (Accessibility, Lakeview, Smoking)'],
-            'Connected To Room': item['Connected To Room'],
-            'Room Owned By (Secret Party)': item['Room Owned By (Secret Party)'],
-            'Check-in Date': item['Check-in Date'],
-            'Check-out Date': item['Check-out Date'],
-            'Change Reason': item['Change Reason'],
-            'Guest Restriction Notes': item['Guest Restriction Notes'],
-            'Placement Team Notes': item['Placement Team Notes'],
-            'Paying guest?': item['Paying guest?'],
-            'Department': item['Department'],
-            'Ticket ID in SecretParty': item['Ticket ID in SecretParty']
+            'Placement Verified': item.placement_verified,
+            'Floor': item.floor,
+            'Room': item.room,
+            'Room Type': item.room_type,
+            'Room Features (Accessibility, Lakeview, Smoking)': item.room_features,
+            'Connected To Room': item.connected_to_room,
+            'Room Owned By (Secret Party)': item.room_owned_by,
+            'Check-in Date': item.check_in_date,
+            'Check-out Date': item.check_out_date,
+            'Change Reason': item.change_reason,
+            'Guest Restriction Notes': item.guest_restriction_notes,
+            'Placement Team Notes': item.placement_team_notes,
+            'Paying guest?': item.paying_guest,
+            'Department': item.department,
+            'Ticket ID in SecretParty': item.ticket_id_in_secret_party
         }
 
         # straight anonymization of pii
         if weights is None:
-            if item['Placed By'] != '' and item['Placed By'] != 'Roombaht':
-                if item['Placed By'] not in name_maps:
+            if item.placed_by != '' and item.placed_by != 'Roombaht':
+                if item.placed_by not in name_maps:
                     new_placer = generate_name(style = 'capital')
-                    name_maps[item['Placed By']] = new_placer
+                    name_maps[item.placed_by] = new_placer
                     new_item['Placed By'] = new_placer
                 else:
-                    new_item['Placed By'] = name_maps[item['Placed By']]
+                    new_item['Placed By'] = name_maps[item.placed_by]
 
-            if item['First Name (Resident)'] != '':
+            if item.first_name_resident != '':
                 new_item['First Name (Resident)'] = new_first_name
-            if item['Last Name (Resident)'] != '':
+            if item.last_name_resident != '':
                 new_item['Last Name (Resident)'] = new_last_name
 
-            if item['Secondary Name'] != '':
-                if item['Secondary Name'] not in name_maps:
+            if item.secondary_name != '':
+                if item.secondary_name not in name_maps:
                     new_secondary = generate_name(style = 'capital')
-                    name_maps[item['Secondary Name']] = new_secondary
+                    name_maps[item.secondary_name] = new_secondary
                     new_item['Secondary Name'] = new_secondary
                 else:
-                    new_item['Secondary Name'] = name_maps[item['Secondary Name']]
+                    new_item['Secondary Name'] = name_maps[item.secondary_name]
 
-            if item['Art Room'].lower() == 'yes':
-                new_item['Art Room'] = item['Art Room']
+            if item.art_room.lower() == 'yes':
+                new_item['Art Room'] = item.art_room
                 new_item['Art Name / Placed Name'] = phrasing()
                 new_item['Art Room Type'] = art_type()
 
-            if item['Changeable'] != '':
-                if 'yes' in item['Changeable'].lower():
+            if item.changeable != '':
+                if 'yes' in item.changeable.lower():
                     new_item['Changeable'] = 'Yes'
                 else:
                     new_item['Changeable'] = 'No'
@@ -183,7 +183,7 @@ def massage_guests(input_items):
     email_maps = {}
 
     for item in input_items:
-        a_name = "%s %s" % (item['first_name'], item['last_name'])
+        a_name = "%s %s" % (item.first_name, item.last_name)
         new_name = generate_name(style = 'capital')
         new_name_bits = new_name.split(' ')
         new_first_name = new_name_bits[0]
@@ -194,22 +194,22 @@ def massage_guests(input_items):
             name_maps[a_name] = "%s %s" % (new_first_name, new_last_name)
 
         if new_email not in email_maps:
-            email_maps[item['email']] = new_email
+            email_maps[item.email] = new_email
 
     # actually anonymize
     for item in input_items:
-        a_name = "%s %s" % (item['first_name'], item['last_name'])
+        a_name = "%s %s" % (item.first_name, item.last_name)
         new_first_name, new_last_name = name_maps[a_name].split(' ')
         new_item = {
-            'ticket_code': item['ticket_code'],
+            'ticket_code': item.ticket_code,
             'last_name': new_last_name,
             'first_name': new_first_name,
-            'email': email_maps[item['email']],
-            'product': item['product']
+            'email': email_maps[item.email],
+            'product': item.product
         }
 
-        if item['transferred_from_code'] != '':
-            new_item['transferred_from_code'] = item['transferred_from_code']
+        if item.transferred_from_code != '':
+            new_item['transferred_from_code'] = item.transferred_from_code
 
         output_items.append(new_item)
 
@@ -251,7 +251,10 @@ def main(args):
     anon_rooms = massage_rooms(original_rooms_valid, maps, weights)
 
     egest_csv(anon_guests, guest_fields, dest_guest_list)
+    logger.info(f"Wrote anonymized guest list to: {dest_guest_list}")
     egest_csv(anon_rooms, room_fields, dest_room_list)
+    logger.info(f"Wrote anonymized room list to: {dest_room_list}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(usage=('at least it has builtin help'),
