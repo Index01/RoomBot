@@ -16,6 +16,7 @@ from reservations.helpers import phrasing, ingest_csv, my_url, send_email
 import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
 from datetime import datetime
+from reservations.ingest_models import RoomPlacementListIngest, ValidationError
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
@@ -44,15 +45,41 @@ def search_ticket(ticket, guest_entries):
     return False
 
 
-def real_date(a_date):
-    day, date = a_date.split('-')
+def real_date(a_date: str, year=None):
+    """Convert string date into python date
+
+    Args:
+        a_date (str): date string, 
+            expected format: "Mon - 11/7"
+        year (Optional[int]): year, in 4-digit format
+            Allows specification of year, otherwise is in current year at runtime
+    Returns:
+        date: python `date` object
+    """
+    year = year or datetime.now().year
+    _, date = a_date.split('-')
     month, day = date.lstrip().split('/')
-    return parse_date("%s-%s-%s" % (datetime.now().year, month, day))
+    return parse_date("%s-%s-%s" % (year, month, day))
 
 def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
-
+    # validate imported rooms list
+    # rooms_import_list = [RoomPlacementListIngest(**r) for r in rooms_rows]
+    validation_errors = []
+    rooms_import_list = []
+    for r in rooms_rows:
+        try:
+            room_data = RoomPlacementListIngest(**r)
+            rooms_import_list.append(room_data)
+        except ValidationError as e:
+            logger.info(f"Validation error for row {r}: {e}")
+            validation_errors.append(e)
+    if validation_errors:
+        with open("validation_errors.txt", "w") as f:
+            for line in validation_errors:
+                f.write(f"{line}\n")
+    
     if(is_hardrock):
         hotel = "Hard Rock"
     else:
@@ -60,12 +87,12 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
 
     logger.info("read in %s rooms for %s", len(rooms_rows), hotel)
 
-    for elem in rooms_rows:
+    for elem in rooms_import_list:
         room = None
         room_changed = False
         room_action = "Created"
         try:
-            room = Room.objects.get(number=elem['Room'])
+            room = Room.objects.get(number=elem.room)
             room_action = "Updated"
         except Room.DoesNotExist:
             # some things are not mutable
@@ -74,34 +101,30 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             # * hotel
             # * room type
             # * initial roombaht based availability
-            room = Room(name_take3=elem['Room Type'],
+            room = Room(name_take3=elem.room_type, 
                         name_hotel=hotel,
-                        number=elem['Room']
-                        )
+                        number=elem.room)
 
             try:
-                features = elem['Room Features (Accessibility, Lakeview, Smoking)'].lower()
+                features = elem.room_features.lower()
             except KeyError as e:
                 features = []
             if 'hearing accessible' in features:
                 room.is_hearing_accessible = True
-
             if 'ada' in features:
                 room.is_ada = True
-
             if 'lakeview' in features:
                 room.is_lakeview = True
-
             if 'smoking' in features:
                 room.is_smoking = True
 
-            if elem['Placed By'] == 'Roombaht' or \
-               (elem['Placed By'] == '' and force_roombaht):
+            if elem.placed_by == 'Roombaht' or \
+                (elem.placed_by == '' and force_roombaht):
                 room.is_available = True
                 room.is_swappable = True
                 room.placed_by_roombot = True
 
-            if elem['Art Room'] == 'Yes':
+            if elem.art_room == 'Yes':
                 room.is_art = True
 
             if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
@@ -112,33 +135,33 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room_changed = True
 
         # check-in/check-out are only adjustable via room spreadsheet
-        if elem['Check-in Date'] != '':
-            check_in_date = real_date(elem['Check-in Date'])
+        if elem.check_in_date != '':
+            check_in_date = real_date(elem.check_in_date)
             if check_in_date != room.check_in:
                 room.check_in = check_in_date
                 room_changed = True
-        elif elem['Check-in Date'] == '' and room.check_in is not None:
+        elif elem.check_in_date == '' and room.check_in is not None:
             room.check_in = None
             room_changed = True
 
-        if elem['Check-out Date'] != '':
-            check_out_date = real_date(elem['Check-out Date'])
+        if elem.check_out_date != '':
+            check_out_date = real_date(elem.check_out_date)
             if check_out_date != room.check_out:
                 room.check_out = check_out_date
                 room_changed = True
-        elif elem['Check-out Date'] == '' and room.check_out is not None:
+        elif elem.check_out_date == '' and room.check_out is not None:
             room.check_out = None
             room_changed = True
-
         # room notes are only adjustable via room spreadsheet
-        if elem['Room Notes'] != room.notes:
-            room.notes = elem['Room Notes']
+        if elem.room_notes != room.notes:
+            room.notes = elem.room_notes
             room_changed = True
+
 
         # Cannot mark a room as non available based on being set to roombaht
         #   in spreadsheet if it already actually assigned, but you can mark
         #   a room as non available/swappable if it is not assigned yet
-        if elem['Placed By'] == '' and (not room.is_available):
+        if elem.placed_by == '' and (not room.is_available):
             if not room.guest:
                 room.is_available = False
                 room.is_swappable = False
@@ -148,30 +171,30 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
 
         # the following per-guest stuff gets a bit more complex
         primary_name = None
-        if elem['First Name (Resident)'] != '':
-            primary_name = elem['First Name (Resident)']
-            if elem['Last Name (Resident)'] == '':
+        if elem.first_name_resident != '':
+            primary_name = elem.first_name_resident
+            if elem.last_name_resident == '':
                 logger.warning("No last name for room %s", room.number)
             else:
-                primary_name = f"{primary_name} {elem['Last Name (Resident)']}"
+                primary_name = "%s %s" % (primary_name, elem.last_name_resident)
 
             if room.primary != primary_name:
                 room.primary = primary_name.title()
                 room_changed = True
 
-            if elem['Placed By'] == '':
+            if elem.placed_by == '':
                 logger.warning("Room %s Reserved w/o placer", room.number)
 
-            if elem['Placed By'] != 'Roombaht' and elem['Placed By'] != '' and not room.is_placed:
+            if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:
                 room.is_placed = True
                 room_changed = True
 
-            if elem['Guest Restriction Notes'] != room.guest_notes:
-                room.guest_notes = elem['Guest Restriction Notes']
+            if elem.guest_restriction_notes != room.guest_notes:
+                room.guest_notes = elem.guest_restriction_notes
                 room_changed = True
 
-            if elem['Secondary Name'] != room.secondary:
-                room.secondary = elem['Secondary Name'].title()
+            if elem.secondary_name != room.secondary:
+                room.secondary = elem.secondary_name
                 room_changed = True
 
             room.available = False
@@ -182,15 +205,16 @@ def create_rooms_main(rooms_file, is_hardrock=False, force_roombaht=False):
             room.secondary = ''
             room_changed = True
 
-        if elem['Paying guest?'] == 'Comp' and not room.is_comp:
+        if elem.paying_guest == 'Comp' and not room.is_comp:
             room.is_comp = True
             room_changed = True
 
-        if elem['Ticket ID in SecretParty'] != room.sp_ticket_id \
-           and elem['Ticket ID in SecretParty'] != 'n/a':
-            room.sp_ticket_id = elem['Ticket ID in SecretParty']
+        if (elem.ticket_id_in_secret_party != room.sp_ticket_id 
+            and elem.ticket_id_in_secret_party != 'n/a'):
+            room.sp_ticket_id = elem.ticket_id_in_secret_party
             room_changed = True
 
+		# loaded room, check if room_changed
         if room_changed:
             room_msg = f"{room_action} {room.name_take3} room {room.number}"
             if room.is_swappable:

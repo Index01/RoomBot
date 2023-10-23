@@ -23,6 +23,7 @@ from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_e
 from reservations.constants import ROOM_LIST
 import reservations.config as roombaht_config
 from reservations.auth import authenticate_admin, unauthenticated
+from reservations.ingest_models import SecretPartyGuestIngest
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 

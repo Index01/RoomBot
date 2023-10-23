@@ -151,7 +151,7 @@ For the room list, the following changes are made
 * Optionally, placed rooms have a chance to be set as changable (weight name `changeable`, default 50%)
 
 ```
-./backend/scripts/massage_csv.py /tmp/SecretPartyExport.csv /tmp/RoomsSheetExport.csv --weight placed:30,art:10
+python ./backend/scripts/massage_csv.py /tmp/SecretPartyExport.csv /tmp/RoomsSheetExport.csv --weight placed:30,art:10
 ```
 
 # DB Schema
