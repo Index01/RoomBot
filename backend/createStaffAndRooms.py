@@ -57,7 +57,7 @@ def real_date(a_date: str, year=None):
         date: python `date` object
     """
     year = year or datetime.now().year
-    day, date = a_date.split('-')
+    _, date = a_date.split('-')
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (year, month, day))
 
