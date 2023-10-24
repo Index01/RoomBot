@@ -53,7 +53,7 @@ if [ "$ACTION" == "init" ] ; then
     ROOM_FILE="$(basename "$ROOM_FILE")"
     STAFF_FILE="$(basename "$STAFF_FILE")"
     ssh -t "${R_USER}@${R_HOST}" \
-	"sudo bash /tmp/init-remote.sh /tmp/${ROOM_FILE} /tmp/${STAFF_FILE} ; sudo rm /tmp/init-remote.sh"
+	"sudo bash /tmp/init-remote.sh '/tmp/${ROOM_FILE}' '/tmp/${STAFF_FILE}' ; sudo rm /tmp/init-remote.sh"
 elif [ "$ACTION" == "backend-log" ] ; then
     ssh -t "${R_USER}@${R_HOST}" "sudo journalctl -f -u roombaht"
 elif [ "$ACTION" == "frontend-log" ] ; then
@@ -61,7 +61,7 @@ elif [ "$ACTION" == "frontend-log" ] ; then
 elif [ "$ACTION" == "wipe" ] ; then
     echo "This will completely wipe the database and it will be super annoying to get it back."
     echo "Are you sure? [y/n]"
-    read -n -s -n 1 answer
+    read -r -s -n 1 answer
     if [ "$answer" != "y" ] ; then
 	problems "user said no"
     fi
