@@ -437,7 +437,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                 continue
 
-            existing_room = Room.objects.get(number = existing_guest.room_number)
+            if existing_guest.room_number != None:
+                existing_room = Room.objects.get(number = existing_guest.room_number)
+            else:
+                return
 
             if guest_entries.count() == 0:
                 # Transferring to new guest...
@@ -461,7 +464,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 # has multiple rooms (email/room uniq)
                 otp = guest_entries[0].jwt
                 guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
-
+                
             room_counts.allocated(room.name_take3)
             room_counts.transfer(existing_room.name_take3)
 
