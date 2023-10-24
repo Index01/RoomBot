@@ -13,7 +13,7 @@ def onboarding_email(email, otp):
     body_text = f"""
         BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
 
-        After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Sunday 11/5 at 5pm PST, so please make sure you are good with what you have or trade early.
+        After you login below you can view your current room, look at other rooms and send trade requests. This functionality is *only available until Sunday 11/5 at 5pm* PST, so please make sure you are good with what you have or trade early.
 
         Here's how to swap rooms with someone:
         1. Find your desired room with the same room type (eg queen).
