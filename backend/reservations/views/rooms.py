@@ -22,6 +22,7 @@ logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_rooms')
 
+
 @api_view(['POST'])
 def my_rooms(request):
     if request.method == 'POST':
@@ -42,8 +43,47 @@ def my_rooms(request):
         response = json.dumps([{"number": int(room.number),
                                 "type": room.name_take3} for room in rooms_mine], indent=2)
 
-        logger.debug("rooms for user %s: %s", email, rooms_mine)
+        logger.debug("rooms swappable for user %s: %s", email, rooms_mine)
         return Response(response)
+
+
+@api_view(['POST'])
+def available_rooms(request):
+    if request.method == 'POST':
+        auth_obj = authenticate(request)
+        if not auth_obj or 'email' not in auth_obj:
+            return unauthenticated()
+        email = auth_obj['email']
+        try:
+            _guest_instances = Guest.objects.filter(email=email)
+        except IndexError:
+            return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
+
+        roomz = Room.objects.all()
+        # we want to bubble up any room that is swappable, is not available,
+        #  is not special (chapel, etc), and does have a guest associated.
+        #  the display layer will handle the per-room-type filtering
+        mine = set([elem.name_take3 for elem in roomz if elem.guest is not None and elem.guest.email==email])
+        print(f'mine {mine}')
+        rooms = sum([list(roomz.filter(name_take3=mytype, 
+                                            guest=None,
+                                            is_special=False,
+                                            is_available=True)) for mytype in mine], [])
+
+        print(f'rooms {rooms}')
+        if(len(rooms)==0):
+            logger.debug("No room types available for guest %s", email)
+
+        serializer = RoomSerializer(rooms, context={'request': request}, many=True)
+        data = serializer.data
+
+        for room in data:
+            if(len(room['number'])==3):
+                room["floorplans"]=FLOORPLANS[int(room["number"][:1])]
+            elif(len(room['number'])==4):
+                room["floorplans"]=FLOORPLANS[int(room["number"][:2])]
+
+        return Response(serializer.data)
 
 
 @api_view(['POST'])

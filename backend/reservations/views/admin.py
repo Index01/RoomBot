@@ -108,27 +108,32 @@ def onboarding_email(guest_new, otp):
                'RoomService RoomBaht - Account Activation',
                body_text)
 
-def find_room(room_product):
-    room_type = short_product_code(room_product)
+def find_room(guest, room_counts, assign_rooms=False, hotel="Ballys"):
+    room_type = short_product_code(guest["product"])
 
     if not room_type:
-        raise Exception("Unable to actually find room type for %s" % room_product)
+        raise Exception("Unable to actually find room type for %s" % guest["product"])
 
     # We only auto-assign rooms if these criteria are met
     #  * must be available
     #  * must not be art - we should rarely see these as art rooms are almost always placed
-    available_room = Room.objects \
-                         .filter(is_available=True,
-                                 is_art=False,
-                                 name_take3=room_type
-                                 ) \
-                         .order_by('?') \
-                         .first()
-
+    if(assign_rooms==True):
+        available_room = Room.objects.filter(is_available=True,
+                                             is_art=False,
+                                             name_take3=room_type,
+                                            ).order_by('?') .first()
+    else:
+        return Room(name_take3="NullRoom",
+                    name_hotel=hotel,
+                    number=666
+                    )
     if not available_room:
         logger.debug("No room of type %s available. Product: %s",
                      room_type,
-                     room_product)
+                     guest["product"])
+        logger.warning("No empty rooms available for %s", guest['email'])
+        room_counts.shortage(short_product_code(guest['product']))
+        return None
     else:
         logger.debug("Found free room of type %s: %s",
                      room_type,
@@ -332,6 +337,85 @@ def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
     room.primary=guest.name
     room.save()
 
+def deal_with_transfers(room_count, guest, trans_code, guest_rows, guest_entries, room_counts, transferred_tickets):
+    # Transfered ticket...
+    existing_guest = None
+    ticket_code = guest['ticket_code']
+    try:
+        existing_guest = Guest.objects.get(ticket=trans_code)
+        logger.info(f'esisting guest found: {existing_guest.room_number}')
+    except Guest.DoesNotExist:
+        # sometimes this happens due to transfers showing up earlier in the sp export than
+        # the origial ticket. so we go through the full set of rows
+        chain = transfer_chain(trans_code, guest_rows)
+        if len(chain) == 0:
+            logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
+            return
+
+        for chain_guest in chain:
+            # add stub guests
+            stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".title(),
+                         email=chain_guest['email'],
+                         ticket=chain_guest['ticket_code'])
+            stub.save()
+
+            transferred_tickets.append(chain_guest['ticket_code'])
+
+        room = find_room(guest, room_counts)
+
+        email_chain = ','.join([x['email'] for x in chain])
+        if guest_entries.count() == 0:
+            logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
+                         trans_code,
+                         ticket_code,
+                         email_chain,
+                         guest['email'])
+            otp = phrasing()
+            guest_update(guest, otp, room, room_counts)
+        else:
+            logger.debug("Processing transfer %s (%s) from %s to %s",
+                         trans_code,
+                         ticket_code,
+                         email_chain,
+                         guest['email'])
+            otp = guest_entries[0].jwt
+            guest_update(guest, otp, room, room_counts)
+
+        room_counts.transfer(room.name_take3)
+
+        return
+
+    if(existing_guest.room_number!=None):
+        existing_room = Room.objects.get(number = existing_guest.room_number)
+    else:
+        return
+
+    if guest_entries.count() == 0:
+        # Transferring to new guest...
+        logger.debug("Processing placed transfer %s (%s) from %s to (new guest) %s",
+                     trans_code,
+                     ticket_code,
+                     existing_guest.email,
+                     guest['email'])
+        otp = phrasing()
+        guest_update(guest, otp, existing_room, room_counts, og_guest=existing_guest)
+        onboarding_email(guest, otp)
+    else:
+        # Transferring to existing guest...
+        logger.debug("Processing placed transfer %s (%s) from %s to %s",
+                     trans_code,
+                     ticket_code,
+                     existing_guest.email,
+                     guest['email'])
+        # i think this will result in every jwt field being the same? guest entries
+        # are kept around as part of transfers (ticket/email uniq) and when someone
+        # has multiple rooms (email/room uniq)
+        otp = guest_entries[0].jwt
+        guest_update(guest, otp, existing_room, room_counts, og_guest=existing_guest)
+
+    room_counts.transfer(existing_room.name_take3)
+
+
 def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
     transferred_tickets = []
 
@@ -354,7 +438,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
-            room = find_room(guest_obj['product'])
+            room = find_room(guest_obj, room_counts)
             if not room:
                 # sometimes this happens due to room transfers not being complete.
                 logger.warning("No empty rooms available for %s", guest_obj['email'])
@@ -371,7 +455,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             # * admins / staff
             # * people share email addresses and soft-transfer rooms in sp
             if len([x.ticket for x in guest_entries if x.ticket == ticket_code]) == 0:
-                room = find_room(guest_obj['product'])
+                room = find_room(guest_obj, room_counts)
                 if not room:
                     logger.warning("No empty rooms available for %s", guest_entries[0].email)
                     room_counts.shortage(short_product_code(guest_obj['product']))
@@ -384,85 +468,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 logger.warning("Not sure how to handle non-transfer, existing user ticket %s", ticket_code)
 
         elif trans_code != "":
-            # Transfered ticket...
-            existing_guest = None
-            try:
-                existing_guest = Guest.objects.get(ticket=trans_code)
-            except Guest.DoesNotExist:
-                # sometimes this happens due to transfers showing up earlier in the sp export than
-                # the origial ticket. so we go through the full set of rows
-                chain = transfer_chain(trans_code, guest_rows)
-                if len(chain) == 0:
-                    logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
-                    continue
-
-                for chain_guest in chain:
-                    # add stub guests
-                    stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".title(),
-                                 email=chain_guest['email'],
-                                 ticket=chain_guest['ticket_code'])
-                    stub.save()
-
-                    transferred_tickets.append(chain_guest['ticket_code'])
-
-                room = find_room(guest_obj['product'])
-
-                if not room:
-                    logger.warning("No empty rooms available for %s", guest_obj['email'])
-                    room_counts.shortage(short_product_code(guest_obj['product']))
-                    continue
-
-                email_chain = ','.join([x['email'] for x in chain])
-                if guest_entries.count() == 0:
-                    logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
-                                 trans_code,
-                                 ticket_code,
-                                 email_chain,
-                                 guest_obj['email'])
-                    otp = phrasing()
-                    guest_update(guest_obj, otp, room, room_counts)
-                else:
-                    logger.debug("Processing transfer %s (%s) from %s to %s",
-                                 trans_code,
-                                 ticket_code,
-                                 email_chain,
-                                 guest_obj['email'])
-                    otp = guest_entries[0].jwt
-                    guest_update(guest_obj, otp, room, room_counts)
-
-                room_counts.allocated(room.name_take3)
-                room_counts.transfer(room.name_take3)
-
-                continue
-
-            existing_room = Room.objects.get(number = existing_guest.room_number)
-
-            if guest_entries.count() == 0:
-                # Transferring to new guest...
-                logger.debug("Processing placed transfer %s (%s) from %s to (new guest) %s",
-                             trans_code,
-                             ticket_code,
-                             existing_guest.email,
-                             guest_obj['email'])
-                otp = phrasing()
-                guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
-                onboarding_email(guest_obj, otp)
-            else:
-                # Transferring to existing guest...
-                logger.debug("Processing placed transfer %s (%s) from %s to %s",
-                             trans_code,
-                             ticket_code,
-                             existing_guest.email,
-                             guest_obj['email'])
-                # i think this will result in every jwt field being the same? guest entries
-                # are kept around as part of transfers (ticket/email uniq) and when someone
-                # has multiple rooms (email/room uniq)
-                otp = guest_entries[0].jwt
-                guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
-
-            room_counts.allocated(room.name_take3)
-            room_counts.transfer(existing_room.name_take3)
-
+            deal_with_transfers(room_counts, guest_obj, trans_code, guest_rows, guest_entries, room_counts, transferred_tickets)
 
         else:
             logger.warning("Not sure how to handle ticket %s", ticket_code)

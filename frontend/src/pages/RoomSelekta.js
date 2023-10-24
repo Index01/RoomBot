@@ -1,4 +1,4 @@
-import RoomDataTable from '../components/dasDataTable.js';
+import { RoomAvailableDataTable, RoomDataTable } from '../components/dasDataTable.js';
 import MyRoomsTable from '../components/myRooms.js';
 import "../styles/RoomDataTable.css";
 import React from 'react';
@@ -14,6 +14,10 @@ const RoomSelekta = () => {
              
             <div className="DTApp"> My Rooms
               <MyRoomsTable/>
+            </div>
+
+            <div className="DTApp"> Available Rooms
+              <RoomAvailableDataTable/>
             </div>
 
             <div className="DTApp"> Swappable Rooms
