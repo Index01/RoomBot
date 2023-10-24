@@ -86,7 +86,7 @@ def short_product_code(product):
 
 def onboarding_email(guest_new, otp):
     if not roombaht_config.SEND_ONBOARDING:
-        logger.debug("Not actually sending onboarding email to %s", guest_new['email'])
+        logger.debug("Not actually sending onboarding email to %s", guest_new.email)
         return
 
     hostname = my_url()
@@ -141,10 +141,10 @@ def find_room(room_product):
 def transfer_chain(ticket, guest_rows, depth=1):
     chain = []
     for row in guest_rows:
-        if ticket == row['ticket_code']:
+        if ticket == row.ticket_code:
             chain.append(row)
-            if row['transferred_from_code'] != '':
-                a_chain = transfer_chain(row['transferred_from_code'],
+            if row.transferred_from_code != '':
+                a_chain = transfer_chain(row.transferred_from_code,
                                          guest_rows,
                                          depth + 1)
                 if len(a_chain) == 0:
@@ -163,10 +163,10 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
     orphan_tickets = []
     def get_guest_obj(field, value):
         for guest in guest_rows:
-            if field == 'name' and value == f"{guest['first_name']} {guest['last_name']}":
+            if field == 'name' and value == f"{guest.first_name} {guest.last_name}":
                 return guest
 
-            if field == 'ticket' and value == guest['ticket_code']:
+            if field == 'ticket' and value == guest.ticket_code:
                 return guest
 
         return None
@@ -220,21 +220,21 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                 guest_obj = get_guest_obj('ticket', room.sp_ticket_id)
                 if guest_obj:
                     logger.info("Found guest %s by ticket %s in CSV for orphan %s room %s",
-                                guest_obj['email'],
+                                guest_obj.email,
                                 room.sp_ticket_id,
                                 room.name_take3,
                                 room.number)
                     # if this is a transfer, need to account for those as well
-                    if guest_obj['transferred_from_code'] != '':
-                        chain = transfer_chain(guest_obj['transferred_from_code'], guest_rows)
+                    if guest_obj.transferred_from_code != '':
+                        chain = transfer_chain(guest_obj.transferred_from_code, guest_rows)
                         if len(chain) > 0:
                             for chain_guest in chain:
                                 # add stubs to represent the transfers
-                                stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".title(),
-                                             email=chain_guest['email'],
-                                             ticket=chain_guest['ticket_code'])
+                                stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
+                                             email=chain_guest.email,
+                                             ticket=chain_guest.ticket_code)
                                 stub.save()
-                                orphan_tickets.append(chain_guest['ticket_code'])
+                                orphan_tickets.append(chain_guest.ticket_code)
 
 
             if guest_obj:
@@ -266,9 +266,9 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
     return orphan_tickets
 
-def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
-    ticket_code = guest_dict['ticket_code']
-    email = guest_dict['email']
+def guest_update(guest_obj, otp, room, room_counts, og_guest=None):
+    ticket_code = guest_obj.ticket_code
+    email = guest_obj.email
     guest = None
     guest_changed = False
     try:
@@ -301,8 +301,8 @@ def guest_update(guest_dict, otp, room, room_counts, og_guest=None):
 
     except Guest.DoesNotExist:
         # but most of the time the guest does not exist yet
-        guest = Guest(name=f"{guest_dict['first_name']} {guest_dict['last_name']}".title(),
-                      ticket=guest_dict['ticket_code'],
+        guest = Guest(name=f"{guest_obj.first_name} {guest_obj.last_name}".title(),
+                      ticket=guest_obj.ticket_code,
                       jwt=otp,
                       email=email,
                       room_number=room.number)
@@ -338,9 +338,9 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
     transferred_tickets = []
 
     for guest_obj in guest_rows:
-        guest_entries = Guest.objects.filter(email=guest_obj["email"])
-        trans_code = guest_obj['transferred_from_code']
-        ticket_code = guest_obj['ticket_code']
+        guest_entries = Guest.objects.filter(email=guest_obj.email)
+        trans_code = guest_obj.transferred_from_code
+        ticket_code = guest_obj.ticket_code
 
         if ticket_code in transferred_tickets:
             logger.debug("Skipping transferred ticket %s", ticket_code)
@@ -356,14 +356,14 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
-            room = find_room(guest_obj['product'])
+            room = find_room(guest_obj.product)
             if not room:
                 # sometimes this happens due to room transfers not being complete.
-                logger.warning("No empty rooms available for %s", guest_obj['email'])
-                room_counts.shortage(short_product_code(guest_obj['product']))
+                logger.warning("No empty rooms available for %s", guest_obj.email)
+                room_counts.shortage(short_product_code(guest_obj.product))
                 continue
 
-            logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj["email"])
+            logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj.email)
             otp = phrasing()
             guest_update(guest_obj, otp, room, room_counts)
             onboarding_email(guest_obj, otp)
@@ -373,10 +373,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             # * admins / staff
             # * people share email addresses and soft-transfer rooms in sp
             if len([x.ticket for x in guest_entries if x.ticket == ticket_code]) == 0:
-                room = find_room(guest_obj['product'])
+                room = find_room(guest_obj.product)
                 if not room:
                     logger.warning("No empty rooms available for %s", guest_entries[0].email)
-                    room_counts.shortage(short_product_code(guest_obj['product']))
+                    room_counts.shortage(short_product_code(guest_obj.product))
                     continue
 
                 logger.debug("assigning room %s to (unassigned ticket/room) %s", room.number, guest_entries[0].email)
@@ -400,27 +400,27 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                 for chain_guest in chain:
                     # add stub guests
-                    stub = Guest(name=f"{chain_guest['first_name']} {chain_guest['last_name']}".title(),
-                                 email=chain_guest['email'],
-                                 ticket=chain_guest['ticket_code'])
+                    stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
+                                 email=chain_guest.email,
+                                 ticket=chain_guest.ticket_code)
                     stub.save()
 
-                    transferred_tickets.append(chain_guest['ticket_code'])
+                    transferred_tickets.append(chain_guest.ticket_code)
 
-                room = find_room(guest_obj['product'])
+                room = find_room(guest_obj.product)
 
                 if not room:
-                    logger.warning("No empty rooms available for %s", guest_obj['email'])
-                    room_counts.shortage(short_product_code(guest_obj['product']))
+                    logger.warning("No empty rooms available for %s", guest_obj.email)
+                    room_counts.shortage(short_product_code(guest_obj.product))
                     continue
 
-                email_chain = ','.join([x['email'] for x in chain])
+                email_chain = ','.join([x.email for x in chain])
                 if guest_entries.count() == 0:
                     logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
                                  trans_code,
                                  ticket_code,
                                  email_chain,
-                                 guest_obj['email'])
+                                 guest_obj.email)
                     otp = phrasing()
                     guest_update(guest_obj, otp, room, room_counts)
                 else:
@@ -428,7 +428,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  trans_code,
                                  ticket_code,
                                  email_chain,
-                                 guest_obj['email'])
+                                 guest_obj.email)
                     otp = guest_entries[0].jwt
                     guest_update(guest_obj, otp, room, room_counts)
 
@@ -437,7 +437,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                 continue
 
-            existing_room = Room.objects.get(number = existing_guest.room_number)
+            if existing_guest.room_number != None:
+                existing_room = Room.objects.get(number = existing_guest.room_number)
+            else:
+                return
 
             if guest_entries.count() == 0:
                 # Transferring to new guest...
@@ -445,7 +448,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                              trans_code,
                              ticket_code,
                              existing_guest.email,
-                             guest_obj['email'])
+                             guest_obj.email)
                 otp = phrasing()
                 guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
                 onboarding_email(guest_obj, otp)
@@ -455,14 +458,14 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                              trans_code,
                              ticket_code,
                              existing_guest.email,
-                             guest_obj['email'])
+                             guest_obj.email)
                 # i think this will result in every jwt field being the same? guest entries
                 # are kept around as part of transfers (ticket/email uniq) and when someone
                 # has multiple rooms (email/room uniq)
                 otp = guest_entries[0].jwt
                 guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
 
-            room_counts.allocated(room.name_take3)
+            room_counts.allocated(existing_room.name_take3)
             room_counts.transfer(existing_room.name_take3)
 
 
@@ -478,7 +481,8 @@ def create_guests(request):
         if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
             return unauthenticated()
 
-        _guest_fields, guest_rows = ingest_csv(guests_csv)
+        _guest_fields, original_guests = ingest_csv(guests_csv)
+        guest_rows = [SecretPartyGuestIngest(**guest) for guest in original_guests]
         # actually keep some metrics here
         room_counts = RoomCounts()
         # start by seeing if we can address orphaned placed rooms

@@ -1,14 +1,24 @@
-ticket_code,last_name,first_name,email,product,
-asdf123,cc00ff33,Alice,alice@noop.com,Hard Rock - Standard 2 Queens (50% fee)
-zasv123,cc00ff77,Zebra,zebra@noop.com,Hard Rock - Lakeview Balcony 2 Queens
-qwer123,cc00ff44,Bob,bob@noop.com,Bally's - Standard 2 Queens (RFP Sale)
-zxcv123,cc00ff55,Charlie,charlie@noop.com,Bally's - Standard King
-zkkv123,cc00ff66,Charlie,charlie@noop.com,Bally's - Sierra King Suite
-zknm123,cc00ff77,Chad,chad@noop.com,Bally's - Tahoe King Suite
-cvnm123,cc00ff88,Index,tyler32bit@gmail.com,Bally's - Executive King Suite
-cqwm143,cc00ff88,Index,tyler32bit@gmail.com,Hard Rock - Lakeview Balcony 2 Queens
-cqwas43,cc00ff88,Index,tyler32bit@gmail.com,Hard Rock - Lakeview Balcony 2 Queens
-cq12k43,cc00ff88,Index,tyler32bit@gmail.com,Bally's - Standard King
-iamanid,Pez,Mike,mpesaven@gmail.com,Hard Rock - Lakeview Balcony 2 Queens
-notanid,Pez,Mike,mpesaven@gmail.com,Bally's - Sierra King Suite
-bizbaz,Gadget,Hiiam,jonafree@gmail.com,Bally's - Standard 2 Queens (Direct Sale)
+ticket_code,last_name,first_name,email,product,transferred_from_code,transferred_from_email
+# manually placed in room 305
+aaa001,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (RFP Sale),,
+# manually placed in room 306
+aaa002,Baz,Foo,foo.baz@noop.com,Bally's - Standard 2 Queens (Direct Sale),,
+# these two should be auto placed
+aaa003,Bam,Foo,foo.bam@noop.com,Bally's - Standard King,,
+aaa004,Bat,Foo,foo.bat@noop.com,Bally's - Standard King (Direct Sale),,
+# normal placed art room(s)
+aaa005,Baa,Foo,foo.baa@noop.com,Art Room Bally's - Standard King,,
+aaa006,Bac,Foo,foo.bac@noop.com,Art Room Bally's - Standard 2 Queens,,
+# someone transfering art room to an artist - original ticket placed
+aaa007,Bab,Foo,foo.bab@noop.com,Art Room Bally's - Standard King,,
+aaa008,Bal,Foo,foo.bal@noop.com,Art Room Bally's - Standard King,aaa007,
+# someone else transfering art room to an artist - transferred ticket placed
+aaa009,Bab,Foo,foo.bab@noop.com,Art Room Bally's - Standard 2 Queens,,
+aaa010,Bal,Foo,foo.bal@noop.com,Art Room Bally's - Standard 2 Queens,aaa009,
+# transferred to self bc why tf not
+aaa011,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,,
+aaa012,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,,aaa011
+# transferred twice
+aaa013,TxBar,Foo,foo.txbar@noop.com,Bally's - Standard 2 Queens,,
+aaa014,TxBaz,Foo,foo.txbaz@noop.com,Bally's - Standard 2 Queens,aaa013,
+aaa015,TxBam,Foo,foo.txbam@noop.com,Bally's - Standard 2 Queens,aaa014,

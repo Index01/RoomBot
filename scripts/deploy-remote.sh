@@ -29,6 +29,7 @@ trap cleanup EXIT
 source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
+# load the backend
 if [ -d "${BACKEND_DIR}.old" ] ; then
     rm -rf "${BACKEND_DIR}.old"
 fi
@@ -69,6 +70,7 @@ systemctl stop roombaht
     "${BACKEND_DIR}/manage.py" migrate
 systemctl start roombaht
 
+# load the frontend
 if [ -d "${FRONTEND_DIR}.old" ] ; then
     rm -rf "${FRONTEND_DIR}.old"
 fi
