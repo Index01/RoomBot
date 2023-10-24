@@ -82,7 +82,7 @@ This should ensure proper depdendencies, initialize and run migrations on sqlite
 
 # Managing a Real Host
 
-Use `make artifacts` to generate the frontend and backend artifacts.
+Use `make archive` to generate the frontend and backend artifacts.
 
 There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
 
@@ -107,6 +107,15 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 source backend/venv/bin/activate
 source dev.env
 python backend/createStaffAndRooms.py samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+```
+
+To get a guest password, you can go to the Django management console.
+First, already have a running backend.
+Then, run `python backend/manage.py shell`
+And in the python terminal, enter
+```python
+from reservations.models import Guest
+Guest.objects.filter(email="mpesaven@gmail.com")[0].jwt
 ```
 
 ## Remote

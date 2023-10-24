@@ -42,17 +42,19 @@ archive: backend_archive frontend_archive
 
 backend_archive:
 	mkdir -p build && \
-		tar -cvz \
-			--exclude "__pycache__" \
-			--exclude ".env" \
-			--exclude "venv" \
-			--exclude "db.sqlite3" \
-			--transform 's,^backend,roombaht-backend,' \
-			backend > build/roombaht-backend.tgz
+	cp -r backend roombaht-backend && \
+	tar -cvz \
+		--exclude "__pycache__" \
+		--exclude ".env" \
+		--exclude "venv" \
+		--exclude "db.sqlite3" \
+		backend > build/roombaht-backend.tgz && \
+	rm -rf roombaht-backend
 
 frontend_archive: frontend_build
 	mkdir -p build && \
-		tar -cvz \
-			-C frontend \
-			--transform 's,^build,roombaht-frontend,' \
-			build > build/roombaht-frontend.tgz
+	cp -r frontend roombaht-frontend && \
+	tar -cvz \
+		-C frontend \
+		build > build/roombaht-frontend.tgz && \
+	rm -rf roombaht-frontend
