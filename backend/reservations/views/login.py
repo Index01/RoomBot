@@ -14,6 +14,7 @@ from ..models import Room
 from ..models import Staff
 from ..helpers import phrasing, send_email
 import reservations.config as roombaht_config
+from reservations.auth import reset_otp
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
@@ -72,23 +73,8 @@ def login_reset(request):
         except KeyError as e:
             logger.info(f"[+] Reset fail missing field: {data['email']}")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+
         logger.info(f"[+] User reset attempt: {data['email']}")
-
-        new_pass = phrasing()
-        try:
-            guests = Guest.objects.all()
-            guest_email = guests.filter(email=email)[0]
-            guest_email.jwt=new_pass
-            guest_email.save()
-        except (IndexError, KeyError) as e:
-            logger.info(f"[-] User reset failed {data['email']}")
-            return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
-
-        body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
-
-        send_email([guest_email.email],
-                   'RoomService RoomBaht - Password Reset',
-                   body_text
-                   )
+        reset_otp(data['email'])
 
         return Response(status=status.HTTP_201_CREATED)

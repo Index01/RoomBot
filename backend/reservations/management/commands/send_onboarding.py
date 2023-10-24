@@ -32,7 +32,7 @@ def onboarding_email(email, otp):
 class Command(BaseCommand):
     help = "Send batches of onboarding emails for guests"
     def add_arguments(self, parser):
-        parser.add_argument('-b', '--batch_size',
+        parser.add_argument('-b', '--batch-size',
                             help=f"Batch size to use, defaults to {roombaht_config.ONBOARDING_BATCH}",
                             default=roombaht_config.ONBOARDING_BATCH)
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
             .filter(onboarding_sent=False) \
             .order_by('?') \
             .values('email') \
-            .distinct()[:int(roombaht_config.ONBOARDING_BATCH)]
+            .distinct()[:int(kwargs['batch_size'])]
 
         emails_length = emails.count()
         logger.debug("Found %s guests who have not had a onboarding email sent", emails_length)
@@ -49,7 +49,7 @@ class Command(BaseCommand):
         if emails_length == 0:
             self.stdout.write("No more activation emails left")
 
-        for email in emails:
+        for email in [x['email'] for x in emails]:
             guests = Guest.objects.filter(email = email)
             onboarded = [x for x in guests if x.onboarding_sent]
             if len(onboarded) == 0:
