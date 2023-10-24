@@ -147,7 +147,7 @@ def create_rooms_main(args):
         elif elem.check_in_date == '' and room.check_in is not None:
             room.check_in = None
             room_changed = True
-        elif elem.check_in_date == '' and room.check_in is None:
+        elif elem.check_in_date == '' and room.check_in is None and args['default_check_in']:
             check_in_date = real_date(args['default_check_in'])
             room.check_in = check_in_date
             room_changed = True
@@ -160,7 +160,7 @@ def create_rooms_main(args):
         elif elem.check_out_date == '' and room.check_out is not None:
             room.check_out = None
             room_changed = True
-        elif elem.check_out_date == '' and room.check_out is None:
+        elif elem.check_out_date == '' and room.check_out is None and args['default_check_out']:
             check_out_date = real_date(args['default_check_out'])
             room.check_out = check_out_date
             room_changed = True

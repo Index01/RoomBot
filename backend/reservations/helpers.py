@@ -59,7 +59,7 @@ def phrasing():
 
 def my_url():
     port = roombaht_config.URL_PORT
-    if port not in (80, 443):
+    if port not in ("80", "443"):
         port = ":%s" % port
 
     return "%s://%s%s" % (

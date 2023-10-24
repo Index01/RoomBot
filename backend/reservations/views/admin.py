@@ -85,7 +85,6 @@ def short_product_code(product):
 
     raise Exception('Should never not find a short product code tho')
 
-
 def find_room(room_product):
     room_type = short_product_code(room_product)
 
