@@ -34,7 +34,8 @@ def ingest_csv(filename):
 
     input_dict = []
     input_items = []
-    input_dict = DictReader(csv_iter, skipinitialspace=True)
+    # filter out comments and blank lines
+    input_dict = DictReader(filter(lambda row: len(row) > 0 and row[0]!='#', csv_iter), skipinitialspace=True)
     input_fields = [k.lstrip().rstrip() for k in input_dict.fieldnames if type(k)==str]
     for elem in input_dict:
         strip_elem = {k.lstrip().rstrip(): v.lstrip().rstrip() for k, v in elem.items() if type(k)==str and type(v)==str}
