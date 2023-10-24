@@ -91,6 +91,8 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
   * python `virtualenv` management
   * `nginx` configuration
   * `systemd` for the django bits
+* Run `init` to load the Rooms and Staff tables, generally after a `wipe` and/or `deploy`
+  * `./scripts/roombaht_ctl user 127.0.0.1 init ${ROOM_FILE} ${STAFF_FILE}`
 * You can easily view frontend (nginx) and backend (django/wsgi) logs remotely
   * `./scripts/roombaht_ctl user 127.0.0.1 frontend-log`
   * `./scripts/roombaht_ctl user 127.0.0.1 backend-log`
