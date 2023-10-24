@@ -12,6 +12,7 @@ URL_SCHEMA = os.environ.get('ROOMBAHT_SCHEMA', 'http')
 JWT_KEY = os.environ['ROOMBAHT_JWT_KEY']
 
 SEND_ONBOARDING = os.environ.get('ROOMBAHT_SEND_ONBOARDING', 'false').lower() == 'true'
+ONBOARDING_BATCH = os.environ.get('ROOMBAHT_ONBOARDING_BATCH', '5')
 
 TEMP_DIR = os.environ.get('ROOMBAHT_TMP', '/tmp')
 

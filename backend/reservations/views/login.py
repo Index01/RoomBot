@@ -19,6 +19,11 @@ logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_login')
 
+def update_last_login(guest):
+    for a_guest in Guest.objects.filter(email=guest.email):
+        a_guest.last_login = datetime.datetime.now()
+        a_guest.save()
+
 @api_view(['POST'])
 def login(request):
     if request.method == 'POST':
@@ -27,7 +32,7 @@ def login(request):
         logger.info(f"[+] User login attempt: {data['email']}")
         try:
             email = data['email']
-        except KeyError as e:
+        except KeyError:
             logger.info(f"[-] User login failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
         guests = Guest.objects.all()
@@ -42,19 +47,18 @@ def login(request):
                                    "datetime":str(datetime.datetime.utcnow())},
                                    jwt_key,
                                   algorithm="HS256")
-                logger.debug(f'returning: {resp}')
                 logger.info(f"[+] Admin login succes. sending resp")
+                update_last_login(admin.guest)
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
 
         # Check if login attempt is guest
         for guest in guest_email:
-            logger.debug(f"[+] in: {data['jwt']} db {guest.jwt}")
             if data['jwt'] == guest.jwt:
                 resp = jwt.encode({"email":guest.email,
                                    "datetime":str(datetime.datetime.utcnow())},
                                    jwt_key, algorithm="HS256")
-                logger.debug(f'returning: {resp}')
                 logger.info(f"[+] User login succes. sending resp")
+                update_last_login(guest)
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
         return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
 
@@ -68,11 +72,9 @@ def login_reset(request):
         except KeyError as e:
             logger.info(f"[+] Reset fail missing field: {data['email']}")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        logger.debug(f'reset: {data}')
         logger.info(f"[+] User reset attempt: {data['email']}")
 
         new_pass = phrasing()
-        logger.debug(f'phrase: {new_pass}')
         try:
             guests = Guest.objects.all()
             guest_email = guests.filter(email=email)[0]

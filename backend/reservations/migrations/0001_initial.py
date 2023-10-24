@@ -24,6 +24,8 @@ class Migration(migrations.Migration):
                 ('invitation', models.CharField(max_length=20, verbose_name='Invitation')),
                 ('jwt', models.CharField(max_length=240, verbose_name='JWT')),
                 ('room_number', models.CharField(max_length=20, verbose_name='RoomNumber', blank=True, null=True)),
+                ('onboarding_sent', models.BooleanField(verbose_name="OnboardingSent", default=False)),
+                ('last_login', models.DateTimeField(blank=True, null=True))
             ],
         ),
         migrations.CreateModel(
