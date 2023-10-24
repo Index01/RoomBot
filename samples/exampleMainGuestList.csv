@@ -20,5 +20,5 @@ aaa011,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,,
 aaa012,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,,aaa011
 # transferred twice
 aaa013,TxBar,Foo,foo.txbar@noop.com,Bally's - Standard 2 Queens,,
-aaa014,TxBaz,Foo,foo.txbaz@noop.com,Bally's - Standard 2 Queens,,aaa013
-aaa015,TxBam,Foo,foo.txbam@noop.com,Bally's - Standard 2 Queens,,aaa014
+aaa014,TxBaz,Foo,foo.txbaz@noop.com,Bally's - Standard 2 Queens,aaa013,
+aaa015,TxBam,Foo,foo.txbam@noop.com,Bally's - Standard 2 Queens,aaa014,
