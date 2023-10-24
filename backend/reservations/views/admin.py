@@ -86,6 +86,7 @@ def short_product_code(product):
 
 def onboarding_email(guest_new, otp):
     if not roombaht_config.SEND_ONBOARDING:
+        logger.debug("Not actually sending onboarding email to %s", guest_new['email'])
         return
 
     hostname = my_url()
@@ -536,7 +537,7 @@ def request_metrics(request):
         guest_unique = len(set([guest.email for guest in guessssts]))
         guest_count = Guest.objects.all().count()
         guest_unplaced = len(guessssts.filter(room=None, ticket__isnull=True))
- 
+
         rooms_count = rooooms.count()
         rooms_occupied = rooooms.exclude(is_available=True).count()
         rooms_swappable = rooooms.exclude(is_swappable=False).count()
