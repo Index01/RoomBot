@@ -2,6 +2,7 @@
 
 set -e
 
+OLD_RELEASES=5
 BACKEND_ARTIFACT="/tmp/roombaht-backend.tgz"
 FRONTEND_ARTIFACT="/tmp/roombaht-frontend.tgz"
 
@@ -9,6 +10,8 @@ BACKEND_DIR="/opt/roombaht-backend"
 FRONTEND_DIR="/opt/roombaht-frontend"
 
 ENV_FILE="/tmp/secrets.env"
+
+NOW="$(date '+%m%d%Y-%H%M')"
 
 problems() {
     2>&1 echo "Error: $*"
@@ -34,7 +37,12 @@ if [ -d "${BACKEND_DIR}.old" ] ; then
     rm -rf "${BACKEND_DIR}.old"
 fi
 
-mv "$BACKEND_DIR" "${BACKEND_DIR}.old"
+# keep some archives for rollback
+mv "$BACKEND_DIR" "${BACKEND_DIR}-${NOW}"
+for old in `find /opt -name 'roombot-backend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+    rm -rf "$old"
+done
+
 tar -C "/opt" -xzvf "$BACKEND_ARTIFACT"
 if [ -d "${BACKEND_DIR}/.old/venv" ] ; then
     cp -r "${BACKEND_DIR}.old/venv" "${BACKEND_DIR}/venv"
@@ -71,11 +79,12 @@ systemctl stop roombaht
 systemctl start roombaht
 
 # load the frontend
-if [ -d "${FRONTEND_DIR}.old" ] ; then
-    rm -rf "${FRONTEND_DIR}.old"
-fi
+mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
+for old in `find /opt -name 'roombot-frontend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+    rm -rf "$old"
+done
 
-mv "$FRONTEND_DIR" "${FRONTEND_DIR}.old"
+mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
 tar -C /opt -xzvf "$FRONTEND_ARTIFACT"
 
 chown -R roombaht: "$FRONTEND_DIR"

@@ -57,7 +57,7 @@ for image in "${TMPDIR}/${PUBLIC_DIR}/"*.png ; do
     THUMBFILE="${DESTFILE%.*}_thumb.png"
     cp "${TMPDIR}/${PUBLIC_DIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
     echo "Fetched ${SRCFILE} as ${DESTFILE}"
-    convert "${TMPDIR}/${PUBLIC_DIR}/${SRCFILE}" -format png -thumbnail 100x100 "${LAYOUTS_DIR}/${THUMBFILE}"
+    convert "${TMPDIR}/${PUBLIC_DIR}/${SRCFILE}" -format png -thumbnail 35x30 "${LAYOUTS_DIR}/${THUMBFILE}"
     echo "Generated thumbnail ${THUMBFILE}"
 done
 
@@ -71,6 +71,6 @@ for image in "${TMPDIR}/${PRIVATE_DIR}/"*.png ; do
     THUMBFILE="${DESTFILE%.*}_thumb.png"
     cp "${TMPDIR}/${PRIVATE_DIR}/${SRCFILE}" "${LAYOUTS_DIR}/${DESTFILE}"
     echo "Fetched ${PRIVATE_DIR}/${SRCFILE} as ${DESTFILE}"
-    convert "${TMPDIR}/${PRIVATE_DIR}/${SRCFILE}" -format png -thumbnail 100x100 "${LAYOUTS_DIR}/${THUMBFILE}"
+    convert "${TMPDIR}/${PRIVATE_DIR}/${SRCFILE}" -format png -thumbnail 35x30 "${LAYOUTS_DIR}/${THUMBFILE}"
     echo "Generated thumbnail ${THUMBFILE}"
 done

@@ -96,8 +96,10 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 * You can easily view frontend (nginx) and backend (django/wsgi) logs remotely
   * `./scripts/roombaht_ctl user 127.0.0.1 frontend-log`
   * `./scripts/roombaht_ctl user 127.0.0.1 backend-log`
-* You can completely wipe the database as well. Helpful during pre-season development and a terrible idea once the gates have opened.
+* You can completely wipe the database as well. Helpful during pre-season development and a terrible idea once the gates have opened. After a helful confirmation prompt, this will wipe the database and re-run the migrations.
   * `./scripts/roombaht_ctl user 127.0.0.1 wipe`
+* You can directly invoke a the django management tool, which gives you access to a variety of administrative tools.
+  * `./scripts/roombaht_ctl user 127.0.0.1 manage shell` - invoke the djangok shell will full access to the orm and every module in the project
 
 # Data Population
 
@@ -209,4 +211,5 @@ Rooms are where the party is.
 * `sp_ticket_id` The Secret Party ticket ID.
 * `primary` The full name of the primary resident in the room.
 * `secondary` The full name of a secondary person in the room.
+* `placed_by_roombot` Indicates that this is a room which can be placed by roombot. Implies not a placed room.
 * `guest` A mapping to a guest record.

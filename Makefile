@@ -1,4 +1,4 @@
-.PHONY = frontend_build frontend_dev frontend_archive \
+.PHONY = frontend_build frontend_dev frontend_archive frontend_clean \
 	backend_dev backend_archive backend_clean backend_env \
 	archive
 
@@ -9,6 +9,7 @@ else
 endif
 
 frontend_build:
+	test -d frontend/public/layouts || ./scripts/fetch-images
 	docker build -t roombaht:latest frontend/
 	docker run -u node \
 		-e REACT_APP_API_ENDPOINT=$(API_ENDPOINT) \
@@ -21,6 +22,9 @@ frontend_dev: frontend_build
 		-p 3000:3000 \
 		-u node \
 		-v $(shell pwd)/frontend/:/app roombaht:latest
+
+frontend_clean:
+	rm -rf build/roombaht-frontend.tgz frontend/public/layouts
 
 backend_env:
 	test -d backend/venv || \
@@ -36,7 +40,7 @@ backend_dev: backend_env
 	./scripts/start_backend_dev.sh
 
 backend_clean:
-	rm -rf backend/db.sqlite3
+	rm -rf backend/db.sqlite3 build/roombaht-backend.tgz
 
 archive: backend_archive frontend_archive
 
