@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-FOLDER="1ItFFYhcHdFTiTAM8277olo4JDvSrvGLV"
+FOLDER="17GU6iDJiSMVZGtHL0jWVoBgyPuiqsUVs"
 
 set -e
 
 SCRIPTDIR=$( cd "${0%/*}" && pwd)
 ROOTDIR="${SCRIPTDIR%/*}"
 
-PUBLIC_DIR="Lakeview icon removed"
-PRIVATE_DIR="Smoking Version"
+PUBLIC_DIR=""
+PRIVATE_DIR="With Smoking Icons"
 
 LAYOUTS_DIR="${ROOTDIR}/frontend/public/layouts"
 TMPDIR="$(mktemp -d)"
@@ -64,7 +64,7 @@ done
 # for private images. different filename.
 for image in "${TMPDIR}/${PRIVATE_DIR}/"*.png ; do
     SRCFILE="$(basename "$image")"
-    DESTFILE="private_$(sed -e 's/ smoking//g' -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
+    DESTFILE="private_$(sed -e 's/ //g' -e 's/-/_/' -e 's/\./th\./' <<< "$SRCFILE")"
     if grep -q '3th' <<< "$DESTFILE" ; then
 	DESTFILE="${DESTFILE/th/rd}"
     fi
