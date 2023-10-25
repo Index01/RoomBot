@@ -12,6 +12,7 @@ import Form from 'react-bootstrap/Form';
 
 function GuestsCard() {
   const [phrase, setPhrase] = useState("");
+  const [respText, setRespText] = useState([]);
   const [isLoading, setLoading] = useState(false);
   const handleClick = () => setLoading(true);
   const jwt = JSON.parse(localStorage.getItem('jwt'));
@@ -81,8 +82,9 @@ function GuestsCard() {
     if (isLoading) {
       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { jwt: jwt['jwt'] }).then((res) => {
         console.log(res.data);
-	setLoading(false);
-	setPhrase("{" + res.data.results.join("\n") + "}");
+	    setLoading(false);
+	    setPhrase("{" + res.data.results.join("\n") + "}");
+        setRespText(JSON.parse(respText.data).admins);
       })
       .catch((error) => {
           console.log(error);
@@ -110,6 +112,12 @@ function GuestsCard() {
 
         <p></p>
         <Card.Text>{phrase}</Card.Text>
+
+        <ol className="card-subtitle mb-2 text-muted">
+          {respText.map((item) => (
+            <li key={item}>load response: {item}</li>
+          ))}
+        </ol>
 
         <Button
           variant="primary"
