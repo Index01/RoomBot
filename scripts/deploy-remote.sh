@@ -38,10 +38,12 @@ if [ -d "${BACKEND_DIR}.old" ] ; then
 fi
 
 # keep some archives for rollback
-mv "$BACKEND_DIR" "${BACKEND_DIR}-${NOW}"
-for old in `find /opt -name 'roombot-backend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
-    rm -rf "$old"
-done
+if [ -d "$BACKEND_DIR" ] ; then
+    mv "$BACKEND_DIR" "${BACKEND_DIR}-${NOW}"
+    for old in `find /opt -name 'roombaht-backend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+	rm -rf "$old"
+    done
+fi
 
 tar -C "/opt" -xzvf "$BACKEND_ARTIFACT"
 if [ -d "${BACKEND_DIR}/.old/venv" ] ; then
@@ -79,12 +81,13 @@ systemctl stop roombaht
 systemctl start roombaht
 
 # load the frontend
-mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
-for old in `find /opt -name 'roombot-frontend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
-    rm -rf "$old"
-done
+if [ -d "$FRONTEND_DIR" ] ; then
+    mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
+    for old in `find /opt -name 'roombahtt-frontend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+	rm -rf "$old"
+    done
+fi
 
-mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
 tar -C /opt -xzvf "$FRONTEND_ARTIFACT"
 
 chown -R roombaht: "$FRONTEND_DIR"
