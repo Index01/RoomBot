@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from datetime import datetime
 
 import django
 django.setup()
@@ -13,6 +14,25 @@ import reservations.config as roombaht_config
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ReportingLogger')
+
+
+def diff_swaps(swap_from, swap_to):
+    fieldnames = ['Datetime', 'Swap From', 'Swap To']
+    file = f"{roombaht_config.TEMP_DIR}/diff_swaps.csv"
+    file_exists = os.path.isfile(file)
+    with open(file, 'a') as diffout:
+        writer = DictWriter(diffout, fieldnames)
+        if(not file_exists):
+            writer.writeheader()
+        writer.writerow({'Datetime': datetime.now(), 'Swap From': swap_from.number, 'Swap To': swap_to.number})
+
+def diff_swaps_count():
+    try:
+        with open(f"{roombaht_config.TEMP_DIR}/diff_swaps.csv", 'r') as diffout:
+            return sum(1 for lie in diffout) - 1
+    except FileNotFoundError as e:
+        logger.warn(f'No swaps yet')
+        return 0
 
 def diff_latest(rows):
     diff_count = 0
