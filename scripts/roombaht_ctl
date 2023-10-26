@@ -69,11 +69,11 @@ elif [ "$ACTION" == "wipe" ] ; then
     fi
     "${SCRIPTDIR}/secrets" decrypt
     scp "$ENV_FILE" "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
-    ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh wipe"
+    ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh wipe ; sudo rm /tmp/roombaht_ctl.remote.sh"
 elif [ "$ACTION" == "manage" ] ; then
     "${SCRIPTDIR}/secrets" decrypt
     scp "$ENV_FILE" "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
-    ssh -t "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh manage $*"
+    ssh -t "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh manage $* ; sudo rm /tmp/roombaht_ctl-remote.sh"
 elif [ "$ACTION" == "help" ] ; then
     usage
 else
