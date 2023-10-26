@@ -68,7 +68,7 @@ class RoomCounts:
                                counts['orphan'])
 
             remaining = Room.objects.filter(name_take3=room_type, is_available=True).count()
-            line = f"{room_type} room allocated: {counts['allocated']}, transfer: {counts['transfer']}, remaining: {remaining}, orphan: {counts['orphan']} (of {counts['available']} available)"
+            line = f"{room_type} shortage: {counts['shortage']} allocated: {counts['allocated']}, transfer: {counts['transfer']}, remaining: {remaining}, orphan: {counts['orphan']} (of {counts['available']} available)"
             logger.info(line)
             lines.append(line)
 
