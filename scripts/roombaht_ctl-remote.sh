@@ -30,6 +30,7 @@ if [ "$ACTION" == "init" ] ; then
 	"${STAFF_FILE}"
 elif [ "$ACTION" == "wipe" ] ; then
     psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc 'DROP DATABASE roombaht;'
+    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE roombaht;"
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" migrate
 elif [ "$ACTION" == "manage" ] ; then
