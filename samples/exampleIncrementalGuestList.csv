@@ -1,0 +1,8 @@
+ticket_code,last_name,first_name,email,product,transferred_from_code,transferred_from_email
+# transferred from someone in initial list
+ccc001,TxBam,Fom,fom.txbam@noop.com,Bally's - Standard 2 Queens,bbb001,
+ccc002,TxBam,Fon,fon.txbam@noop.com,Bally's - Standard King,aaa004,
+# just some more new purchases
+ccc003,Bam,Non,non.bam@noop.com,Bally's - Standard 2 Queens,,
+ccc004,Bam,Von,von.bam@noop.com,Bally's - Standard 2 Queens,,
+ccc005,Bam,Jon,jon.bam@noop.com,Bally's - Standard King,,
