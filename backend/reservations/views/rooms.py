@@ -171,15 +171,15 @@ def swap_request(request):
         hostname = my_url()
         body_text = f"""
 
-Someone would like to trade rooms with you for Room Service. Since rooms are randomly assigned, we built this tool for everyone to trade rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details, then one of you will generate a swap code in Roombaht and send it to the other. Enter the code, switch-aroo magic happens, and you check-in as normal.
+Someone would like to trade rooms with you for Room Service. Since rooms are randomly placed, we built this tool to let people swap rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details with them, then one of you will generate a swap code in Roombaht and send it to the other. One person enters the other one’s swap code, switch-aroo magic happens, and you both check-in as normal to your new rooms.
 
 Contact info: {msg}
 
-After you have contacted the person asking to trade rooms with you, click this link to create the swap code and trade rooms: {hostname}/rooms
+After you have contacted the person asking to trade rooms with you and decided to swap, click this link to create the swap code and trade rooms: {hostname}/rooms
 
-If you have any trouble with that link you can login from the initial email you received from RoomBaht.
+If you have any trouble with that link, you can login from the initial email you received from RoomBaht.
 
-If you have any issues contact placement@take3presents.com
+If you have any issues, contact placement@take3presents.com.
 
 Good Luck, Starfighter.
 
