@@ -24,36 +24,36 @@ export default class RoomDataTable extends React.Component {
 
   storyHeaderFactory(swaps_enabled) {
     let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
-					{
-					  prop: "number",
-					  title: "Number",
-					  isSortable: true,
-					  isFilterable: true
-					},
-					{
-					  prop: "name_take3",
-					  title: "Type",
-					  isFilterable: true
-					},
-					{
-					  prop: "floorplan",
-					  title: "FloorPlan",
-					  cell: (row) => (
-					    <ModalImage
-					      small={"layouts/" + row.floorplans[1]}
-					      large={"layouts/" + row.floorplans[0]}
-					      alt="Hotel Floor Plan"
-					    />
-					  )
-					},
-					{
-					  prop: "button",
-					  cell: (row) => (
-					    <ModalRequestSwap row={row} swaps_enabled={swaps_enabled} />
-					  )
-					}
-					];
-			       return STORY_HEADERS;
+      {
+        prop: "number",
+        title: "Number",
+        isSortable: true,
+        isFilterable: true
+      },
+      {
+        prop: "name_take3",
+        title: "Type",
+        isFilterable: true
+      },
+      {
+        prop: "floorplan",
+        title: "FloorPlan",
+        cell: (row) => (
+          <ModalImage
+            small={"layouts/" + row.floorplans[1]}
+            large={"layouts/" + row.floorplans[0]}
+            alt="Hotel Floor Plan"
+          />
+        )
+      },
+      {
+        prop: "button",
+        cell: (row) => (
+          <ModalRequestSwap row={row} swaps_enabled={swaps_enabled} />
+        )
+      }
+    ];
+    return STORY_HEADERS;
 
 
 

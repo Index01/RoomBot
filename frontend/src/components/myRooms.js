@@ -26,30 +26,30 @@ export default class MyRoomsTable extends React.Component {
 
   storyHeaderFactory(swaps_enabled) {
     let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
-					{
-					  prop: "number",
-					  title: "Number",
-					  isSortable: true,
-					},
-					{
-					  prop: "type",
-					  title: "Type",
-					},
-					{
-					  prop: "button",
-					  cell: (row) => (
-					    <ModalCreateCode row={row.number} swaps_enabled={swaps_enabled}/>
-					  )
-					},
-					{
-					  prop: "button",
-					  cell: (row) => (
-					    <ModalEnterCode row={row.number} swaps_enabled={swaps_enabled}/>
-					  )
-					},
-					];
-					return STORY_HEADERS;
-					};
+        {
+          prop: "number",
+          title: "Number",
+          isSortable: true,
+        },
+        {
+          prop: "type",
+          title: "Type",
+        },
+        {
+          prop: "button",
+          cell: (row) => (
+            <ModalCreateCode row={row.number} swaps_enabled={swaps_enabled}/>
+          )
+        },
+        {
+          prop: "button",
+          cell: (row) => (
+            <ModalEnterCode row={row.number} swaps_enabled={swaps_enabled}/>
+          )
+        },
+      ];
+    return STORY_HEADERS;
+  };
 
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
