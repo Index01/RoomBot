@@ -6,6 +6,10 @@ SCRIPTDIR=$( cd "${0%/*}" && pwd)
 ROOTDIR="${SCRIPTDIR%/*}"
 ENV_FILE="${ROOTDIR}/secrets.env"
 
+warn() {
+    2>&1 echo "Warning: $*"
+}
+
 problems() {
     2>&1 echo "Error: $*"
     exit 1
@@ -19,9 +23,11 @@ cleanup() {
 
 usage() {
     echo "deploy <username> <hostname>"
+    echo "             -f force through confirmations"
     echo
     echo "this script will deploy the most recently built (local) artifact to the remote host"
-    echo "it will perform migrations, restart services, and not make you a martini"
+    echo "it will perform migrations, restart services, and not make you a martini. this script"
+    echo "is meant to run only from a clean git checkout on the 'main' branch."
     exit 1
 }
 
@@ -33,6 +39,41 @@ trap cleanup EXIT
 
 R_USER="$1"
 R_HOST="$2"
+shift 2
+FORCE=""
+while getopts "f" arg; do
+    case $arg in
+	f)
+	    FORCE="yes"
+	    ;;
+	*)
+	    usage
+	    ;;
+    esac
+done
+
+
+DIRTY=""
+if [ "$(git status --porcelain || true | wc -l)" != "0" ] ; then
+    warn "Dirty git repo detected"
+    DIRTY="yes"
+fi
+if [ "$(git rev-parse --abbrev-rev HEAD)" != "main" ] ; then
+    warn "Branch other than 'main' detected"
+    DIRTY="yes"
+fi
+if [ -n "$DIRTY" ] ; then
+    if [ -n "$FORCE" ] ; then
+	warn "Deploying anyway, despite recommendations on local workspace"
+    else
+	echo "Deployment should only be done from a git workspace that is clean and on the 'main' branch."
+	echo "Are you sure you wish to continue? [y/n]"
+	read -r -s -n 1 answer
+	if [ "$answer" != "y" ] ; then
+	    problems "user said no"
+	fi
+    fi
+fi
 
 scp "${SCRIPTDIR}/deploy-remote.sh" \
     "${R_USER}@${R_HOST}:/tmp/deploy.sh"

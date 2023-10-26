@@ -27,3 +27,4 @@ psycopg2==2.9.9
 fuzzywuzzy==0.18.0
 pydantic==2.4.2
 python-Levenshtein==0.23.0
+ipython==7.27.0
