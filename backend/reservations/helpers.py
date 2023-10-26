@@ -62,6 +62,8 @@ def my_url():
     port = roombaht_config.URL_PORT
     if port not in ("80", "443"):
         port = ":%s" % port
+    else:
+        port = ''
 
     return "%s://%s%s" % (
         roombaht_config.URL_SCHEMA,
