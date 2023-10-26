@@ -233,6 +233,9 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                                 stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
                                              email=chain_guest.email,
                                              ticket=chain_guest.ticket_code)
+                                if chain_guest.transferred_from_code:
+                                    stub.transfer = chain_guest.transferred_from_code
+
                                 stub.save()
                                 orphan_tickets.append(chain_guest.ticket_code)
 
@@ -306,6 +309,10 @@ def guest_update(guest_obj, otp, room, room_counts, og_guest=None):
                       jwt=otp,
                       email=email,
                       room_number=room.number)
+
+        if guest_obj.transferred_from_code:
+            guest.transfer = guest_obj.transferred_from_code
+
         logger.debug("New guest %s in room %s (%s)",
                      email, room.number, room.name_take3)
         guest_changed = True
@@ -403,6 +410,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
                                  email=chain_guest.email,
                                  ticket=chain_guest.ticket_code)
+
+                    if chain_guest.transferred_from_code:
+                        stub.transfer = chain_guest.transferred_from_code
+
                     stub.save()
 
                     transferred_tickets.append(chain_guest.ticket_code)

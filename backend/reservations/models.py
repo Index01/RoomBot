@@ -4,6 +4,7 @@ class Guest(models.Model):
     name = models.CharField("Name", max_length=240)
     email = models.EmailField()
     ticket = models.CharField("Ticket", max_length=20)
+    transfer = models.CharField("Transfer", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
     room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
