@@ -24,6 +24,9 @@ eval `cat "$ENV_FILE"`
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
 if [ "$ACTION" == "init" ] ; then
+    ROOM_FILE="$2"
+    STAFF_FILE="$3"
+    shift 2
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/createStaffAndRooms.py" \
 	"${ROOM_FILE}" \
