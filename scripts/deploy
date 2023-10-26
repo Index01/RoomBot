@@ -54,7 +54,7 @@ done
 
 
 DIRTY=""
-if [ "$(git status --porcelain || true | wc -l)" != "0" ] ; then
+if [ "$( (git status --porcelain || true) | wc -l)" != "0" ] ; then
     warn "Dirty git repo detected"
     DIRTY="yes"
 fi
