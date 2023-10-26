@@ -64,9 +64,9 @@ export function ModalRequestSwap({row}) {
 
           <h5>System Live</h5>
           <p>Ok fam so rly we can only do so much for you here.</p>
-          <p>We can send the owner of this room an email with your contact info, try to put you in touch, but we cant make them look at their phone or care about trading rooms with you. So. If you have another way of reaching this person go for it.</p>
-          <p>Once you are in contact, click the CreateSwapCode button on your room. Send the code and have them enter it.</p>
-          <p>Enter your email addres or phone number for the room owner to reach you.</p>
+          <p>We can send the owner of this room an email with your contact info, but we can’t make them look at their phone or want to swap rooms with you. So. If you have another way of reaching this person, go for it.</p>
+          <p>Once you are in contact and both agree to the swap, click the CreateSwapCode button on your room. Send the code to the other person and have them enter it.</p>
+          <p>Enter your email address and/or phone number so the owner of the room you want can contact you.</p>
 
           <Form onSubmit={handleSubmit}>
 
@@ -215,7 +215,7 @@ export function ModalCreateCode({row}) {
           <h5>Send this code to your friend if u rly want to trade roomz with them.</h5>
           <p/>
           <p>Direct them to follow the link in the request email, or initial placement email. Have them click EnterSwapCode on the room they are trading to you.</p>
-          <p>This code is good for 10mins. No un-swapzies.</p>
+          <p>This code expires after 10mins. No un-swapzies.</p>
           <p>Swap Code: {phrase}</p>
         </Modal.Body>
 
