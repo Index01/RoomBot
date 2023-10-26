@@ -1,5 +1,7 @@
 import logging
+from random import randint
 import sys
+import time
 from django.core.management.base import BaseCommand, CommandError
 import reservations.config as roombaht_config
 from reservations.models import Guest
@@ -66,3 +68,5 @@ class Command(BaseCommand):
                 for guest in not_onboarded:
                     guest.onboarding_sent = True
                     guest.save()
+
+            time.sleep(randint(2, 5))

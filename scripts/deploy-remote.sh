@@ -80,6 +80,23 @@ systemctl stop roombaht
     "${BACKEND_DIR}/manage.py" migrate
 systemctl start roombaht
 
+sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
+    -e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
+    -e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
+    -e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
+    -e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
+    -e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
+    -e "s%@TEMP@%${ROOMBAHT_TMP}%" \
+    -e "s/@JWT_KEY@/${ROOMBAHT_JWT_KEY}/" \
+    -e "s/@HOST@/${ROOMBAHT_HOST}/" \
+    -e "s/@LOGLEVEL@/${ROOMBAHT_LOGLEVEL}"/ \
+    -e "s/@SEND_ONBOARDING@/${ROOMBAHT_SEND_ONBOARDING}/" \
+    -e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
+    -e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
+    "${BACKEND_DIR}/scripts/roombaht-oob.sh" \
+    > "/opt/roombaht-backend/scripts/roombaht-oob"
+chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"
+
 # load the frontend
 if [ -d "$FRONTEND_DIR" ] ; then
     mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
