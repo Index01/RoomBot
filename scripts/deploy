@@ -58,7 +58,7 @@ if [ "$(git status --porcelain || true | wc -l)" != "0" ] ; then
     warn "Dirty git repo detected"
     DIRTY="yes"
 fi
-if [ "$(git rev-parse --abbrev-rev HEAD)" != "main" ] ; then
+if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ] ; then
     warn "Branch other than 'main' detected"
     DIRTY="yes"
 fi
