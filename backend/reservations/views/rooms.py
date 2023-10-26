@@ -39,8 +39,13 @@ def my_rooms(request):
         rooms = Room.objects.all()
         rooms_mine = [elem for elem in rooms if elem.guest is not None and elem.guest.email==email]
 
-        response = json.dumps([{"number": int(room.number),
-                                "type": room.name_take3} for room in rooms_mine], indent=2)
+        data = {
+            'rooms': [{"number": int(room.number),
+                       "type": room.name_take3} for room in rooms_mine],
+            'swaps_enabled': roombaht_config.SWAPS_ENABLED
+        }
+
+        response = json.dumps(data, indent=2)
 
         logger.debug("rooms for user %s: %s", email, rooms_mine)
         return Response(response)
@@ -72,21 +77,23 @@ def room_list(request):
             room_types = ['None']
 
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
-        data = serializer.data
+        data = {
+            'rooms': serializer.data,
+            'swaps_enabled': roombaht_config.SWAPS_ENABLED
+        }
 
-        for room in data:
+        for room in data['rooms']:
             if(len(room['number'])==3):
                 room["floorplans"]=FLOORPLANS[int(room["number"][:1])]
             elif(len(room['number'])==4):
                 room["floorplans"]=FLOORPLANS[int(room["number"][:2])]
-            for room_type in room_types:
-                if(room["name_take3"]==room_type):
-                    room['available']=True
-                    break
-                else:
-                    room['available']=False
 
-        return Response(serializer.data)
+            if roombaht_config.SWAPS_ENABLED and room['name_take3'] in room_types:
+                room['available']=True
+            else:
+                room['available']=False
+
+        return Response(data)
 
 
 @api_view(['POST'])
@@ -142,12 +149,17 @@ def swap_request(request):
         requester_email = auth_obj['email']
 
         data = request.data
+
+        if not roombaht_config.SWAPS_ENABLED:
+            return Response("Room swaps are not currently enabled",
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
+
         try:
             room_num=data["number"]
             msg=data["contact_info"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        swap_req = Room.objects.filter(number=room_num) \
+        swap_req = Room.objects.filter(number=room_num)
 
         try:
             swap_req_email = swap_req[0].guest.email
@@ -189,6 +201,10 @@ def swap_gen(request):
             return unauthenticated()
         email = auth_obj['email']
 
+        if not roombaht_config.SWAPS_ENABLED:
+            return Response("Room swaps are not currently enabled",
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
+
         data = request.data
         logger.debug(f"data_swap_gen: {data}")
         try:
@@ -219,6 +235,10 @@ def swap_it_up(request):
         if not auth_obj or 'email' not in auth_obj:
             return unauthenticated()
         email = auth_obj['email']
+
+        if not roombaht_config.SWAPS_ENABLED:
+            return Response("Room swaps are not currently enabled",
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
 
         data = request.data
         try:

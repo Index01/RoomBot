@@ -16,54 +16,58 @@ import ModalImage from "react-modal-image";
 import {ModalRequestSwap} from "./modals.js";
 import { Navigate } from "react-router-dom";
 
-const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
-    {
-      prop: "number",
-      title: "Number",
-      isSortable: true,
-      isFilterable: true
-    },
-    {
-      prop: "name_take3",
-      title: "Type",
-      isFilterable: true
-    },
-    {
-      prop: "floorplan",
-      title: "FloorPlan",
-      cell: (row) => (
-          <ModalImage
-            small={"layouts/" + row.floorplans[1]}
-            large={"layouts/" + row.floorplans[0]}
-            alt="Babyface_footprint"
-          />
-      )
-    },
-    {
-      prop: "button",
-      cell: (row) => (
-        <ModalRequestSwap row={row}/>
-      )
-    }
-  ];
-
-
 export default class RoomDataTable extends React.Component {
   state = {
     rooms : [],
     jwt: ""
   }
 
+  storyHeaderFactory(swaps_enabled) {
+    let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
+					{
+					  prop: "number",
+					  title: "Number",
+					  isSortable: true,
+					  isFilterable: true
+					},
+					{
+					  prop: "name_take3",
+					  title: "Type",
+					  isFilterable: true
+					},
+					{
+					  prop: "floorplan",
+					  title: "FloorPlan",
+					  cell: (row) => (
+					    <ModalImage
+					      small={"layouts/" + row.floorplans[1]}
+					      large={"layouts/" + row.floorplans[0]}
+					      alt="Hotel Floor Plan"
+					    />
+					  )
+					},
+					{
+					  prop: "button",
+					  cell: (row) => (
+					    <ModalRequestSwap row={row} swaps_enabled={swaps_enabled} />
+					  )
+					}
+					];
+			       return STORY_HEADERS;
+
+
+
+  };
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    console.log("ALL THE ROOMSSS");
     axios.post(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {
         console.log(res.data);
         const data = res.data
-        this.state.rooms = data
+        this.state.rooms = data.rooms;
+	this.state.swaps_enabled = data.swaps_enabled;
         this.setState({ data  });
       })
       .catch((error) => {
@@ -85,7 +89,7 @@ export default class RoomDataTable extends React.Component {
     return(
       <DatatableWrapper
         body={this.state.rooms}
-        headers={STORY_HEADERS}
+        headers={this.storyHeaderFactory(this.state.swaps_enabled)}
         paginationOptionsProps={{
           initialState: {
             rowsPerPage: 10,

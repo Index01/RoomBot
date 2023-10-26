@@ -6,13 +6,13 @@ import Modal from 'react-bootstrap/Modal';
 import axios from 'axios';
 import "../styles/modals.css";
 
-export function ModalRequestSwap({row}) {
+export function ModalRequestSwap(props) {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const [phrase, setPhrase] = useState("");
   const jwt = JSON.parse(localStorage.getItem('jwt'));
-
+  const row = props.row;
   const handleAPICall = (contacts) => {
     if (contacts === null) {
         return;
@@ -49,13 +49,21 @@ export function ModalRequestSwap({row}) {
 
   return (
     <>
+      {props.swaps_enabled ?
       <Button disabled={row.available ? false : true}
 	    variant={row.available ? "outline-primary" : "outline-secondary"}
             size="sm"
             onClick={handleShow}>
             SendSwapRequest
       </Button>
-
+       :
+       <Button hidden disabled={row.available ? false : true}
+	    variant={row.available ? "outline-primary" : "outline-secondary"}
+            size="sm"
+            onClick={handleShow}>
+            SendSwapRequest
+      </Button>
+      }
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
           <Modal.Title>RoomService Room Trader</Modal.Title>
@@ -76,7 +84,7 @@ export function ModalRequestSwap({row}) {
             </Form.Group>
 
           <Button variant="primary" type="submit">
-            Submit 
+            Submit
           </Button>
           </Form>
 
@@ -90,12 +98,13 @@ export function ModalRequestSwap({row}) {
 }
 
 
-export function ModalEnterCode({row}) {
+export function ModalEnterCode(props) {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const [phrase, setPhrase] = useState("");
   const jwt = JSON.parse(localStorage.getItem('jwt'));
+  const row = props.row;
 
   const handleAPICall = (code) => {
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_it_up/', {
@@ -132,9 +141,15 @@ export function ModalEnterCode({row}) {
 
   return (
     <>
+      {props.swaps_enabled ?
       <Button size="sm" variant="outline-primary" onClick={handleShow}>
           EnterSwapCode
       </Button>
+       :
+      <Button hidden size="sm" variant="outline-primary" onClick={handleShow}>
+          EnterSwapCode
+      </Button>
+      }
 
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
@@ -152,7 +167,7 @@ export function ModalEnterCode({row}) {
             </Form.Group>
 
           <Button variant="primary" type="submit">
-            Submit 
+            Submit
           </Button>
           </Form>
 
@@ -165,16 +180,16 @@ export function ModalEnterCode({row}) {
   );
 }
 
-export function ModalCreateCode({row}) {
+export function ModalCreateCode(props) {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const [phrase, setPhrase] = useState("");
 
   const jwt = JSON.parse(localStorage.getItem('jwt'));
-
+  const row = props.row;
   const handleAPICall = () => {
-  
+
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_gen/', {
             jwt: jwt['jwt'],
             number: {row},
@@ -201,9 +216,15 @@ export function ModalCreateCode({row}) {
 
   return (
     <>
+      {props.swaps_enabled ?
       <Button size="sm" variant="outline-primary" onClick={handleAPICall}>
           CreateSwapCode
       </Button>
+       :
+      <Button hidden size="sm" variant="outline-primary" onClick={handleAPICall}>
+          CreateSwapCode
+      </Button>
+      }
 
       <Modal show={show} onHide={handleClose}>
 
@@ -221,7 +242,7 @@ export function ModalCreateCode({row}) {
 
         <Modal.Footer>
           <Button variant="primary" onClick={handleClose}>
-            Close 
+            Close
           </Button>
         </Modal.Footer>
 
