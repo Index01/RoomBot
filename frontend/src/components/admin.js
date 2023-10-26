@@ -12,6 +12,7 @@ import Form from 'react-bootstrap/Form';
 
 function GuestsCard() {
   const [phrase, setPhrase] = useState("");
+  const [respText, setRespText] = useState([]);
   const [isLoading, setLoading] = useState(false);
   const handleClick = () => setLoading(true);
   const jwt = JSON.parse(localStorage.getItem('jwt'));
@@ -80,9 +81,11 @@ function GuestsCard() {
   useEffect(() => {
     if (isLoading) {
       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { jwt: jwt['jwt'] }).then((res) => {
-        console.log(res.data);
-	setLoading(false);
-	setPhrase("{" + res.data.results.join("\n") + "}");
+        console.log("results");
+        console.log(res.data.results);
+	    setLoading(false);
+        setRespText(JSON.parse(JSON.stringify(res.data)).results);
+        setPhrase("");
       })
       .catch((error) => {
           console.log(error);
@@ -99,6 +102,7 @@ function GuestsCard() {
          Select a guest list to upload, verify it, load it to database.
         </Card.Text>
 
+
         <Form onSubmit={handleSubmit}>
             <div className="mb-3">
               <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
@@ -106,10 +110,9 @@ function GuestsCard() {
           <Button variant="primary" type="submit">
             Upload
           </Button>
-        </Form>
-
         <p></p>
         <Card.Text>{phrase}</Card.Text>
+        </Form>
 
         <Button
           variant="primary"
@@ -118,6 +121,13 @@ function GuestsCard() {
         >
           {isLoading ? 'Loading…' : 'Click to load'}
         </Button>
+        <p></p>
+        <ul className="card-subtitle mb-2 text-muted">
+          {respText.map(item =>
+            <li key={item}>load response: {item}</li>
+          )}
+        </ul>
+
 
       </Card.Body>
     </Card>

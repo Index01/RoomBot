@@ -36,14 +36,21 @@ export default class BasicVis extends React.Component {
 
   render(){
     let {metrics, error} = this.state;
-
+    let animated = false;
+    if (metrics.percent_placed < 100) {
+      animated = true;
+    }
     return(
       <Container>
 	    {error && (<Navigate to="/login" replace={true} />)}
         <Row className="justify-content-md-center">
           <Col width="100">
             <p></p>
-            <ProgressBar animated now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
+	    this.{animated ?
+             <ProgressBar animated now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
+	     :
+	     <ProgressBar now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
+	    }
             <p></p>
           </Col>
         </Row>

@@ -2,6 +2,7 @@
 
 set -e
 
+OLD_RELEASES=5
 BACKEND_ARTIFACT="/tmp/roombaht-backend.tgz"
 FRONTEND_ARTIFACT="/tmp/roombaht-frontend.tgz"
 
@@ -9,6 +10,8 @@ BACKEND_DIR="/opt/roombaht-backend"
 FRONTEND_DIR="/opt/roombaht-frontend"
 
 ENV_FILE="/tmp/secrets.env"
+
+NOW="$(date '+%m%d%Y-%H%M')"
 
 problems() {
     2>&1 echo "Error: $*"
@@ -29,11 +32,19 @@ trap cleanup EXIT
 source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
+# load the backend
 if [ -d "${BACKEND_DIR}.old" ] ; then
     rm -rf "${BACKEND_DIR}.old"
 fi
 
-mv "$BACKEND_DIR" "${BACKEND_DIR}.old"
+# keep some archives for rollback
+if [ -d "$BACKEND_DIR" ] ; then
+    mv "$BACKEND_DIR" "${BACKEND_DIR}-${NOW}"
+    for old in `find /opt -name 'roombaht-backend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+	rm -rf "$old"
+    done
+fi
+
 tar -C "/opt" -xzvf "$BACKEND_ARTIFACT"
 if [ -d "${BACKEND_DIR}/.old/venv" ] ; then
     cp -r "${BACKEND_DIR}.old/venv" "${BACKEND_DIR}/venv"
@@ -69,11 +80,14 @@ systemctl stop roombaht
     "${BACKEND_DIR}/manage.py" migrate
 systemctl start roombaht
 
-if [ -d "${FRONTEND_DIR}.old" ] ; then
-    rm -rf "${FRONTEND_DIR}.old"
+# load the frontend
+if [ -d "$FRONTEND_DIR" ] ; then
+    mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
+    for old in `find /opt -name 'roombahtt-frontend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+	rm -rf "$old"
+    done
 fi
 
-mv "$FRONTEND_DIR" "${FRONTEND_DIR}.old"
 tar -C /opt -xzvf "$FRONTEND_ARTIFACT"
 
 chown -R roombaht: "$FRONTEND_DIR"
