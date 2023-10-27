@@ -16,11 +16,33 @@ import ModalImage from "react-modal-image";
 import {ModalRequestSwap} from "./modals.js";
 import { Navigate } from "react-router-dom";
 
+
+
+
 export default class RoomDataTable extends React.Component {
   state = {
     rooms : [],
-    jwt: ""
+    jwt: "",
+    sortColumn: "number", // default column to sort by
+    sortDirection: "asc", // default sort direction
   }
+  
+  // utility function for sorting table room # strings as numbers
+  sortData = () => {
+    this.setState((prevState) => {
+      const sortedRooms = [...prevState.rooms];
+      sortedRooms.sort((a, b) => {
+        const valA = a[prevState.sortColumn];
+        const valB = b[prevState.sortColumn];
+        if (prevState.sortDirection === "asc") {
+          return valA - valB; // for numerical values
+        } else {
+          return valB - valA; // for descending order
+        }
+      });
+      return { rooms: sortedRooms };
+    });
+  };
 
   storyHeaderFactory(swaps_enabled) {
     let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
@@ -53,6 +75,16 @@ export default class RoomDataTable extends React.Component {
         )
       }
     ];
+    // handle column header clicks
+    STORY_HEADERS[0].onHeaderClick = () => {
+      this.setState(
+        (prevState) => ({
+          sortColumn: "number",
+          sortDirection: prevState.sortColumn === "number" && prevState.sortDirection === "asc" ? "desc" : "asc",
+        }),
+        this.sortData // callback to sort data after state is updated
+      );
+    };
     return STORY_HEADERS;
 
 
@@ -67,21 +99,22 @@ export default class RoomDataTable extends React.Component {
         console.log(res.data);
         const data = res.data
         this.state.rooms = data.rooms;
-	this.state.swaps_enabled = data.swaps_enabled;
+	  this.state.swaps_enabled = data.swaps_enabled;
         this.setState({ data  });
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-	  if (error.response.status == '401') {
-	    this.setState({ error: 'auth' });
+          if (error.response.status == '401') {
+            this.setState({ error: 'auth' });
           } else if (error.request) {
             console.log("network error");
           } else {
             console.log("unhandled error " + error.response.status + ", " + error.response.data);
           }
-	}
+	      }
       });
+    this.sortData();
   }
 
   render(){
