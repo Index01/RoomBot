@@ -33,12 +33,11 @@ usage() {
 
 trap cleanup EXIT
 
-[ $# -ge 3 ] || usage
+[ $# -ge 2 ] || usage
 
 R_USER="$1"
-R_HOST="$2"
-R_ENV="$3"
-shift 3
+R_ENV="$2"
+shift 2
 
 FORCE=""
 while getopts "f" arg; do
@@ -79,13 +78,4 @@ if [ -n "$DIRTY" ] ; then
     fi
 fi
 
-scp "${SCRIPTDIR}/deploy-remote.sh" \
-    "${R_USER}@${R_HOST}:/tmp/deploy.sh"
-scp "${ROOTDIR}/build/roombaht-backend.tgz" \
-    "${ROOTDIR}/build/roombaht-frontend.tgz" \
-    "${R_USER}@${R_HOST}:/tmp" || problems "Unable to copy archives"
-"${SCRIPTDIR}/secrets" decrypt "$R_ENV"
-scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
-
-ssh "${R_USER}@${R_HOST}" \
-    "sudo bash /tmp/deploy.sh ; sudo rm /tmp/deploy.sh"
+"${SCRIPTDIR}/roombaht_ctl" "$R_USER" "$R_ENV" deploy

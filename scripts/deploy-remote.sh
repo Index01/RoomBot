@@ -85,7 +85,7 @@ systemctl start roombaht
 # load the frontend
 if [ -d "$FRONTEND_DIR" ] ; then
     mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
-    for old in `find /opt -name 'roombahtt-frontend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
+    for old in `find /opt -name 'roombaht-frontend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
 	rm -rf "$old"
     done
 fi
