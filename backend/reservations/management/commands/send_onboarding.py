@@ -26,9 +26,11 @@ def onboarding_email(email, otp):
         4. If you both agree to swap rooms, login (link below) and find the room you want to swap under "My Rooms."
         5. Click CreateSwapCode. Give this swap code to the other person.
         6. The other person has 10 minutes to log into Roombaht, click "EnterSwapCode" for the room that they are swapping with you, and enter the swap code.
-        7. Magic intradimensional elves will hop around and inform you of your success. And you will have the new room of your dreams!
+        7. After swapping, refresh your browser and you should see your new room. 
+        8. Magic intradimensional elves will hop around and inform you of your success. And you will have the new room of your dreams!
 
-        This is your password. There are many like it, but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
+        This is your password. There are many like it, but this one is yours. 
+        It should go without saying, but don't forward this email.
 
         Copy and paste this password. Because let's face it, no one should trust humans to make passwords:
         username: {email}
@@ -36,9 +38,6 @@ def onboarding_email(email, otp):
         login page: {hostname}/login
 
         Good Luck, Starfighter.
-
-        It should go without saying, but don't forward this email.
-
 
     """
     send_email([email],
