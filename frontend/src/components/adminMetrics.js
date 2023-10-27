@@ -40,34 +40,38 @@ export default class BasicVis extends React.Component {
     if (metrics.percent_placed < 100) {
       animated = true;
     }
+    //TODO(tb): omfg someone plz make this use a map or something
     return(
       <Container>
 	    {error && (<Navigate to="/login" replace={true} />)}
         <Row className="justify-content-md-center">
           <Col width="100">
             <p></p>
-	    this.{animated ?
-             <ProgressBar animated now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
-	     :
-	     <ProgressBar now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
-	    }
+   	        {animated ?
+                 <ProgressBar animated now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
+	         :
+	             <ProgressBar now={this.state.metrics.percent_placed} label={`Percent placed ${this.state.metrics.percent_placed}%`} />
+	        }
             <p></p>
           </Col>
         </Row>
         <Row className="justify-content-md-center">
           <Col xs lg="4">
               <h5> Guests</h5>
-              <div className="card-subtitle mb-2 text-muted">Guest Count: {this.state.metrics.guest_count}</div>
-              <div className="card-subtitle mb-2 text-muted">Guest Unique: {this.state.metrics.guest_unique}</div>
-              <div className="card-subtitle mb-2 text-muted">Guest Unplaced: {this.state.metrics.guest_unplaced}</div>
+              <div className="card-subtitle mb-2 text-muted">Count: {this.state.metrics.guest_count}</div>
+              <div className="card-subtitle mb-2 text-muted">Unique: {this.state.metrics.guest_unique}</div>
+              <div className="card-subtitle mb-2 text-muted">Unplaced: {this.state.metrics.guest_unplaced}</div>
+              <div className="card-subtitle mb-2 text-muted">Swaps Created: {this.state.metrics.rooms_swap_code_count}</div>
+              <div className="card-subtitle mb-2 text-muted">Swaps Completed: {this.state.metrics.rooms_swap_success_count}</div>
           </Col>
           <Col xs lg="4">
               <h5> Rooms</h5>
-              <div className="card-subtitle mb-2 text-muted">Room Count: {this.state.metrics.rooms_count}</div>
-              <div className="card-subtitle mb-2 text-muted">Room Occupied: {this.state.metrics.rooms_occupied}</div>
-              <div className="card-subtitle mb-2 text-muted">Room Available: {this.state.metrics.rooms_available}</div>
-              <div className="card-subtitle mb-2 text-muted">Room Swappable: {this.state.metrics.rooms_swappable}</div>
-              <div className="card-subtitle mb-2 text-muted">Room RoomBot Placed: {this.state.metrics.rooms_placed_by_roombot}</div>
+              <div className="card-subtitle mb-2 text-muted">Count: {this.state.metrics.rooms_count}</div>
+              <div className="card-subtitle mb-2 text-muted">Occupied: {this.state.metrics.rooms_occupied}</div>
+              <div className="card-subtitle mb-2 text-muted">Available: {this.state.metrics.rooms_available}</div>
+              <div className="card-subtitle mb-2 text-muted">Swappable: {this.state.metrics.rooms_swappable}</div>
+              <div className="card-subtitle mb-2 text-muted">Manually Placed: {this.state.metrics.rooms_placed_manually}</div>
+              <div className="card-subtitle mb-2 text-muted">RoomBot Placed: {this.state.metrics.rooms_placed_by_roombot}</div>
           </Col>
           <Col xs lg="4">
               <h5> Unoccupied</h5>

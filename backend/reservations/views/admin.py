@@ -18,7 +18,7 @@ from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
-from ..reporting import dump_guest_rooms, diff_latest, hotel_export
+from ..reporting import dump_guest_rooms, diff_latest, hotel_export, diff_swaps_count
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
 import reservations.config as roombaht_config
@@ -556,8 +556,12 @@ def request_metrics(request):
         rooms_count = rooooms.count()
         rooms_occupied = rooooms.exclude(is_available=True).count()
         rooms_swappable = rooooms.exclude(is_swappable=False).count()
+        # rooms available: has not yet been placed, roombaht or other
         rooms_available = rooooms.exclude(is_available=False).count()
-        rooms_placed_by_roombot = rooooms.exclude(placed_by_roombot=True).count()
+        # rooms placed by roombot: rooms available to be placed by
+        rooms_placed_by_roombot = rooooms.exclude(placed_by_roombot=False).count()
+        rooms_placed_manually = rooooms.exclude(placed_by_roombot=True).count()
+        rooms_swap_code_count = rooooms.filter(swap_code__isnull=False).count()
 
         if(rooms_occupied!=0 and rooms_count!=0):
             percent_placed = round(float(rooms_occupied) / float(rooms_count) * 100, 2)
@@ -578,7 +582,10 @@ def request_metrics(request):
                    "rooms_swappable": rooms_swappable,
                    "rooms_available": rooms_available,
                    "rooms_placed_by_roombot": rooms_placed_by_roombot,
+                   "rooms_placed_manually": rooms_placed_manually,
                    "percent_placed": percent_placed,
+                   "rooms_swap_code_count": rooms_swap_code_count,
+                   "rooms_swap_success_count": diff_swaps_count(),
                    }
         metrics.update(type_totals)
         metrics.update(type_unocc)

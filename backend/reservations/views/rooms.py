@@ -14,6 +14,7 @@ from ..models import Room
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
+from ..reporting import diff_swaps
 from reservations.helpers import my_url, send_email
 import reservations.config as roombaht_config
 from reservations.auth import authenticate, unauthenticated
@@ -265,11 +266,13 @@ def swap_it_up(request):
             logger.warning("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
 
-        expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=600)
+        expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=3600)
+
         if(expiration.timestamp() < datetime.datetime.utcnow().timestamp()):
             logger.warning("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
 
+        swap_room_theirs.swap_code = None
         guest_id_theirs = swap_room_theirs.guest
         swap_room_theirs.guest = swap_room_mine.guest
         swap_room_mine.guest = guest_id_theirs
@@ -277,6 +280,7 @@ def swap_it_up(request):
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_mine} {swap_room_theirs}")
         swap_room_mine.save()
         swap_room_theirs.save()
+        diff_swaps(swap_room_theirs, swap_room_mine)
 
         return Response(status=status.HTTP_201_CREATED)
 
