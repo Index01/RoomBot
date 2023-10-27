@@ -92,19 +92,22 @@ $ API_ENV=staging make archive
 There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
 
 * `./scripts/provision user 127.0.0.1` is to be run when a host is first created and when any baseline non-application changes are desired. It will execute `./scripts/provision-remote.sh` on the remote host.
-* `./scripts/deploy user 127.0.0.1 <env>` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. You must specify the `prod` or `staging` environment. Make sure you are pointing the right environment at the right host! This includes
+* `./scripts/deploy user 127.0.0.1 <env>` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. You must specify the `prod` or `staging` environment. Make sure you are pointing the right environment at the right host! This deployment includes
   * python `virtualenv` management
   * `nginx` configuration
   * `systemd` for the django bits
+  * running any available database migrations
 * Run `init` to load the Rooms and Staff tables, generally after a `wipe` and/or `deploy`
-  * `./scripts/roombaht_ctl user 127.0.0.1 init ${ROOM_FILE} ${STAFF_FILE}`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> init ${ROOM_FILE} ${STAFF_FILE}`
 * You can easily view frontend (nginx) and backend (django/wsgi) logs remotely
-  * `./scripts/roombaht_ctl user 127.0.0.1 frontend-log`
-  * `./scripts/roombaht_ctl user 127.0.0.1 backend-log`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> frontend-log`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> backend-log`
 * You can completely wipe the database as well. Helpful during pre-season development and a terrible idea once the gates have opened. After a helful confirmation prompt, this will wipe the database and re-run the migrations.
-  * `./scripts/roombaht_ctl user 127.0.0.1 wipe`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> wipe`
 * You can directly invoke a the django management tool, which gives you access to a variety of administrative tools.
-  * `./scripts/roombaht_ctl user 127.0.0.1 manage shell` - invoke the djangok shell will full access to the orm and every module in the project
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage shell` - invoke the django shell will full access to the orm and every module in the project.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_show name@noop.com` the `user_show` command will display information on a guest.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_edit --help` the `user_edit` can edit limited aspects of a guest.
 
 # Data Population
 
@@ -118,13 +121,12 @@ source dev.env
 python backend/createStaffAndRooms.py samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
 ```
 
-To get a guest password, you can go to the Django management console.
+To get a guest password, you can use a Django management command.
 First, already have a running backend.
-Then, run `python backend/manage.py shell`
-And in the python terminal, enter
-```python
-from reservations.models import Guest
-Guest.objects.filter(email="mpesaven@gmail.com")[0].jwt
+```
+$ python backend/manage.py user_show name@noop.com
+User Foo Bar, otp: SomeOtp, last login: never
+    rooms: 305, tickets: aaa001, onboarding sent: yes
 ```
 
 ## Remote
@@ -132,12 +134,12 @@ Guest.objects.filter(email="mpesaven@gmail.com")[0].jwt
 This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name.
 
 ```
-./scripts/roombaht_ctl user 127.0.0.1 init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+./scripts/roombaht_ctl user 127.0.0.1 init <env> samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
 ```
 
 ## Images
 
-Images are kinda like data? There is a script that will either work based on an existing downloaded folder (i.e. if you have GDrive setup on a computer) or will attempt to use `gdown` to fetch the folder magially. It will then generate thumbnails and put the images in the right place. Not these images will _not_ end up in the git repo.
+Images are kinda like data? There is a script that will either work based on an existing downloaded folder (i.e. if you have GDrive setup on a computer) or will attempt to use `gdown` to fetch the folder magially. It will then generate thumbnails and put the images in the right place. Not these images will _not_ end up in the git repo. Images will be fetched during the `frontend_build` step if they are not present.
 
 ```
 ./scripts/fetch-images
