@@ -62,7 +62,7 @@ def unauthenticated():
 
 def reset_otp(email):
     new_pass = phrasing()
-    body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strang happening in the neghborhood. Please report any suspicious activity.\nGood luck."
+    body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strange happening in the neghborhood. Please report any suspicious activity.\nGood luck."
     guests = Guest.objects.filter(email=email)
     if guests.count() > 0:
         logger.info("Resetting password for %s", email)
