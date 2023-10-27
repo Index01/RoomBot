@@ -1,0 +1,1 @@
+*/2 * * * * roombaht systemd-cat -t roombaht-oob bash -c /opt/roombaht-backend/scripts/roombaht-oob

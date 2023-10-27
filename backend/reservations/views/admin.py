@@ -8,6 +8,7 @@ import json
 import string
 import sys
 
+from random import randint
 from csv import DictReader, DictWriter
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -83,32 +84,6 @@ def short_product_code(product):
         return product
 
     raise Exception('Should never not find a short product code tho')
-
-def onboarding_email(guest_new, otp):
-    if not roombaht_config.SEND_ONBOARDING:
-        logger.debug("Not actually sending onboarding email to %s", guest_new.email)
-        return
-
-    hostname = my_url()
-    time.sleep(5)
-    body_text = f"""
-        BleepBloopBleep, this is the Room Service RoomBaht for Room Swaps letting you know the floors have been cleaned and you have been assigned a room. No bucket or mop needed.
-
-        After you login below you can view your current room, look at other rooms and send trade requests. This functionality is only available until Monday 11/7 at 5pm PST, so please make sure you are good with what you have or trade early.
-
-        Goes without saying, but don't forward this email.
-
-        This is your password, there are many like it but this one is yours. Once you use this password on a device, RoomBaht will remember you, but only on that device.
-        Copy and paste this password. Because let’s face it, no one should trust humans to make passwords:
-        {otp}
-        {hostname}/login
-
-        Good Luck, Starfighter.
-
-    """
-    send_email([guest_new["email"]],
-               'RoomService RoomBaht - Account Activation',
-               body_text)
 
 def find_room(room_product):
     room_type = short_product_code(room_product)
@@ -241,10 +216,14 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
 
             if guest_obj:
-                # we have one, that's nice
+                # we have one, that's nice. make sure to use the same otp
+                # if we can for this guest
+                existing_guests = Guest.objects.filter(email=guest_obj.email)
                 otp = phrasing()
-                guest_update(guest_obj, otp, room, room_counts)
-                onboarding_email(guest_obj, otp)
+                if len(existing_guests) > 0:
+                    otp = existing_guests[0].jwt
+
+                guest_update(guest_obj, otp, room)
             else:
                 if room.is_comp:
                     logger.debug("Ignoring comp'd %s room %s, guest %s",
@@ -269,7 +248,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
     return orphan_tickets
 
-def guest_update(guest_obj, otp, room, room_counts, og_guest=None):
+def guest_update(guest_obj, otp, room, og_guest=None):
     ticket_code = guest_obj.ticket_code
     email = guest_obj.email
     guest = None
@@ -372,8 +351,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
             logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj.email)
             otp = phrasing()
-            guest_update(guest_obj, otp, room, room_counts)
-            onboarding_email(guest_obj, otp)
+            guest_update(guest_obj, otp, room)
             room_counts.allocated(room.name_take3)
         elif trans_code =='' and guest_entries.count() > 0:
             # There are a few cases that could pop up here
@@ -387,7 +365,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     continue
 
                 logger.debug("assigning room %s to (unassigned ticket/room) %s", room.number, guest_entries[0].email)
-                guest_update(guest_obj, guest_entries[0].jwt, room, room_counts)
+                guest_update(guest_obj, guest_entries[0].jwt, room)
                 room_counts.allocated(room.name_take3)
             else:
                 logger.warning("Not sure how to handle non-transfer, existing user ticket %s", ticket_code)
@@ -433,7 +411,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj.email)
                     otp = phrasing()
-                    guest_update(guest_obj, otp, room, room_counts)
+                    guest_update(guest_obj, otp, room)
                 else:
                     logger.debug("Processing transfer %s (%s) from %s to %s",
                                  trans_code,
@@ -441,7 +419,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj.email)
                     otp = guest_entries[0].jwt
-                    guest_update(guest_obj, otp, room, room_counts)
+                    guest_update(guest_obj, otp, room)
 
                 room_counts.allocated(room.name_take3)
                 room_counts.transfer(room.name_take3)
@@ -461,8 +439,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                              existing_guest.email,
                              guest_obj.email)
                 otp = phrasing()
-                guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
-                onboarding_email(guest_obj, otp)
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
             else:
                 # Transferring to existing guest...
                 logger.debug("Processing placed transfer %s (%s) from %s to %s",
@@ -474,7 +451,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 # are kept around as part of transfers (ticket/email uniq) and when someone
                 # has multiple rooms (email/room uniq)
                 otp = guest_entries[0].jwt
-                guest_update(guest_obj, otp, existing_room, room_counts, og_guest=existing_guest)
+                guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
 
             room_counts.allocated(existing_room.name_take3)
             room_counts.transfer(existing_room.name_take3)

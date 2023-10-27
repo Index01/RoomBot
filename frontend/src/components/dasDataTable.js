@@ -26,7 +26,7 @@ export default class RoomDataTable extends React.Component {
     sortColumn: "number", // default column to sort by
     sortDirection: "asc", // default sort direction
   }
-  
+
   // utility function for sorting table room # strings as numbers
   sortData = () => {
     this.setState((prevState) => {

@@ -16,6 +16,8 @@ class Migration(migrations.Migration):
             name='Guest',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=240, verbose_name='Name')),
                 ('email', models.EmailField(max_length=254)),
                 ('ticket', models.CharField(max_length=20, verbose_name='Ticket')),
@@ -23,12 +25,16 @@ class Migration(migrations.Migration):
                 ('invitation', models.CharField(max_length=20, verbose_name='Invitation')),
                 ('jwt', models.CharField(max_length=240, verbose_name='JWT')),
                 ('room_number', models.CharField(max_length=20, verbose_name='RoomNumber', blank=True, null=True)),
+                ('onboarding_sent', models.BooleanField(verbose_name="OnboardingSent", default=False)),
+                ('last_login', models.DateTimeField(blank=True, null=True))
             ],
         ),
         migrations.CreateModel(
             name='Staff',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=240, verbose_name='Name')),
                 ('email', models.EmailField(max_length=254)),
                 ('is_admin', models.BooleanField(default=False, verbose_name='Admin')),
@@ -39,6 +45,8 @@ class Migration(migrations.Migration):
             name='Room',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
                 ('number', models.CharField(max_length=20, verbose_name='Number')),
                 ('name_take3', models.CharField(max_length=50, verbose_name='Take3Name')),
                 ('name_hotel', models.CharField(max_length=50, verbose_name='HotelName')),

@@ -82,25 +82,20 @@ def send_email(addresses, subject, body, attachments=[]):
 
     real_addresses = []
     for address in addresses:
-        if not roombaht_config.DEV:
-            # normal production email sending
+        if '@noop.com' not in address:
+            # always send to normal emails
             real_addresses.append(address)
         else:
-            # development mode is a bit more special
-            if '@noop.com' not in address:
-                # always send to normal emails
-                real_addresses.append(address)
+            if roombaht_config.DEV_MAIL != '':
+                # if the ROOMBAHT_DEV_MAIL var is set then insert the address part
+                #   of the @noop.com email address as a suffix and treat as normal
+                email_address, _email_host = address.split('@')
+                dev_address, dev_host = roombaht_config.DEV_MAIL.split('@')
+                real_addresses.append(f"{dev_address}+{email_address}@{dev_host}")
             else:
-                if roombaht_config.DEV_MAIL != '':
-                    # if the ROOMBAHT_DEV_MAIL var is set then insert the address part
-                    #   of the @noop.com email address as a suffix and treat as normal
-                    email_address, _email_host = address.split('@')
-                    dev_address, dev_host = roombaht_config.DEV_MAIL.split('@')
-                    real_addresses.append(f"{dev_address}+{email_address}@{dev_host}")
-                else:
-                    # otherwise just pretend to send the email
-                    logger.debug("Would have sent email to %s, subject: %s", address, subject)
-                    return
+                # otherwise just pretend to send the email
+                logger.debug("Not really sending noop dot com email to %s, subject: %s", address, subject)
+                return
 
     msg = EmailMessage(subject=subject,
                        body=body,

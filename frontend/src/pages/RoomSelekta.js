@@ -13,7 +13,7 @@ const RoomSelekta = () => {
             <div className="AppHeader">
 	         <img src="roombaht_header.png" alt="RoomBaht9000" />
             </div>
-             
+
             <div className="DTApp"> My Rooms
               <MyRoomsTable/>
             </div>
@@ -25,7 +25,7 @@ const RoomSelekta = () => {
             <div className="DTApp">
               <Row>
                 <Col>
-                  <a href="https://rooms.take3presents.com/donate">Donate to the Roombaht project</a>
+                  <a href="/donate">Donate to the Roombaht project</a>
                 </Col>
                 <Col xs="auto">
                   <div className="text-muted">

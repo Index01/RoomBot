@@ -123,7 +123,7 @@ function GuestsCard() {
         </Button>
         <p></p>
         <ul className="card-subtitle mb-2 text-muted">
-          {respText.map(item => 
+          {respText.map(item =>
             <li key={item}>load response: {item}</li>
           )}
         </ul>

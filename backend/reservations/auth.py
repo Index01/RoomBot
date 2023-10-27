@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 import reservations.config as roombaht_config
 from reservations.models import Guest, Staff
+from reservations.helpers import send_email, phrasing
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 logger = logging.getLogger('ViewLogger_auth')
@@ -58,3 +59,21 @@ def authenticate_admin(request):
 
 def unauthenticated():
     return Response("[-] Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+def reset_otp(email):
+    new_pass = phrasing()
+    body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strange happening in the neghborhood. Please report any suspicious activity.\nGood luck."
+    guests = Guest.objects.filter(email=email)
+    if guests.count() > 0:
+        logger.info("Resetting password for %s", email)
+        for guest in guests:
+            guest.jwt = new_pass
+            guest.save()
+
+        send_email([email],
+                       'RoomService RoomBaht - Password Reset',
+                       body_text
+                       )
+
+    else:
+        logger.warning("Password reset for unknwon user %s", email)
