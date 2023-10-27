@@ -19,7 +19,8 @@ problems() {
 }
 
 cleanup() {
-    rm "$ENV_FILE" "$BACKEND_ARTIFACT" "$FRONTEND_ARTIFACT"
+    rm "$ENV_FILE"
+    rm "$BACKEND_ARTIFACT" "$FRONTEND_ARTIFACT"
 }
 
 [ -e "$BACKEND_ARTIFACT" ] || problems "unable to find backend artifact"

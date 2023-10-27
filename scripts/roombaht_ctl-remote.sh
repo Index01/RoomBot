@@ -11,6 +11,12 @@ problems() {
 
 cleanup() {
     rm "$ENV_FILE"
+    if [ -n "$ROOM_FILE" ] ; then
+	rm "$ROOM_FILE"
+    fi
+    if [ -n "$STAFF_FILE" ] ; then
+	rm "$STAFF_FILE"
+    fi
 }
 
 [ -e "$ENV_FILE" ] || problems "unable to find env file"

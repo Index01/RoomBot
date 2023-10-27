@@ -75,7 +75,7 @@ elif [ "$ACTION" == "wipe" ] ; then
     "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
     scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
-    ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh wipe ; sudo rm /tmp/roombaht_ctl.remote.sh"
+    ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh wipe ; sudo rm /tmp/roombaht_ctl-remote.sh"
 elif [ "$ACTION" == "manage" ] ; then
     "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
