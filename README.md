@@ -82,12 +82,17 @@ This should ensure proper depdendencies, initialize and run migrations on sqlite
 
 # Managing a Real Host
 
-Use `make archive` to generate the frontend and backend artifacts.
+Use `make archive` to generate the frontend and backend artifacts. By default this will build the frontend pointing at the production frontend host. To point at a different environment, specify the `API_ENV` variable.
+
+```
+$ API_ENV=dev make archive
+$ API_ENV=staging make archive
+```
 
 There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
 
 * `./scripts/provision user 127.0.0.1` is to be run when a host is first created and when any baseline non-application changes are desired. It will execute `./scripts/provision-remote.sh` on the remote host.
-* `./scripts/deploy user 127.0.0.1` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. This includes
+* `./scripts/deploy user 127.0.0.1 <env>` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. You must specify the `prod` or `staging` environment. Make sure you are pointing the right environment at the right host! This includes
   * python `virtualenv` management
   * `nginx` configuration
   * `systemd` for the django bits

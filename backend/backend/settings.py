@@ -90,7 +90,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'roombaht',
+            'NAME': os.environ['ROOMBAHT_DB'],
             'USER': 'postgres',
             'PASSWORD': os.environ['ROOMBAHT_DB_PASSWORD'],
             'HOST': os.environ['ROOMBAHT_DB_HOST'],

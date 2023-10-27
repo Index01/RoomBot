@@ -56,13 +56,14 @@ chmod -R o-rwx "$BACKEND_DIR"
 sudo -u roombaht -- bash -c "test -d ${BACKEND_DIR}/venv || ( mkdir ${BACKEND_DIR}/venv && virtualenv -p python3 ${BACKEND_DIR}/venv ) && ${BACKEND_DIR}/venv/bin/python3 -m pip install --upgrade pip"
 sudo -u roombaht -- bash -c "${BACKEND_DIR}/venv/bin/pip install -r ${BACKEND_DIR}/requirements.txt --upgrade"
 
-if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q roombaht ; then
-    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE roombaht;"
+if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
+    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE ${ROOMBAHT_DB};"
 fi
 sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
     -e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
     -e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
+    -e "s/@DB_NAME@/${ROOMBAHT_DB}/" \
     -e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
     -e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
     -e "s%@TEMP@%${ROOMBAHT_TMP}%" \
