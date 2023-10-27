@@ -12,7 +12,7 @@ Facilitates participants trading accomodations and answering the critical questi
 
 # Environment / Configuration
 
-Configuration is handled through environment variables, which are stored encrypted in GitHub. Secret management is handled through the `./scripts/secrets` script. You must have a file named `.secret` in the top level of the Git repository. Contact an adult for the contents of this file.
+Configuration is handled through environment variables, which are stored encrypted in GitHub. Secret management is handled through the `./scripts/env_extract` script. You must have a file named `.secret` in the top level of the Git repository. Contact an adult for the contents of this file.
 
 * `./scripts/decrypt` generate the `secrets.env` file from encrypted source
 * `./scripts/encrypt` encrypt the `secrets.env` file

@@ -51,7 +51,7 @@ if [ "$ACTION" == "init" ] ; then
     if [ ! -e "$STAFF_FILE" ] ; then
 	problems "staff file ${STAFF_FILE} not found"
     fi
-    "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
+    "${SCRIPTDIR}/env_extract" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
     scp "$ROOM_FILE" "$STAFF_FILE" "${SCRIPTDIR}/roombaht_ctl-remote.sh" \
 	"${R_USER}@${R_HOST}:/tmp"
@@ -72,12 +72,12 @@ elif [ "$ACTION" == "wipe" ] ; then
     if [ "$answer" != "y" ] ; then
 	problems "user said no"
     fi
-    "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
+    "${SCRIPTDIR}/env_extract" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
     scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
     ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh wipe ; sudo rm /tmp/roombaht_ctl-remote.sh"
 elif [ "$ACTION" == "manage" ] ; then
-    "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
+    "${SCRIPTDIR}/env_extract" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
     scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
     ssh -t "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh manage $* ; sudo rm /tmp/roombaht_ctl-remote.sh"

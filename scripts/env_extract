@@ -14,9 +14,9 @@ problems() {
 }
 
 usage() {
-    echo "secrets decrypt <file>            decrypts specified env file"
-    echo "secrets encrypt <file>            encrypts specified env file, removing non-encrypted version"
-    echo "secrets show <file>               shows contents of specified env file, suitable for eval"
+    echo "env_extract decrypt <file>            decrypts specified env file"
+    echo "env_extract encrypt <file>            encrypts specified env file, removing non-encrypted version"
+    echo "env_extract show <file>               shows contents of specified env file, suitable for eval"
     exit 1
 }
 

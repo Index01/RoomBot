@@ -6,10 +6,10 @@ ifdef API_ENV
 ifeq ($(API_ENV), dev)
 	API_ENDPOINT := "http://localhost:8000/"
 else
-	API_ENDPOINT := $(shell ./scripts/secrets show $(API_ENV) REACT_APP_API_ENDPOINT)
+	API_ENDPOINT := $(shell ./scripts/env_extract show $(API_ENV) REACT_APP_API_ENDPOINT)
 endif
 else
-	API_ENDPOINT := $(shell ./scripts/secrets show prod REACT_APP_API_ENDPOINT)
+	API_ENDPOINT := $(shell ./scripts/env_extract show prod REACT_APP_API_ENDPOINT)
 endif
 
 

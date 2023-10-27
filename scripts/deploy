@@ -84,7 +84,7 @@ scp "${SCRIPTDIR}/deploy-remote.sh" \
 scp "${ROOTDIR}/build/roombaht-backend.tgz" \
     "${ROOTDIR}/build/roombaht-frontend.tgz" \
     "${R_USER}@${R_HOST}:/tmp" || problems "Unable to copy archives"
-"${SCRIPTDIR}/secrets" decrypt "$R_ENV"
+"${SCRIPTDIR}/env_extract" decrypt "$R_ENV"
 scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
 
 ssh "${R_USER}@${R_HOST}" \
