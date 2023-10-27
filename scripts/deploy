@@ -4,7 +4,6 @@ set -e
 
 SCRIPTDIR=$( cd "${0%/*}" && pwd)
 ROOTDIR="${SCRIPTDIR%/*}"
-ENV_FILE="${ROOTDIR}/secrets.env"
 
 warn() {
     2>&1 echo "Warning: $*"
@@ -22,7 +21,7 @@ cleanup() {
 }
 
 usage() {
-    echo "deploy <username> <hostname>"
+    echo "deploy <username> <hostname> <env>"
     echo "             -f force through confirmations"
     echo
     echo "this script will deploy the most recently built (local) artifact to the remote host"
@@ -31,15 +30,16 @@ usage() {
     exit 1
 }
 
-[ -e "${ROOTDIR}/secrets.env" ] && problems "plaintext secrets present"
 
 trap cleanup EXIT
 
-[ $# == 2 ] || usage
+[ $# -ge 3 ] || usage
 
 R_USER="$1"
 R_HOST="$2"
-shift 2
+R_ENV="$3"
+shift 3
+
 FORCE=""
 while getopts "f" arg; do
     case $arg in
@@ -52,13 +52,17 @@ while getopts "f" arg; do
     esac
 done
 
+ENV_FILE="${ROOTDIR}/secrets/${R_ENV}.env"
+ENC_FILE="${ROOTDIR}/config/${R_ENV}.enc"
+[ -e "$ENV_FILE" ] && problems "plaintext secrets present"
+[ -e "$ENC_FILE" ] || problems "unknown env ${R_ENV} specified"
 
 DIRTY=""
-if [ "$(git status --porcelain || true | wc -l)" != "0" ] ; then
+if [ "$( (git status --porcelain || true) | wc -l)" != "0" ] ; then
     warn "Dirty git repo detected"
     DIRTY="yes"
 fi
-if [ "$(git rev-parse --abbrev-rev HEAD)" != "main" ] ; then
+if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ] ; then
     warn "Branch other than 'main' detected"
     DIRTY="yes"
 fi
@@ -79,8 +83,8 @@ scp "${SCRIPTDIR}/deploy-remote.sh" \
     "${R_USER}@${R_HOST}:/tmp/deploy.sh"
 scp "${ROOTDIR}/build/roombaht-backend.tgz" \
     "${ROOTDIR}/build/roombaht-frontend.tgz" \
-    "${R_USER}@${R_HOST}:/tmp"
-"${SCRIPTDIR}/secrets" decrypt
+    "${R_USER}@${R_HOST}:/tmp" || problems "Unable to copy archives"
+"${SCRIPTDIR}/secrets" decrypt "$R_ENV"
 scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
 
 ssh "${R_USER}@${R_HOST}" \

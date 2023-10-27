@@ -1,5 +1,5 @@
 import "bootstrap/dist/css/bootstrap.css";
-import { Button, Col, Row, Table } from "react-bootstrap";
+import { Col, Row, Table } from "react-bootstrap";
 import {
   DatatableWrapper,
   Filter,
@@ -16,68 +16,112 @@ import ModalImage from "react-modal-image";
 import {ModalRequestSwap} from "./modals.js";
 import { Navigate } from "react-router-dom";
 
-const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
-    {
-      prop: "number",
-      title: "Number",
-      isSortable: true,
-      isFilterable: true
-    },
-    {
-      prop: "name_take3",
-      title: "Type",
-      isFilterable: true
-    },
-    {
-      prop: "floorplan",
-      title: "FloorPlan",
-      cell: (row) => (
-          <ModalImage
-            small={"layouts/" + row.floorplans[1]}
-            large={"layouts/" + row.floorplans[0]}
-            alt="Babyface_footprint"
-          />
-      )
-    },
-    {
-      prop: "button",
-      cell: (row) => (
-        <ModalRequestSwap row={row}/>
-      )
-    }
-  ];
+
 
 
 export default class RoomDataTable extends React.Component {
   state = {
     rooms : [],
-    jwt: ""
+    jwt: "",
+    sortColumn: "number", // default column to sort by
+    sortDirection: "asc", // default sort direction
   }
 
+  // utility function for sorting table room # strings as numbers
+  sortData = () => {
+    this.setState((prevState) => {
+      const sortedRooms = [...prevState.rooms];
+      sortedRooms.sort((a, b) => {
+        const valA = a[prevState.sortColumn];
+        const valB = b[prevState.sortColumn];
+        if (prevState.sortDirection === "asc") {
+          return valA - valB; // for numerical values
+        } else {
+          return valB - valA; // for descending order
+        }
+      });
+      return { rooms: sortedRooms };
+    });
+  };
+
+  storyHeaderFactory(swaps_enabled) {
+    let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
+      {
+        prop: "number",
+        title: "Number",
+        isSortable: true,
+        isFilterable: true
+      },
+      {
+        prop: "name_take3",
+        title: "Type",
+        isFilterable: true
+      },
+      {
+        prop: "floorplan",
+        title: "FloorPlan",
+        cell: (row) => (
+          <ModalImage
+            small={"layouts/" + row.floorplans[1]}
+            large={"layouts/" + row.floorplans[0]}
+            alt="Hotel Floor Plan"
+          />
+        )
+      },
+      {
+        prop: "button",
+        cell: (row) => (
+          <ModalRequestSwap row={row} swaps_enabled={swaps_enabled} />
+        )
+      }
+    ];
+    // handle column header clicks
+    STORY_HEADERS[0].onHeaderClick = () => {
+      this.setState(
+        (prevState) => ({
+          sortColumn: "number",
+          sortDirection: prevState.sortColumn === "number" && prevState.sortDirection === "asc" ? "desc" : "asc",
+        }),
+        this.sortData // callback to sort data after state is updated
+      );
+    };
+    return STORY_HEADERS;
+
+
+
+  };
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
-    console.log("ALL THE ROOMSSS");
     axios.post(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {
         console.log(res.data);
-        const data = res.data
-        this.state.rooms = data
-        this.setState({ data  });
+        const data = res.data;
+
+        // Convert room number strings to integers
+        const roomsWithIntegers = data.rooms.map(room => ({
+          ...room,
+          number: parseInt(room.number, 10)
+        }));
+        this.setState({
+          rooms: roomsWithIntegers,
+          swaps_enabled: data.swaps_enabled
+        }, this.sortData0);
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-	  if (error.response.status == '401') {
-	    this.setState({ error: 'auth' });
+          if (error.response.status === '401') {
+            this.setState({ error: 'auth' });
           } else if (error.request) {
             console.log("network error");
           } else {
             console.log("unhandled error " + error.response.status + ", " + error.response.data);
           }
-	}
+	      }
       });
+    this.sortData();
   }
 
   render(){
@@ -85,7 +129,7 @@ export default class RoomDataTable extends React.Component {
     return(
       <DatatableWrapper
         body={this.state.rooms}
-        headers={STORY_HEADERS}
+        headers={this.storyHeaderFactory(this.state.swaps_enabled)}
         paginationOptionsProps={{
           initialState: {
             rowsPerPage: 10,

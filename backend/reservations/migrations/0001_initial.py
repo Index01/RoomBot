@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=240, verbose_name='Name')),
                 ('email', models.EmailField(max_length=254)),
                 ('ticket', models.CharField(max_length=20, verbose_name='Ticket')),
+                ('transfer', models.CharField(max_length=20, verbose_name='Transfer')),
                 ('invitation', models.CharField(max_length=20, verbose_name='Invitation')),
                 ('jwt', models.CharField(max_length=240, verbose_name='JWT')),
                 ('room_number', models.CharField(max_length=20, verbose_name='RoomNumber', blank=True, null=True)),

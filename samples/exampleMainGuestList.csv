@@ -6,6 +6,9 @@ aaa002,Baz,Foo,foo.baz@noop.com,Bally's - Standard 2 Queens (Direct Sale),,
 # these two should be auto placed
 aaa003,Bam,Foo,foo.bam@noop.com,Bally's - Standard King,,
 aaa004,Bat,Foo,foo.bat@noop.com,Bally's - Standard King (Direct Sale),,
+# these two should be auto placed in queen room
+bbb001,Bam,Fob,fob.bam@noop.com,Bally's - Standard 2 Queens,,
+bbb002,Baz,Fob,fob.baz@noop.com,Bally's - Standard 2 Queens,,
 # normal placed art room(s)
 aaa005,Baa,Foo,foo.baa@noop.com,Art Room Bally's - Standard King,,
 aaa006,Bac,Foo,foo.bac@noop.com,Art Room Bally's - Standard 2 Queens,,
@@ -17,7 +20,7 @@ aaa009,Bab,Foo,foo.bab@noop.com,Art Room Bally's - Standard 2 Queens,,
 aaa010,Bal,Foo,foo.bal@noop.com,Art Room Bally's - Standard 2 Queens,aaa009,
 # transferred to self bc why tf not
 aaa011,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,,
-aaa012,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,,aaa011
+aaa012,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,aaa011,
 # transferred twice
 aaa013,TxBar,Foo,foo.txbar@noop.com,Bally's - Standard 2 Queens,,
 aaa014,TxBaz,Foo,foo.txbaz@noop.com,Bally's - Standard 2 Queens,aaa013,

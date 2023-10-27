@@ -90,7 +90,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'roombaht',
+            'NAME': os.environ['ROOMBAHT_DB'],
             'USER': 'postgres',
             'PASSWORD': os.environ['ROOMBAHT_DB_PASSWORD'],
             'HOST': os.environ['ROOMBAHT_DB_HOST'],
@@ -98,6 +98,13 @@ else:
         }
     }
 
+# disable browsable api outside of dev
+if not DEV_MODE:
+    REST_FRAMEWORK = {
+        'DEFAULT_RENDERER_CLASSES': (
+            'rest_framework.renderers.JSONRenderer',
+        )
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

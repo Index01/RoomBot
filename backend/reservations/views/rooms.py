@@ -14,6 +14,7 @@ from ..models import Room
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
+from ..reporting import diff_swaps
 from reservations.helpers import my_url, send_email
 import reservations.config as roombaht_config
 from reservations.auth import authenticate, unauthenticated
@@ -39,8 +40,13 @@ def my_rooms(request):
         rooms = Room.objects.all()
         rooms_mine = [elem for elem in rooms if elem.guest is not None and elem.guest.email==email]
 
-        response = json.dumps([{"number": int(room.number),
-                                "type": room.name_take3} for room in rooms_mine], indent=2)
+        data = {
+            'rooms': [{"number": int(room.number),
+                       "type": room.name_take3} for room in rooms_mine],
+            'swaps_enabled': roombaht_config.SWAPS_ENABLED
+        }
+
+        response = json.dumps(data, indent=2)
 
         logger.debug("rooms for user %s: %s", email, rooms_mine)
         return Response(response)
@@ -72,21 +78,23 @@ def room_list(request):
             room_types = ['None']
 
         serializer = RoomSerializer(rooms, context={'request': request}, many=True)
-        data = serializer.data
+        data = {
+            'rooms': serializer.data,
+            'swaps_enabled': roombaht_config.SWAPS_ENABLED
+        }
 
-        for room in data:
+        for room in data['rooms']:
             if(len(room['number'])==3):
                 room["floorplans"]=FLOORPLANS[int(room["number"][:1])]
             elif(len(room['number'])==4):
                 room["floorplans"]=FLOORPLANS[int(room["number"][:2])]
-            for room_type in room_types:
-                if(room["name_take3"]==room_type):
-                    room['available']=True
-                    break
-                else:
-                    room['available']=False
 
-        return Response(serializer.data)
+            if roombaht_config.SWAPS_ENABLED and room['name_take3'] in room_types:
+                room['available']=True
+            else:
+                room['available']=False
+
+        return Response(data)
 
 
 @api_view(['POST'])
@@ -142,12 +150,17 @@ def swap_request(request):
         requester_email = auth_obj['email']
 
         data = request.data
+
+        if not roombaht_config.SWAPS_ENABLED:
+            return Response("Room swaps are not currently enabled",
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
+
         try:
             room_num=data["number"]
             msg=data["contact_info"]
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
-        swap_req = Room.objects.filter(number=room_num) \
+        swap_req = Room.objects.filter(number=room_num)
 
         try:
             swap_req_email = swap_req[0].guest.email
@@ -159,15 +172,15 @@ def swap_request(request):
         hostname = my_url()
         body_text = f"""
 
-Someone would like to trade rooms with you for Room Service. Since rooms are randomly assigned, we built this tool for everyone to trade rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details, then one of you will generate a swap code in Roombaht and send it to the other. Enter the code, switch-aroo magic happens, and you check-in as normal.
+Someone would like to trade rooms with you for Room Service. Since rooms are randomly placed, we built this tool to let people swap rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details with them, then one of you will generate a swap code in Roombaht and send it to the other. One person enters the other one’s swap code, switch-aroo magic happens, and you both check-in as normal to your new rooms.
 
 Contact info: {msg}
 
-After you have contacted the person asking to trade rooms with you, click this link to create the swap code and trade rooms: {hostname}/rooms
+After you have contacted the person asking to trade rooms with you and decided to swap, click this link to create the swap code and trade rooms: {hostname}/rooms
 
-If you have any trouble with that link you can login from the initial email you received from RoomBaht.
+If you have any trouble with that link, you can login from the initial email you received from RoomBaht.
 
-If you have any issues contact placement@take3presents.com
+If you have any issues, contact placement@take3presents.com.
 
 Good Luck, Starfighter.
 
@@ -188,6 +201,10 @@ def swap_gen(request):
         if not auth_obj or 'email' not in auth_obj:
             return unauthenticated()
         email = auth_obj['email']
+
+        if not roombaht_config.SWAPS_ENABLED:
+            return Response("Room swaps are not currently enabled",
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
 
         data = request.data
         logger.debug(f"data_swap_gen: {data}")
@@ -220,6 +237,10 @@ def swap_it_up(request):
             return unauthenticated()
         email = auth_obj['email']
 
+        if not roombaht_config.SWAPS_ENABLED:
+            return Response("Room swaps are not currently enabled",
+                            status=status.HTTP_501_NOT_IMPLEMENTED)
+
         data = request.data
         try:
             room_num=data["number"]
@@ -245,11 +266,13 @@ def swap_it_up(request):
             logger.warning("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
 
-        expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=600)
+        expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=3600)
+
         if(expiration.timestamp() < datetime.datetime.utcnow().timestamp()):
             logger.warning("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
 
+        swap_room_theirs.swap_code = None
         guest_id_theirs = swap_room_theirs.guest
         swap_room_theirs.guest = swap_room_mine.guest
         swap_room_mine.guest = guest_id_theirs
@@ -257,6 +280,7 @@ def swap_it_up(request):
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_mine} {swap_room_theirs}")
         swap_room_mine.save()
         swap_room_theirs.save()
+        diff_swaps(swap_room_theirs, swap_room_mine)
 
         return Response(status=status.HTTP_201_CREATED)
 

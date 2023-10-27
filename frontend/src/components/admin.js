@@ -162,7 +162,8 @@ function ReportCard() {
       <Card.Body>
         <Card.Title>Run the following reports:</Card.Title>
         <ListGroup variant="flush">
-          <ListGroup.Item>Diff Dump</ListGroup.Item>
+          <ListGroup.Item>Diff GuestList</ListGroup.Item>
+          <ListGroup.Item>Diff Swaps</ListGroup.Item>
           <ListGroup.Item>Guest Dump</ListGroup.Item>
           <ListGroup.Item>Room Dump</ListGroup.Item>
           <ListGroup.Item>Ballys Export</ListGroup.Item>

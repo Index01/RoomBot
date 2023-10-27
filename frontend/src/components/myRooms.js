@@ -17,29 +17,6 @@ import Modal from 'react-bootstrap/Modal';
 import { useState } from 'react';
 
 
-const STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
-    {
-      prop: "number",
-      title: "Number",
-      isSortable: true,
-    },
-    {
-      prop: "type",
-      title: "Type",
-    },
-    {
-      prop: "button",
-      cell: (row) => (
-        <ModalCreateCode row={row.number}/>
-      )
-    },
-    {
-      prop: "button",
-      cell: (row) => (
-        <ModalEnterCode row={row.number}/>
-      )
-    },
-  ];
 
 export default class MyRoomsTable extends React.Component {
   state = {
@@ -47,6 +24,32 @@ export default class MyRoomsTable extends React.Component {
     jwt: ""
   }
 
+  storyHeaderFactory(swaps_enabled) {
+    let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
+        {
+          prop: "number",
+          title: "Number",
+          isSortable: true,
+        },
+        {
+          prop: "type",
+          title: "Type",
+        },
+        {
+          prop: "button",
+          cell: (row) => (
+            <ModalCreateCode row={row.number} swaps_enabled={swaps_enabled}/>
+          )
+        },
+        {
+          prop: "button",
+          cell: (row) => (
+            <ModalEnterCode row={row.number} swaps_enabled={swaps_enabled}/>
+          )
+        },
+      ];
+    return STORY_HEADERS;
+  };
 
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
@@ -56,7 +59,8 @@ export default class MyRoomsTable extends React.Component {
       .then(res => {
         const data = JSON.parse(res.data)
         console.log(JSON.parse(JSON.stringify(data)));
-        this.state.rooms = data
+        this.state.rooms = data.rooms;
+	this.state.swaps_enabled = data.swaps_enabled;
         this.setState({ data  });
 
       })
@@ -78,7 +82,7 @@ export default class MyRoomsTable extends React.Component {
     return(
       <DatatableWrapper
         body={this.state.rooms}
-        headers={STORY_HEADERS}
+        headers={this.storyHeaderFactory(this.state.swaps_enabled)}
       >
         <Row className="mb-4 p-2">
           <Col
