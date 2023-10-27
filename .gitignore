@@ -1,7 +1,7 @@
 # Manually Entered
 output/*
 !output/.gitkeep
-secrets.env
+secrets/
 .secret
 frontend/.env.production
 backend/*_latest.csv

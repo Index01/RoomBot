@@ -11,6 +11,12 @@ problems() {
 
 cleanup() {
     rm "$ENV_FILE"
+    if [ -n "$ROOM_FILE" ] ; then
+	rm "$ROOM_FILE"
+    fi
+    if [ -n "$STAFF_FILE" ] ; then
+	rm "$STAFF_FILE"
+    fi
 }
 
 [ -e "$ENV_FILE" ] || problems "unable to find env file"
@@ -32,8 +38,8 @@ if [ "$ACTION" == "init" ] ; then
 	"${ROOM_FILE}" \
 	"${STAFF_FILE}"
 elif [ "$ACTION" == "wipe" ] ; then
-    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc 'DROP DATABASE roombaht;'
-    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE roombaht;"
+    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "DROP DATABASE ${ROOMBAHT_DB}";
+    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE ${ROOMBAHT_DB};"
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" migrate
 elif [ "$ACTION" == "manage" ] ; then
