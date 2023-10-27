@@ -253,7 +253,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                     logger.warning("Unable to find guest %s for (non-comp) orphan room %s",
                                    room.primary, room.number)
 
-                    possibilities = [x for x in process.extract(room.primary, [f"{x['first_name']} {x['last_name']}" for x in guest_rows]) if x[1] > 85]
+                    possibilities = [x for x in process.extract(room.primary, [f"{g.first_name} {g.last_name}" for g in guest_rows]) if x[1] > 85]
                     if len(possibilities) > 0:
                         logger.warning("Found %s fuzzy name possibilities in CSV for %s in orphan room %s: %s",
                                        len(possibilities),

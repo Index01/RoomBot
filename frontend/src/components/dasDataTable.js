@@ -1,5 +1,5 @@
 import "bootstrap/dist/css/bootstrap.css";
-import { Button, Col, Row, Table } from "react-bootstrap";
+import { Col, Row, Table } from "react-bootstrap";
 import {
   DatatableWrapper,
   Filter,
@@ -97,15 +97,22 @@ export default class RoomDataTable extends React.Component {
       })
       .then(res => {
         console.log(res.data);
-        const data = res.data
-        this.state.rooms = data.rooms;
-	  this.state.swaps_enabled = data.swaps_enabled;
-        this.setState({ data  });
+        const data = res.data;
+
+        // Convert room number strings to integers
+        const roomsWithIntegers = data.rooms.map(room => ({
+          ...room,
+          number: parseInt(room.number, 10)
+        }));
+        this.setState({
+          rooms: roomsWithIntegers,
+          swaps_enabled: data.swaps_enabled
+        }, this.sortData0);
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-          if (error.response.status == '401') {
+          if (error.response.status === '401') {
             this.setState({ error: 'auth' });
           } else if (error.request) {
             console.log("network error");
