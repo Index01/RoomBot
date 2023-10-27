@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         emails = Guest.objects \
-            .filter(onboarding_sent=False) \
+            .filter(onboarding_sent=False, room_number__isnull=False) \
             .order_by('?') \
             .values('email') \
             .distinct()[:int(kwargs['batch_size'])]

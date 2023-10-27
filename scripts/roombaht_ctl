@@ -60,7 +60,7 @@ if [ "$ACTION" == "init" ] ; then
     ssh -t "${R_USER}@${R_HOST}" \
 	"sudo bash /tmp/roombaht_ctl-remote.sh init '/tmp/${ROOM_FILE}' '/tmp/${STAFF_FILE}' ; sudo rm /tmp/roombaht_ctl-remote.sh"
 elif [ "$ACTION" == "backend-log" ] ; then
-    ssh -t "${R_USER}@${R_HOST}" "sudo journalctl -f -u roombaht"
+    ssh -t "${R_USER}@${R_HOST}" "sudo journalctl -f -u roombaht -u cron.service -t roombaht-oob -t uwsgi"
 elif [ "$ACTION" == "frontend-log" ] ; then
     ssh -t "${R_USER}@${R_HOST}" "sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
 elif [ "$ACTION" == "backend-restart" ] ; then

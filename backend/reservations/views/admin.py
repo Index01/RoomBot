@@ -218,7 +218,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
             if guest_obj:
                 # we have one, that's nice. make sure to use the same otp
                 # if we can for this guest
-                existing_guests = Guest.objects.filter(email=guest_obj['email'])
+                existing_guests = Guest.objects.filter(email=guest_obj.email)
                 otp = phrasing()
                 if len(existing_guests) > 0:
                     otp = existing_guests[0].jwt

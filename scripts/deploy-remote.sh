@@ -73,6 +73,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@LOGLEVEL@/${ROOMBAHT_LOGLEVEL}"/ \
     -e "s/@SEND_ONBOARDING@/${ROOMBAHT_SEND_ONBOARDING}/" \
     -e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
+    -e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
     "${BACKEND_DIR}/config/roombaht-systemd.conf" \
     > "/etc/systemd/system/roombaht.service"
 chmod o-rwx "/etc/systemd/system/roombaht.service"
@@ -86,6 +87,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
     -e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
     -e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
+    -e "s/@DB_NAME@/${ROOMBAHT_DB}/" \
     -e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
     -e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
     -e "s%@TEMP@%${ROOMBAHT_TMP}%" \
@@ -95,9 +97,13 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@SEND_ONBOARDING@/${ROOMBAHT_SEND_ONBOARDING}/" \
     -e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
     -e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
+    -e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
     "${BACKEND_DIR}/scripts/roombaht-oob.sh" \
     > "/opt/roombaht-backend/scripts/roombaht-oob"
 chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"
+chown roombaht: "/opt/roombaht-backend/scripts/roombaht-oob"
+cp /opt/roombaht-backend/scripts/roombaht-oob.cron \
+   /etc/cron.d/roombaht-oob
 
 # load the frontend
 if [ -d "$FRONTEND_DIR" ] ; then
