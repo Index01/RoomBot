@@ -32,15 +32,16 @@ def login(request):
 
         logger.info(f"[+] User login attempt: {data['email']}")
         try:
-            email = data['email']
+            email = data['email'].lower()
         except KeyError:
             logger.info(f"[-] User login failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
-        guests = Guest.objects.all()
-        guest_email = guests.filter(email=email)
-        staff = Staff.objects.all()
-        staff_email = staff.filter(email=email)
+        guest_email = Guest.objects.filter(email=email)
+        staff_email = Staff.objects.filter(email=email)
         jwt_key = roombaht_config.JWT_KEY
+        logger.debug("found %s staff, %s guests that match %s" % (staff_email.count(),
+                                                                  guest_email.count(),
+                                                                  email))
         # Check if login attempt is admin
         for admin in staff_email:
             if data['jwt'] == admin.guest.jwt:
@@ -48,7 +49,7 @@ def login(request):
                                    "datetime":str(datetime.datetime.utcnow())},
                                    jwt_key,
                                   algorithm="HS256")
-                logger.info(f"[+] Admin login succes. sending resp")
+                logger.info("[+] Admin login success for %s", admin.email)
                 update_last_login(admin.guest)
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
 
@@ -58,10 +59,12 @@ def login(request):
                 resp = jwt.encode({"email":guest.email,
                                    "datetime":str(datetime.datetime.utcnow())},
                                    jwt_key, algorithm="HS256")
-                logger.info(f"[+] User login succes. sending resp")
+                logger.info("[+] User login success for %s", guest.email)
                 update_last_login(guest)
                 return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
-        return Response("Invalid credentials", status=status.HTTP_400_BAD_REQUEST)
+
+        logger.debug("No valid credentials found for %s", email)
+        return Response("Invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['POST'])
@@ -69,12 +72,12 @@ def login_reset(request):
     if request.method == 'POST':
         try:
             data = request.data["guest"]
-            email = data["email"]
+            email = data["email"].lower()
         except KeyError as e:
             logger.info(f"[+] Reset fail missing field: {data['email']}")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"[+] User reset attempt: {data['email']}")
-        reset_otp(data['email'])
+        logger.info("[+] User reset attempt: %s", email)
+        reset_otp(email)
 
         return Response(status=status.HTTP_201_CREATED)
