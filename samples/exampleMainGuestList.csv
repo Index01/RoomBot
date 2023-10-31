@@ -1,6 +1,6 @@
 ticket_code,last_name,first_name,email,product,transferred_from_code,transferred_from_email
 # manually placed in room 305
-aaa001,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (RFP Sale),,
+aaa001,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (Direct Sale),,
 # manually placed in room 306
 aaa002,Baz,Foo,foo.baz@noop.com,Bally's - Standard 2 Queens (Direct Sale),,
 # these two should be auto placed
@@ -28,3 +28,17 @@ aaa015,TxBam,Foo,foo.txbam@noop.com,Bally's - Standard 2 Queens,aaa014,
 # transfer for placed room
 aaa016,Kar,Foo,foo.kar@noop.com,Bally's - Standard 2 Queens,,
 aaa017,Jar,Foo,foo.jar@noop.com,Bally's - Standard 2 Queens,aaa016,
+# manually placed in room 305 but also bought another room of same type
+aaa018,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (RFP Sale),,
+# manually placed in room 306 but also bought another room of different type
+aaa019,Baz,Foo,foo.baz@noop.com,Bally's - Standard King (Direct Sale),,
+# transferred placed roomtwice
+aaa020,TxBar,Fob,fob.txbar@noop.com,Bally's - Standard 2 Queens,,
+aaa021,TxBaz,Fod,fod.txbaz@noop.com,Bally's - Standard 2 Queens,aaa020,
+aaa022,TxBam,Fom,fom.txbam@noop.com,Bally's - Standard 2 Queens,aaa021,
+## a special person with special rooms (for complex swap testing)
+# this room is placed in 410
+aaa023,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard King,,
+# these rooms are not placed
+aaa024,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard King,,
+aaa025,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard 2 Queens,,

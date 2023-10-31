@@ -14,10 +14,6 @@ import axios from 'axios';
 import React from "react";
 import ModalImage from "react-modal-image";
 import {ModalRequestSwap} from "./modals.js";
-import { Navigate } from "react-router-dom";
-
-
-
 
 export default class RoomDataTable extends React.Component {
   state = {
@@ -92,6 +88,10 @@ export default class RoomDataTable extends React.Component {
   };
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if ( jwt == null ) {
+      this.setState({error: 'auth'});
+      return;
+    }
     axios.post(process.env.REACT_APP_API_ENDPOINT+"/api/rooms/", {
             jwt: jwt["jwt"]
       })
@@ -112,7 +112,8 @@ export default class RoomDataTable extends React.Component {
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-          if (error.response.status === '401') {
+	  console.log("AAAAA " + error.response.status);
+          if (error.response.status === 401) {
             this.setState({ error: 'auth' });
           } else if (error.request) {
             console.log("network error");
@@ -137,7 +138,6 @@ export default class RoomDataTable extends React.Component {
           }
         }}
       >
-	{error && (<Navigate to="/login" replace={true} />)}
         <Row className="mb-4 p-2">
           <Col
             xs={12}

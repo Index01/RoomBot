@@ -58,6 +58,12 @@ class Room(models.Model):
     def __str__(self):
         return str(self.number)
 
+    def swappable(self):
+        return self.guest \
+            and not self.is_placed \
+            and not self.is_art \
+            and self.is_swappable
+
     def hotel_sku(self):
         sku = None
         if self.name_take3 == 'Queen':
@@ -82,5 +88,15 @@ class Room(models.Model):
 
         if self.is_smoking:
             sku = f"{sku} (Smoking)"
+
+        access = []
+        if self.is_hearing_accessible:
+            access.append('Hearing Accessible')
+
+        if self.is_ada:
+            access.append('ADA')
+
+        if len(access) > 0:
+            sku = (f"{sku} ({','.join(access)})")
 
         return sku

@@ -104,7 +104,7 @@ export function ModalEnterCode(props) {
   const handleShow = () => setShow(true);
   const [phrase, setPhrase] = useState("");
   const jwt = JSON.parse(localStorage.getItem('jwt'));
-  const row = props.row;
+  const row = props.row.number;
 
   const handleAPICall = (code) => {
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_it_up/', {
@@ -142,7 +142,7 @@ export function ModalEnterCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-      <Button size="sm" variant="outline-primary" onClick={handleShow}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
           EnterSwapCode
       </Button>
        :
@@ -187,7 +187,7 @@ export function ModalCreateCode(props) {
   const [phrase, setPhrase] = useState("");
 
   const jwt = JSON.parse(localStorage.getItem('jwt'));
-  const row = props.row;
+  const row = props.row.number;
   const handleAPICall = () => {
 
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_gen/', {
@@ -217,7 +217,7 @@ export function ModalCreateCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-      <Button size="sm" variant="outline-primary" onClick={handleAPICall}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
           CreateSwapCode
       </Button>
        :

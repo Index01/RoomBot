@@ -18,6 +18,9 @@ function GuestsCard() {
   const jwt = JSON.parse(localStorage.getItem('jwt'));
 
   const handleAPICall = (file) => {
+    if (jwt == null) {
+      return;
+    }
     const guest = {
         jwt: jwt["jwt"],
         guest_list: file,
@@ -83,7 +86,7 @@ function GuestsCard() {
       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { jwt: jwt['jwt'] }).then((res) => {
         console.log("results");
         console.log(res.data.results);
-	    setLoading(false);
+	setLoading(false);
         setRespText(JSON.parse(JSON.stringify(res.data)).results);
         setPhrase("");
       })
@@ -140,10 +143,13 @@ function ReportCard() {
   const [respText, setRespText] = useState([]);
   const handleClick = () => setLoading(true);
   const jwt = JSON.parse(localStorage.getItem('jwt'));
-  const data = {
-      jwt: jwt["jwt"],
-  }
   useEffect(() => {
+    if (jwt == null) {
+      return;
+    }
+    const data = {
+      jwt: jwt["jwt"],
+    }
     if (isLoading) {
        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/run_reports/', data )
          .then((respText) => {

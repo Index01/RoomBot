@@ -2,6 +2,7 @@ import datetime
 import logging
 import jwt
 import sys
+from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 import reservations.config as roombaht_config
@@ -25,18 +26,18 @@ def authenticate(request):
         logger.warning("[-] Unable to decode jwt ip:%s", request.META['REMOTE_ADDR'])
         return None
 
-    dthen = datetime.datetime.fromisoformat(dec["datetime"])
-    dnow = datetime.datetime.utcnow()
+    dthen = make_aware(datetime.datetime.fromisoformat(dec["datetime"]))
+    dnow = make_aware(datetime.datetime.utcnow())
 
     email = dec['email']
     if dnow - dthen > datetime.timedelta(days=1):
         logger.info("[-] JWT has expired email:%s ip:%s", request.META['REMOTE_ADDR'], email)
         return None
 
-    try:
-        _guest = Guest.objects.filter(email=dec['email'])
-    except Guest.DoesNotExist:
+    guest_entries = Guest.objects.filter(email=dec['email'])
+    if len(guest_entries) == 0:
         logger.warning("[-] No guest found. email:%s ip:%s", email, request.META['REMOTE_ADDR'])
+        return None
 
     return {'email': email, 'admin': False}
 
