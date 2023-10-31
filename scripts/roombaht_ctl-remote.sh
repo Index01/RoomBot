@@ -26,7 +26,7 @@ trap cleanup EXIT
 [ "$#" -ge 1 ] || problems "invalid args"
 ACTION="$1"
 shift
-eval `cat "$ENV_FILE"`
+source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
 if [ "$ACTION" == "init" ] ; then
