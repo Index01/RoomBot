@@ -59,10 +59,7 @@ class Room(models.Model):
         return str(self.number)
 
     def swappable(self):
-        return self.guest \
-            and not self.is_placed \
-            and not self.is_art \
-            and self.is_swappable
+        return self.guest and self.is_swappable
 
     def hotel_sku(self):
         sku = None

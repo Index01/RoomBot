@@ -24,9 +24,23 @@ class Command(BaseCommand):
         parser.add_argument('--guest-notes',
                             help='Specify guest notes (blank string to remove')
 
+        # there is a better way to do this kind of arg but we cannot assume how the room is set
+        parser.add_argument('--swappable',
+                            help='Marks a room as swappable',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--not-swappable',
+                            help='Marks a room as not swappable',
+                            default=False,
+                            action='store_true')
+
     def handle(self, *args, **kwargs):
         if 'number' not in kwargs:
             raise CommandError("Must specify room number")
+
+        if kwargs['swappable'] and kwargs['not_swappable']:
+            raise CommandError("Cannot specify both --swappable and --not-swappable")
 
         room = None
         try:
@@ -71,6 +85,13 @@ class Command(BaseCommand):
 
         if kwargs['guest_notes'] is not None and kwargs['guest_notes'] != room.guest_notes:
             room.guest_notes = kwargs['guest_notes']
+            room_changed = True
+
+        if kwargs['swappable'] and not room.is_swappable:
+            room.is_swappable = True
+            room_changed = True
+        elif kwargs['not_swappable'] and room.is_swappable:
+            room.is_swappable = False
             room_changed = True
 
         if room_changed:
