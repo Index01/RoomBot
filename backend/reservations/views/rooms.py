@@ -42,9 +42,9 @@ def my_rooms(request):
         rooms_mine = [elem for elem in rooms if elem.guest is not None and elem.guest.email==email]
 
         data = {
-        'rooms': [{"number": int(room.number),
-                   "type": room.name_take3,
-                   "swappable": room.swappable()} for room in rooms_mine],
+            'rooms': [{"number": int(room.number),
+                       "type": room.name_take3,
+                       "swappable": room.swappable()} for room in rooms_mine],
             'swaps_enabled': roombaht_config.SWAPS_ENABLED
         }
 
