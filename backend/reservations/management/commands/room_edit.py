@@ -95,5 +95,5 @@ class Command(BaseCommand):
             room_changed = True
 
         if room_changed:
-            self.stdout.write('Updated room')
+            self.stdout.write(f"Updated room: {kwargs['number']}")
             room.save()
