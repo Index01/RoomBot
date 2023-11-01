@@ -5,7 +5,7 @@ from reservations.helpers import real_date
 class Command(BaseCommand):
     help = "Edit aspects of a room"
     def add_arguments(self, parser):
-        parser.add_argument('number',
+        parser.add_argument('number', required=True,
                             help='The room number')
         parser.add_argument('--primary',
                             help='Specify primary name (blank string to remove)')
