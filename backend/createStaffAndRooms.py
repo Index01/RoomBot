@@ -11,8 +11,7 @@ import django
 django.setup()
 from reservations.models import Guest, Room, Staff
 from django.forms.models import model_to_dict
-from django.utils.dateparse import parse_date
-from reservations.helpers import phrasing, ingest_csv, my_url, send_email
+from reservations.helpers import phrasing, ingest_csv, my_url, send_email, real_date
 import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
 from datetime import datetime
@@ -44,30 +43,6 @@ def search_ticket(ticket, guest_entries):
             continue
     return False
 
-
-def real_date(a_date: str, year=None):
-    """Convert string date into python date
-
-    Args:
-        a_date (str): date string,
-            expected format: "Mon - 11/7", "11/7"
-        year (Optional[int]): year, in 4-digit format
-            Allows specification of year, otherwise is in current year at runtime
-    Returns:
-        date: python `date` object
-    """
-    year = year or datetime.now().year
-    date_bits = a_date.split("-")
-    date = None
-    if len(date_bits) == 1:
-        date = date_bits[0]
-    elif len(date_bits) == 2:
-        date = date_bits[1]
-    else:
-        raise Exception(f"Unexpected date format {a_date}")
-
-    month, day = date.lstrip().split('/')
-    return parse_date("%s-%s-%s" % (year, month, day))
 
 def create_rooms_main(args):
     rooms_file = args['rooms_file']

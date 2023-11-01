@@ -34,7 +34,8 @@ ROOM_LIST = {
         "Bally's - Standard King (Direct Sale)",
         "Bally's - Standard King (Post Sale)",
         "Bally's - Standard King (RFP Sale)",
-        "Art Room Bally's - Standard King"
+        "Art Room Bally's - Standard King",
+        "Art Room Bally's - Standard King (Post Sale)"
     ],
 
     'King Sierra Suite': [

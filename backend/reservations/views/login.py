@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail
+from django.utils.timezone import make_aware
 from ..models import Guest
 from ..models import Room
 from ..models import Staff
@@ -22,7 +23,7 @@ logger = logging.getLogger('ViewLogger_login')
 
 def update_last_login(guest):
     for a_guest in Guest.objects.filter(email=guest.email):
-        a_guest.last_login = datetime.datetime.now()
+        a_guest.last_login = make_aware(datetime.datetime.utcnow())
         a_guest.save()
 
 @api_view(['POST'])

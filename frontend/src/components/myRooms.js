@@ -15,8 +15,7 @@ import React from "react";
 import { ModalEnterCode, ModalCreateCode } from "./modals.js";
 import Modal from 'react-bootstrap/Modal';
 import { useState } from 'react';
-
-
+import { Navigate } from "react-router-dom";
 
 export default class MyRoomsTable extends React.Component {
   state = {
@@ -38,13 +37,13 @@ export default class MyRoomsTable extends React.Component {
         {
           prop: "button",
           cell: (row) => (
-            <ModalCreateCode row={row.number} swaps_enabled={swaps_enabled}/>
+            <ModalCreateCode row={row} swaps_enabled={swaps_enabled}/>
           )
         },
         {
           prop: "button",
           cell: (row) => (
-            <ModalEnterCode row={row.number} swaps_enabled={swaps_enabled}/>
+            <ModalEnterCode row={row} swaps_enabled={swaps_enabled}/>
           )
         },
       ];
@@ -53,6 +52,10 @@ export default class MyRoomsTable extends React.Component {
 
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if (jwt === null) {
+      this.setState({error: 'auth'});
+      return;
+    }
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/my_rooms/', {
             jwt: jwt["jwt"]
       })
@@ -67,8 +70,12 @@ export default class MyRoomsTable extends React.Component {
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-          console.log(error.response);
-          console.log("server responded");
+	  if (error.response.status === 401) {
+	    this.setState({error: 'auth'});
+	  } else {
+            console.log(error.response);
+            console.log("server responded");
+	  }
         } else if (error.request) {
           console.log("network error");
         } else {
@@ -79,11 +86,13 @@ export default class MyRoomsTable extends React.Component {
 
 
   render(){
+    let {error} = this.state;
     return(
       <DatatableWrapper
         body={this.state.rooms}
         headers={this.storyHeaderFactory(this.state.swaps_enabled)}
       >
+	{error && (<Navigate to="/login" replace={true} />)}
         <Row className="mb-4 p-2">
           <Col
             xs={12}

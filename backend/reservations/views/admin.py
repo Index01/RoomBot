@@ -336,10 +336,6 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             logger.debug("Skipping ticket %s from orphan processing", ticket_code)
             continue
 
-        if ticket_code in roombaht_config.IGNORE_TRANSACTIONS:
-            logger.info("Skipping ticket %s as it is on our ignore list", ticket_code)
-            continue
-
         if trans_code == '' and guest_entries.count() == 0:
             # Unknown ticket, no transfer; new user
             room = find_room(guest_obj.product)
@@ -613,6 +609,10 @@ def guest_file_upload(request):
 
             if existing_ticket:
                 logger.warning("[-] Ticket %s from upload already in db", guest['ticket_code'])
+                continue
+
+            if guest['ticket_code'] in roombaht_config.IGNORE_TRANSACTIONS:
+                logger.debug("Skipping ticket %s as it is on our ignore list", guest['ticket_code'])
                 continue
 
             new_guests.append(guest)

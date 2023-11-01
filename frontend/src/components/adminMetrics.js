@@ -13,6 +13,10 @@ export default class BasicVis extends React.Component {
   }
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if ( jwt === null ) {
+      this.setState({error: 'auth'});
+      return;
+    }
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/request_metrics/', { jwt: jwt["jwt"] })
       .then((result) => {
         var jresp = JSON.parse(result.data)
@@ -23,7 +27,7 @@ export default class BasicVis extends React.Component {
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-	  if (error.response.status == '401') {
+	  if (error.response.status === 401) {
 	    this.setState({ error: 'auth' });
           } else if (error.request) {
             console.log("network error");
