@@ -1,9 +1,6 @@
 ROOM_LIST = {
     'Queen': [
-#        'Hard Rock - Standard 2 Queens (50% fee)',
-#        'Hard Rock - Lakeview 2 Queens',
-#        'Hard Rock - Lakeview 2 Queens (Post Sale)',
-#        'Hard Rock - Lakeview Balcony 2 Queens',
+        'Hard Rock - Standard 2 Queens (50% fee)',
         "Bally's - Standard 2 Queens",
         "Bally's - Standard 2 Queens (50% fee)",
         "Bally's - Standard 2 Queens (Direct Sale)",
@@ -15,6 +12,11 @@ ROOM_LIST = {
         "Art Room Bally's - Standard 2 Queens (Post Sale)"
     ],
 
+    "Lake View Queen": [
+        'Hard Rock - Lakeview 2 Queens',
+        'Hard Rock - Lakeview 2 Queens (Post Sale)',
+        'Hard Rock - Lakeview Balcony 2 Queens'
+    ],
     'Queen Sierra Suite': [
         "Bally's - Sierra 2 Queens Suite",
         "Bally's - Sierra 2 Queens Suite (Post Sale)",
@@ -22,20 +24,26 @@ ROOM_LIST = {
     ],
 
     "King": [
-#        'Hard Rock - Standard King',
-#        'Hard Rock - Standard King (Post Sale)',
-#        'Hard Rock - Standard King (RFP Sale)'
-#        'Hard Rock - Lakeview King',
-#        'Hard Rock - Lakeview Balcony King',
-#        'Hard Rock - Lakeview Balcony King (Post Sale)',
-#        'Hard Rock - Balcony King',
-#        'Hard Rock - Balcony King (RFP Sale)',
+        'Hard Rock - Standard King',
+        'Hard Rock - Standard King (Post Sale)',
+        'Hard Rock - Standard King (RFP Sale)',
         "Bally's - Standard King",
         "Bally's - Standard King (Direct Sale)",
         "Bally's - Standard King (Post Sale)",
         "Bally's - Standard King (RFP Sale)",
         "Art Room Bally's - Standard King",
         "Art Room Bally's - Standard King (Post Sale)"
+    ],
+
+    "Lake View King": [
+        'Hard Rock - Lakeview King',
+        'Hard Rock - Lakeview Balcony King',
+        'Hard Rock - Lakeview Balcony King (Post Sale)'
+    ],
+
+    "Balcony King": [
+        'Hard Rock - Balcony King',
+        'Hard Rock - Balcony King (RFP Sale)'
     ],
 
     'King Sierra Suite': [
@@ -50,6 +58,18 @@ ROOM_LIST = {
 
     "Executive Suite": [
         "Bally's - Executive King Suite",
+    ],
+
+    "Lake View Suite": [
+        "Hard Rock - Lakeview Balcony Suite",
+        "Hard Rock - Lakeview Balcony Suite (RFP Sale)"
+    ],
+    "Mountain View Suite": [
+        "Hard Rock - Mountain View Suite"
+    ],
+    "Pool View Suite": [
+        "Hard Rock - Pool View Balcony Suite",
+        "Hard Rock - Pool View Balcony Suite (Post Sale)"
     ]
 }
 

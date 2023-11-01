@@ -25,7 +25,7 @@ class Command(BaseCommand):
         if guest.onboarding_sent:
             onboarding = 'yes'
 
-        rooms = ','.join([x.room_number for x in guest_entries if x.room_number])
+        rooms = ','.join([f"{x.hotel} {x.room_number}" for x in guest_entries if x.room_number])
         if len(rooms) == 0:
             rooms = 'none'
 

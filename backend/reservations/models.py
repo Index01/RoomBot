@@ -1,4 +1,5 @@
 from django.db import models
+from reservations.constants import ROOM_LIST
 
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -10,7 +11,9 @@ class Guest(models.Model):
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
     room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
+    hotel = models.CharField("Hotel", max_length=20, null=True, blank=True)
     onboarding_sent = models.BooleanField("OnboardingSent", default=False)
+    can_login = models.BooleanField("CanLogin", default=False)
     last_login = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
@@ -37,6 +40,7 @@ class Room(models.Model):
     is_swappable = models.BooleanField("IsSwappable", default=False)
     is_smoking = models.BooleanField("SmokingRoom", default=False)
     is_lakeview = models.BooleanField("LakeviewRoom", default=False)
+    is_mountainview = models.BooleanField("MountainviewRoom", default=False)
     is_ada = models.BooleanField("ADA", default=False)
     is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
     is_art = models.BooleanField("ArtRoom", default=False)
@@ -97,3 +101,27 @@ class Room(models.Model):
             sku = (f"{sku} ({','.join(access)})")
 
         return sku
+
+    @staticmethod
+    def short_product_code(product):
+        for a_room, a_product in ROOM_LIST.items():
+            if product in a_product:
+                return a_room
+
+        if product in ROOM_LIST.keys():
+            return product
+
+        raise Exception('Should never not find a short product code tho')
+
+    @staticmethod
+    def derive_hotel(product):
+        if product.lower().startswith('hard rock'):
+            return 'Hard Rock'
+
+        if product.lower().startswith('bally'):
+            return 'Ballys'
+
+        if product.lower().startswith('art room bally'):
+            return 'Ballys'
+
+        raise Exception(f"Unable to resolve hotel for {product}")

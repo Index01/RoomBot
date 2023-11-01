@@ -24,6 +24,10 @@ class Command(BaseCommand):
         parser.add_argument('--guest-notes',
                             help='Specify guest notes (blank string to remove')
 
+        parser.add_argument('--hotel-name',
+                            default='Ballys',
+                            help='The hotel name. Defaults to Ballys.')
+
         # there is a better way to do this kind of arg but we cannot assume how the room is set
         parser.add_argument('--swappable',
                             help='Marks a room as swappable',
@@ -41,6 +45,15 @@ class Command(BaseCommand):
 
         if kwargs['swappable'] and kwargs['not_swappable']:
             raise CommandError("Cannot specify both --swappable and --not-swappable")
+
+        hotel_name = None
+        if kwargs['hotel_name'].lower() == 'ballys':
+            hotel_name = 'Ballys'
+        elif kwargs['hotel_name'].lower() == 'hard rock' or \
+           kwargs['hotel_name'].lower() == 'hardrock':
+            hotel_name = 'Hard Rock'
+        else:
+            raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
 
         room = None
         try:

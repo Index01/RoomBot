@@ -1,6 +1,6 @@
 .PHONY = frontend_build frontend_dev frontend_archive frontend_clean \
-	backend_dev backend_archive backend_clean backend_env \
-	archive
+	backend_dev backend_archive backend_clean backend_migrations backend_env \
+	archive sample_data
 
 ifdef API_ENV
 ifeq ($(API_ENV), dev)
@@ -46,6 +46,14 @@ backend_dev: backend_env
 
 backend_clean:
 	rm -rf backend/db.sqlite3 build/roombaht-backend.tgz
+
+backend_migrations: backend_env
+	backend/venv/bin/python3 backend/manage.py makemigrations
+
+sample_data:
+	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleBallysRoomList.csv --force
+	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleHardrockRoomList.csv --force --preserve
+	backend/venv/bin/python3 backend/manage.py create_staff samples/exampleMainStaffList.csv
 
 archive: backend_archive frontend_archive
 

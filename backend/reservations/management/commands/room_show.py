@@ -6,16 +6,28 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('number',
                             help='The room number')
+        parser.add_argument('--hotel-name',
+                            default='Ballys',
+                            help='The hotel name. Defaults to Ballys.')
 
     def handle(self, *args, **kwargs):
         if 'number' not in kwargs:
             raise CommandError("Must specify room number")
 
         room = None
+        hotel_name = None
+        if kwargs['hotel_name'].lower() == 'ballys':
+            hotel_name = 'Ballys'
+        elif kwargs['hotel_name'].lower() == 'hard rock' or \
+           kwargs['hotel_name'].lower() == 'hardrock':
+            hotel_name = 'Hard Rock'
+        else:
+            raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
+
         try:
-            room = Room.objects.get(number=kwargs['number'])
-        except Room.ObjectNotFound as exp:
-            raise CommandError(f"Room {kwargs['number']} not found") from exp
+            room = Room.objects.get(number=kwargs['number'], name_hotel=hotel_name)
+        except Room.DoesNotExist as exp:
+            raise CommandError(f"Room {kwargs['number']} not found in {kwargs['hotel_name']}") from exp
 
         desc = f"{room.hotel_sku()} in {room.name_hotel}"
         if room.guest:
