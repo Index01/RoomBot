@@ -41,6 +41,9 @@ ENC_FILE="${ROOTDIR}/config/${R_ENV}.enc"
 [ -e "$ENV_FILE" ] && problems "plaintext secrets present"
 [ -e "$ENC_FILE" ] || problems "env file not found"
 
+R_SCRIPT="/tmp/roombaht_ctl-remote-${RANDOM}.sh"
+R_SECRET="/tmp/secrets-${RANDOM}.env"
+
 if [ "$ACTION" == "init" ] ; then
     ROOM_FILE="$1"
     STAFF_FILE="$2"
@@ -65,22 +68,25 @@ elif [ "$ACTION" == "frontend-log" ] ; then
     ssh -t "${R_USER}@${R_HOST}" "sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
 elif [ "$ACTION" == "backend-restart" ] ; then
     ssh -t "${R_USER}${R_HOST}" "sudo journalctl restart roombaht"
-elif [ "$ACTION" == "wipe" ] ; then
+elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
     echo "This will completely wipe the database and it will be super annoying to get it back."
     echo "Are you sure? [y/n]"
     read -r -s -n 1 answer
     if [ "$answer" != "y" ] ; then
 	problems "user said no"
     fi
+    if [ "$ACTION" == "clone_db" ] && [ "$R_ENV" == "prod" ] ; then
+	problems "cannot clone prod -> prod"
+    fi
     "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
-    scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
-    scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
-    ssh "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh wipe ; sudo rm /tmp/roombaht_ctl-remote.sh"
+    scp "$ENV_FILE" "${R_USER}@${R_HOST}:${R_SECRET}"
+    scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:${R_SCRIPT}"
+    ssh "${R_USER}@${R_HOST}" "sudo bash -c 'export ENV_FILE=${R_SECRET} ; bash ${R_SCRIPT} ${ACTION} '; sudo rm -f ${R_SCRIPT} ${R_SECRET}"
 elif [ "$ACTION" == "manage" ] ; then
     "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
-    scp "$ENV_FILE" "${R_USER}@${R_HOST}:/tmp/secrets.env"
-    scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:/tmp"
-    ssh -t "${R_USER}@${R_HOST}" "sudo bash /tmp/roombaht_ctl-remote.sh manage $* ; sudo rm /tmp/roombaht_ctl-remote.sh"
+    scp "$ENV_FILE" "${R_USER}@${R_HOST}:${R_SECRET}"
+    scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:${R_SCRIPT}"
+    ssh -t "${R_USER}@${R_HOST}" "sudo bash -c 'export ENV_FILE=${R_SECRET} ; bash ${R_SCRIPT} manage $*' ; sudo rm -f ${R_SCRIPT} ${R_SECRET}"
 elif [ "$ACTION" == "help" ] ; then
     usage
 else

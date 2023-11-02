@@ -319,6 +319,14 @@ def guest_update(guest_obj, otp, room, og_guest=None):
                      room.guest.email, room.name_hotel, room.number)
         room.guest.save()
 
+    # update sp_ticket_id for placed rooms
+    if room.is_placed \
+       and room.sp_ticket_id \
+       and room.sp_ticket_id != guest.ticket:
+        logger.debug("Updating room %s sp_ticket_id %s -> %s",
+                     room.number, room.sp_ticket_id, guest.ticket)
+        room.sp_ticket_id = guest.ticket
+
     # update room
     room.guest = guest
     room.is_available = False

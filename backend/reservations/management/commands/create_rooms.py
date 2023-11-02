@@ -161,7 +161,6 @@ def create_rooms_main(args):
 	# loaded room, check if room_changed
         if room.is_dirty():
             if args['dry_run']:
-                import ipdb ; ipdb.set_trace()
                 dirty_msg = f"{room.name_hotel:9}{room.number:4} changes"
                 for field, values in room.get_dirty_fields(verbose=True).items():
                     dirty_msg=f"{dirty_msg} {field} {values['saved']} -> {values['current']}"
