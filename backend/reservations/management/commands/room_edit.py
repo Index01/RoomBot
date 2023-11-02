@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Room
-from reservations.helpers import real_date
 
 class Command(BaseCommand):
     help = "Edit aspects of a room"
@@ -48,52 +47,29 @@ class Command(BaseCommand):
         except Room.ObjectNotFound as exp:
             raise CommandError(f"Room {kwargs['number']} not found") from exp
 
-        room_changed = False
         if kwargs['primary'] is not None and kwargs['primary'] != room.primary:
             room.primary = kwargs['primary'].title()
-            room_changed = True
 
         if kwargs['secondary'] is not None and kwargs['secondary'] != room.secondary:
             room.secondary = kwargs['secondary'].title()
-            room_changed = True
 
         if kwargs['check_in'] is not None:
-            if kwargs['check_in'] != '':
-                real_check_in = real_date(kwargs['check_in'])
-                if real_check_in != room.check_in:
-                    room.check_in = real_check_in
-                    room_changed = True
-
-            elif kwargs['check_in'] == '' and room.check_in is not None:
-                room.check_in = None
-                room_changed = True
+            room.check_in = kwargs['check_in']
 
         if kwargs['check_out'] is not None:
-            if kwargs['check_out'] != '':
-                real_check_out = real_date(kwargs['check_out'])
-                if real_check_out != room.check_out:
-                    room.check_out = real_check_out
-                    room_changed = True
-
-            elif kwargs['check_out'] == '' and room.check_out is not None:
-                room.check_out = None
-                room_changed = True
+            room.check_out = kwargs['check_out']
 
         if kwargs['notes'] is not None and kwargs['notes'] != room.notes:
             room.notes = kwargs['notes']
-            room_changed = True
 
         if kwargs['guest_notes'] is not None and kwargs['guest_notes'] != room.guest_notes:
             room.guest_notes = kwargs['guest_notes']
-            room_changed = True
 
         if kwargs['swappable'] and not room.is_swappable:
             room.is_swappable = True
-            room_changed = True
         elif kwargs['not_swappable'] and room.is_swappable:
             room.is_swappable = False
-            room_changed = True
 
-        if room_changed:
+        if room.is_dirty():
             self.stdout.write(f"Updated room: {kwargs['number']}")
-            room.save()
+            room.save_dirty_fields()

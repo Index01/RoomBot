@@ -68,7 +68,6 @@ def create_rooms_main(args):
 
     for elem in rooms_import_list:
         room = None
-        room_changed = False
         room_action = "Created"
         try:
             room = Room.objects.get(number=elem.room)
@@ -111,39 +110,20 @@ def create_rooms_main(args):
                 room.is_available = False
                 room.is_swappable = False
 
-            room_changed = True
-
         # check-in/check-out are only adjustable via room spreadsheet
-        if elem.check_in_date != '':
-            check_in_date = real_date(elem.check_in_date)
-            if check_in_date != room.check_in:
-                room.check_in = check_in_date
-                room_changed = True
-        elif elem.check_in_date == '' and room.check_in is not None:
-            room.check_in = None
-            room_changed = True
-        elif elem.check_in_date == '' and room.check_in is None and args['default_check_in']:
-            check_in_date = real_date(args['default_check_in'])
-            room.check_in = check_in_date
-            room_changed = True
+        if elem.check_in_date == '' and args['default_check_in']:
+            room.check_in = args['default_check_in']
+        else:
+            room.check_in = elem.check_in_date
 
-        if elem.check_out_date != '':
-            check_out_date = real_date(elem.check_out_date)
-            if check_out_date != room.check_out:
-                room.check_out = check_out_date
-                room_changed = True
-        elif elem.check_out_date == '' and room.check_out is not None:
-            room.check_out = None
-            room_changed = True
-        elif elem.check_out_date == '' and room.check_out is None and args['default_check_out']:
-            check_out_date = real_date(args['default_check_out'])
-            room.check_out = check_out_date
-            room_changed = True
+        if elem.check_out_date == '' and args['default_check_out']:
+            room.check_out = args['default_check_out']
+        else:
+            room.check_out = elem.check_out_date
 
         # room notes are only adjustable via room spreadsheet
         if elem.room_notes != room.notes:
             room.notes = elem.room_notes
-            room_changed = True
 
 
         # Cannot mark a room as non available based on being set to roombaht
@@ -153,7 +133,6 @@ def create_rooms_main(args):
             if not room.guest:
                 room.is_available = False
                 room.is_swappable = False
-                room_changed = True
             else:
                 logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)
 
@@ -168,22 +147,18 @@ def create_rooms_main(args):
 
             if room.primary != primary_name:
                 room.primary = primary_name.title()
-                room_changed = True
 
             if elem.placed_by == '':
                 logger.warning("Room %s Reserved w/o placer", room.number)
 
             if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:
                 room.is_placed = True
-                room_changed = True
 
             if elem.guest_restriction_notes != room.guest_notes:
                 room.guest_notes = elem.guest_restriction_notes
-                room_changed = True
 
             if elem.secondary_name != room.secondary:
                 room.secondary = elem.secondary_name.title()
-                room_changed = True
 
             room.available = False
         elif room.primary != '' and (not room.guest) and room.is_available:
@@ -191,19 +166,16 @@ def create_rooms_main(args):
             room.primary = ''
             room.guest_notes = ''
             room.secondary = ''
-            room_changed = True
 
         if elem.paying_guest == 'Comp' and not room.is_comp:
             room.is_comp = True
-            room_changed = True
 
         if (elem.ticket_id_in_secret_party != room.sp_ticket_id
             and elem.ticket_id_in_secret_party != 'n/a'):
             room.sp_ticket_id = elem.ticket_id_in_secret_party
-            room_changed = True
 
 	# loaded room, check if room_changed
-        if room_changed:
+        if room.is_dirty():
             room_msg = f"{room_action} {room.name_take3} room {room.number}"
             if room.is_swappable:
                 room_msg += ", swappable"
@@ -211,7 +183,7 @@ def create_rooms_main(args):
             if not room.is_available:
                 room_msg += f", placed ({primary_name})"
 
-            room.save()
+            room.save_dirty_fields()
             logger.debug(room_msg)
 
             # build up some ingestion metrics

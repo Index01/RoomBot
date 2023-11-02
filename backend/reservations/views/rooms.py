@@ -306,6 +306,14 @@ def swap_it_up(request):
             logger.warning("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
 
+        if not swap_room_mine.swappable():
+            logger.warning("Attempted to swap non swappable room %s", swap_room_mine.number)
+            return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
+
+        if not swap_room_theirs.swappable():
+            logger.warning("Attempted to swap non swappable room %s", swap_room_theirs.number)
+            return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
+
         if swap_room_mine.name_take3 != swap_room_theirs.name_take3:
             logger.warning("Attempt to swap mismatched room types %s (%s) - %s (%s)",
                            swap_room_mine.number, swap_room_mine.name_take3,
@@ -337,6 +345,21 @@ def swap_it_up(request):
         if swap_room_theirs.secondary:
             swap_room_mine.secondary = swap_room_theirs_secondary
 
+        swap_room_theirs_check_in = swap_room_theirs.check_in
+        swap_room_theirs_check_out = swap_room_theirs.check_out
+        swap_room_theirs.check_in = swap_room_mine.check_in
+        swap_room_theirs.check_out = swap_room_mine.check_out
+        swap_room_mine.check_in = swap_room_theirs_check_in
+        swap_room_mine.check_out = swap_room_theirs_check_out
+
+        swap_room_theirs_guest_notes = swap_room_theirs.guest_notes
+        swap_room_theirs.guest_notes = swap_room_mine.guest_notes
+        swap_room_mine.guest_notes = swap_room_theirs_guest_notes
+
+        swap_room_theirs_sp_ticket_id = swap_room_theirs.sp_ticket_id
+        swap_room_theirs.sp_ticket_id = swap_room_mine.sp_ticket_id
+        swap_room_mine.sp_ticket_id = swap_room_theirs_sp_ticket_id
+
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_mine} {swap_room_theirs}")
         swap_room_mine.save()
         swap_room_theirs.save()
@@ -346,4 +369,3 @@ def swap_it_up(request):
         swap_room_theirs.guest.save()
 
         return Response(status=status.HTTP_201_CREATED)
-

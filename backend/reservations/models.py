@@ -1,4 +1,6 @@
 from django.db import models
+from dirtyfields import DirtyFieldsMixin
+from reservations.helpers import real_date
 
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -27,7 +29,7 @@ class Staff(models.Model):
     def __str__(self):
         return f'staff name: {self.name}'
 
-class Room(models.Model):
+class Room(DirtyFieldsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     number = models.CharField("Number", max_length=20)
@@ -45,8 +47,8 @@ class Room(models.Model):
     is_placed = models.BooleanField("PlacedRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
-    check_in = models.DateField(blank=True, null=True)
-    check_out = models.DateField(blank=True, null=True)
+    _check_in = models.DateField(blank=True, null=True, db_column='check_in')
+    _check_out = models.DateField(blank=True, null=True, db_column='check_out')
     notes = models.TextField(blank=True, verbose_name='RoomNotes')
     guest_notes = models.TextField(blank=True, verbose_name='GuestNotes')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20, blank=True, null=True)
@@ -58,8 +60,35 @@ class Room(models.Model):
     def __str__(self):
         return str(self.number)
 
+    @property
+    def check_out(self):
+        return self._check_out
+
+    @check_out.setter
+    def check_out(self, value):
+        if value != '':
+            self._check_out = real_date(value)
+        elif value == '':
+            self._check_out = None
+
+    @property
+    def check_in(self):
+        return self._check_in
+
+    @check_in.setter
+    def check_in(self, value):
+        if value != '':
+            self._check_in = real_date(value)
+
+        elif value == '':
+            self._check_in = None
+
     def swappable(self):
-        return self.guest and self.is_swappable
+        return self.guest \
+            and self.is_swappable \
+            and (not self.is_art) \
+            and (not self.is_special) \
+            and (not self.is_comp)
 
     def hotel_sku(self):
         sku = None
