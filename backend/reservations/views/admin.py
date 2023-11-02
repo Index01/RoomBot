@@ -319,7 +319,7 @@ def guest_update(guest_obj, otp, room, og_guest=None):
     room.guest = guest
     room.is_available = False
 
-    room.primary=guest.name
+    room.primary = guest.name
     room.save()
 
 def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):

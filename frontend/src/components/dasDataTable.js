@@ -112,7 +112,6 @@ export default class RoomDataTable extends React.Component {
       .catch((error) => {
         this.setState({errorMessage: error.message});
         if (error.response) {
-	  console.log("AAAAA " + error.response.status);
           if (error.response.status === 401) {
             this.setState({ error: 'auth' });
           } else if (error.request) {
