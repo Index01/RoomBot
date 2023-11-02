@@ -2,8 +2,6 @@ import argparse
 import logging
 import os
 import random
-import termios
-import tty
 import string
 import sys
 
@@ -16,22 +14,10 @@ import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
 from datetime import datetime
 from reservations.ingest_models import RoomPlacementListIngest, ValidationError
+from reservations.management import getch
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
-
 logger = logging.getLogger('createStaffAndRooms')
-
-def getch():
-    def _getch():
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-    return _getch()
 
 def search_ticket(ticket, guest_entries):
     while(len(guest_entries)>0):
