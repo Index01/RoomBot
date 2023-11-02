@@ -37,7 +37,7 @@ def login(request):
         except KeyError:
             logger.info(f"[-] User login failed {data['email']}")
             return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
-        guest_email = Guest.objects.filter(email=email)
+        guest_email = Guest.objects.filter(email=email, can_login=True)
         staff_email = Staff.objects.filter(email=email)
         jwt_key = roombaht_config.JWT_KEY
         logger.debug("found %s staff, %s guests that match %s" % (staff_email.count(),

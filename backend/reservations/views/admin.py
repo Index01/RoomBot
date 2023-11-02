@@ -296,6 +296,10 @@ def guest_update(guest_obj, otp, room, og_guest=None):
                      email, room.name_hotel, room.number, room.name_take3)
         guest_changed = True
 
+    if room.name_hotel == 'Ballys':
+        guest.can_login = True
+        guest_changed = True
+
     # save guest (if needed) and then...
     if guest_changed:
         guest.save()

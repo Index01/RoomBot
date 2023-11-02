@@ -4,14 +4,14 @@ FALSE,1,100,King,Hearing Accessible,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,1,101,Queen,Smoking,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,1,102,Lake View King,Lakeview,,,,,,,,,,,Roombaht,,,,,,,,
 # some comp'd placed rooms
-FALSE,1,103,Queen,,,Staff,Staffy,,,,,,,,Roombaht,,,,,,Comp,,
-FALSE,1,104,Queen,,,Staff,Staffy,,,,,,,,Roombaht,,,,,,Comp,,
+FALSE,1,103,Queen,,,Staff,Staffy,,,,,,,,Foo Placer,,,,,,Comp,,
+FALSE,1,104,Queen,,,Staff,Staffy,,,,,,,,Foo Placer,,,,,,Comp,,
 # a placed purchased room
-FALSE,1,105,Queen,Balcony,,,Hat,Fob,,,,,,,Roombaht,,,,,,,,hhh008
+FALSE,1,105,Queen,Balcony,,Hat,Fob,,,,,,,,Foo Placer,,,,,,Yes,,hhh010
 FALSE,1,106,Queen,"Balcony, ADA, Smoking",,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,1,107,King,Balcony,,,,,,,,,,,Roombaht,,,,,,,,
 # placed / compd room
-FALSE,1,108,King,Mountain View,,,Fop,Hat,,,,,,,,Foo Placer,,,,,,Comp,,
+FALSE,1,108,King,Mountain View,,Fop,Hat,,,,,,,,Foo Placer,,,,,,Comp,,
 # more generic rooms
 FALSE,1,109,King,MountainView,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,1,110,King,"Mountain View, Balcony",,,,,,,,,,,Roombaht,,,,,,,,
