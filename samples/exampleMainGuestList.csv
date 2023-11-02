@@ -56,3 +56,20 @@ hhh008,Has,Foo,foo.has@noop.com,Hard Rock - Mountain View Suite,,
 hhh009,Hat,Foo,foo.hat@noop.com,Hard Rock - Mountain View Suite,hhh008,
 # purchased placed room
 hhh010,Hat,Fob,fob.hat@noop.com,Hard Rock - Standard 2 Queens (50% fee),,
+# double transfer placed suite
+hhh011,Mat,Fob,fob.mat@noop.com,Hard Rock - Lakeview Balcony Suite,,
+hhh012,Mat,Foz,foz.mat@noop.com,Hard Rock - Lakeview Balcony Suite,hhh011,
+hhh013,Mat,Foo,foo.mat@noop.com,Hard Rock - Lakeview Balcony Suite,hhh012,
+# non-placed rooms
+hhh014,Mat,Fon,fon.mat@noop.com,Hard Rock - Lakeview Balcony Suite,,
+hhh015,Map,Fon,fon.map@noop.com,Hard Rock - Lakeview King,,
+# non-placed transfer which will happen under update
+hhh016,Noo,Foo,foo.noo@noop.com,Hard Rock - Standard King,,
+# placed transfer which will happen under update
+hhh017,Moo,Foo,foo.moo@noop.com,Hard Rock - Standard King,,
+# non-placed double transfer that will happen under initial and update
+hhh018,Moo,Aoo,aoo.moo@noop.com,Hard Rock - Pool View Balcony Suite,,
+hhh019,Moo,Boo,boo.moo@noop.com,Hard Rock - Pool View Balcony Suite,hhh018,
+# non-placed rooms for high roller
+hhh020,Bar,Foo,foo.bar@noop.com,Hard Rock - Pool View Balcony Suite,,
+hhh021,Bar,Foo,foo.bar@noop.com,Hard Rock - Standard 2 Queens (50% fee),,

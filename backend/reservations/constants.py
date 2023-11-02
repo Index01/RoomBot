@@ -36,11 +36,13 @@ ROOM_LIST = {
     ],
 
     "Lake View King": [
-        'Hard Rock - Lakeview King',
+        'Hard Rock - Lakeview King'
+    ],
+
+    "Lake View Balcony King": [
         'Hard Rock - Lakeview Balcony King',
         'Hard Rock - Lakeview Balcony King (Post Sale)'
     ],
-
     "Balcony King": [
         'Hard Rock - Balcony King',
         'Hard Rock - Balcony King (RFP Sale)'

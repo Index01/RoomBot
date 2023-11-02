@@ -160,21 +160,29 @@ def create_rooms_main(args):
 
 	# loaded room, check if room_changed
         if room.is_dirty():
-            room_msg = f"{room_action} {room.name_take3} room {room.number}"
-            if room.is_swappable:
-                room_msg += ', swappable'
+            if args['dry_run']:
+                import ipdb ; ipdb.set_trace()
+                dirty_msg = f"{room.name_hotel:9}{room.number:4} changes"
+                for field, values in room.get_dirty_fields(verbose=True).items():
+                    dirty_msg=f"{dirty_msg} {field} {values['saved']} -> {values['current']}"
 
-            if room.is_available:
-                room_msg += ', available'
+                logger.warning(dirty_msg)
+            else:
+                room_msg = f"{room_action} {room.name_take3} room {room.number}"
+                if room.is_swappable:
+                    room_msg += ', swappable'
 
-            if room.is_placed:
-                room_msg += f", placed ({primary_name})"
+                if room.is_available:
+                    room_msg += ', available'
 
-            if room.is_special:
-                room_msg += ", special!"
+                if room.is_placed:
+                    room_msg += f", placed ({primary_name})"
 
-            room.save_dirty_fields()
-            logger.debug(room_msg)
+                if room.is_special:
+                    room_msg += ", special!"
+
+                room.save_dirty_fields()
+                logger.debug(room_msg)
 
             # build up some ingestion metrics
             room_count_obj = None
@@ -252,6 +260,10 @@ class Command(BaseCommand):
                             help='Default check in date MM/DD')
         parser.add_argument('--default-check-out',
                             help='Default check out date MM/DD')
+        parser.add_argument('-d', '--dry-run',
+                             help='Do not actually make changes',
+                             action='store_true',
+                            default=False)
 
     def handle(self, *args, **kwargs):
         if not kwargs['preserve']:
