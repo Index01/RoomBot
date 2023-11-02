@@ -45,8 +45,6 @@ elif [ "$ACTION" == "clone_db" ] ; then
     fi
     dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T roombaht "$ROOMBAHT_DB"
-    "/opt/roombaht-backend/venv/bin/python3" \
-	"/opt/roombaht-backend/manage.py" migrate
 elif [ "$ACTION" == "wipe" ] ; then
     dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     createdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
