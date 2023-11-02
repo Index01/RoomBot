@@ -2,7 +2,9 @@
 
 set -e
 
-ENV_FILE="/tmp/secrets.env"
+if [ -z "$ENV_FILE" ] ; then
+    ENV_FILE="/tmp/secrets.env"
+fi
 
 problems() {
     2>&1 echo "Error: $*"
@@ -37,9 +39,17 @@ if [ "$ACTION" == "init" ] ; then
 	"/opt/roombaht-backend/createStaffAndRooms.py" \
 	"${ROOM_FILE}" \
 	"${STAFF_FILE}"
+elif [ "$ACTION" == "clone_db" ] ; then
+    if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
+	problems "can't clone prod to prod"
+    fi
+    dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T roombaht "$ROOMBAHT_DB"
+    "/opt/roombaht-backend/venv/bin/python3" \
+	"/opt/roombaht-backend/manage.py" migrate
 elif [ "$ACTION" == "wipe" ] ; then
-    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "DROP DATABASE ${ROOMBAHT_DB}";
-    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE ${ROOMBAHT_DB};"
+    dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    createdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" migrate
 elif [ "$ACTION" == "manage" ] ; then

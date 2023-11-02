@@ -31,6 +31,10 @@ class Command(BaseCommand):
                 except Guest.DoesNotExist:
                     msg = f"{msg}    SP Ticket {room.sp_ticket_id} original owner not found??\n"
 
+                if room.guest is None:
+                    print(f"Room {room.number} {room.primary} sp_ticket_id {room.sp_ticket_id} but no guest. Missing / corrupt guests import?\n")
+                    continue
+
                 if room.number != guest.room_number \
                    and room.primary != guest.name \
                        and guest is not None:
