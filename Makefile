@@ -52,7 +52,7 @@ backend_migrations: backend_env
 
 sample_data:
 	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleBallysRoomList.csv --force
-	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleHardrockRoomList.csv --force --preserve
+	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleHardrockRoomList.csv --force --preserve --hotel-name=hardrock
 	backend/venv/bin/python3 backend/manage.py create_staff samples/exampleMainStaffList.csv
 
 archive: backend_archive frontend_archive

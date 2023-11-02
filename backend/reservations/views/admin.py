@@ -504,10 +504,12 @@ def run_reports(request):
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
         guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
+        hardrock_export_file = hotel_export('Hard Rock')
         attachments = [
             guest_dump_file,
             room_dump_file,
-            ballys_export_file
+            ballys_export_file,
+            hardrock_export_file
         ]
         if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
             attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
