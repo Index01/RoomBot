@@ -20,7 +20,7 @@ class Command(BaseCommand):
         if kwargs['hotel_name'].lower() == 'ballys':
             hotel = 'Ballys'
         elif kwargs['hotel_name'].lower() == 'hard rock' or \
-           kwargs['hotel_name'].lower() == 'hardrock':
+             kwargs['hotel_name'].lower() == 'hardrock':
             hotel = 'Hard Rock'
         else:
             raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
