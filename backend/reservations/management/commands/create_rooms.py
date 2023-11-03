@@ -87,7 +87,7 @@ def create_rooms_main(args):
             if elem.art_room == 'Yes':
                 room.is_art = True
 
-            if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
+            if room.name_take3 not in ROOM_LIST:
                 room.is_special = True
                 room.is_available = False
                 room.is_swappable = False
