@@ -11,7 +11,7 @@ from reservations.ingest_models import RoomPlacementListIngest, ValidationError
 from reservations.management import getch
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
-logger = logging.getLogger('createStaffAndRooms')
+logger = logging.getLogger(__name__)
 
 def search_ticket(ticket, guest_entries):
     while(len(guest_entries)>0):
