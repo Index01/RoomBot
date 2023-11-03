@@ -15,17 +15,17 @@ class Command(BaseCommand):
             raise CommandError("Must specify room number")
 
         room = None
-        hotel_name = None
+        hotel = None
         if kwargs['hotel_name'].lower() == 'ballys':
-            hotel_name = 'Ballys'
+            hotel = 'Ballys'
         elif kwargs['hotel_name'].lower() == 'hard rock' or \
            kwargs['hotel_name'].lower() == 'hardrock':
-            hotel_name = 'Hard Rock'
+            hotel = 'Hard Rock'
         else:
             raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
 
         try:
-            room = Room.objects.get(number=kwargs['number'], name_hotel=hotel_name)
+            room = Room.objects.get(number=kwargs['number'], name_hotel=hotel)
         except Room.DoesNotExist as exp:
             raise CommandError(f"Room {kwargs['number']} not found in {kwargs['hotel_name']}") from exp
 

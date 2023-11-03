@@ -624,6 +624,10 @@ def guest_file_upload(request):
                 room_products.append(product)
 
         for guest in guests:
+            # we only care about these hotels
+            if Room.derive_hotel(guest['product']) not in roombaht_config.GUEST_HOTELS:
+                continue
+
             # if we don't know the product, drop it
             if guest['product'] not in room_products:
                 logger.debug("Ticket %s has product we don't care about: %s",

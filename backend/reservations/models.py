@@ -2,6 +2,7 @@ from django.db import models
 from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
+import datetime
 
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -87,7 +88,9 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @check_out.setter
     def check_out(self, value):
-        if value != '':
+        if isinstance(value, datetime.date):
+            self._check_out = value
+        elif value != '':
             self._check_out = real_date(value)
         elif value == '':
             self._check_out = None
@@ -98,7 +101,10 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @check_in.setter
     def check_in(self, value):
-        if value != '':
+        if isinstance(value, datetime.date):
+            self._check_in = value
+
+        elif value != '':
             self._check_in = real_date(value)
 
         elif value == '':

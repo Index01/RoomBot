@@ -37,6 +37,8 @@ Configuration is handled through environment variables, which are stored encrypt
 * `ROOMBAHT_DB_HOST` This is the postgres hostname for production. This must be set, there is no default.
 * `ROOMBAHT_EMAIL_HOST_USER` This is the SMTP user and it must be set, there is no default.
 * `ROOMBAHT_EMAIL_HOST_PASSWORD` This is the SMTP password and it must be set, there is no default.
+* `ROOMBAHT_SWAPS_ENABLED` Is a boolean which controls whether swaps are enabled or not. Defaults to `True`.
+* `ROOMBAHT_GUEST_HOTELS` Is a CSV list of hotel names that will be processed during guest ingestion. Defaults to `Ballys`.
 
 # Local Dev
 

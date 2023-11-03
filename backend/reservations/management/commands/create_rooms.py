@@ -172,7 +172,7 @@ def create_rooms_main(args):
                 for field, values in room.get_dirty_fields(verbose=True).items():
                     dirty_msg=f"{dirty_msg} {field} {values['saved']} -> {values['current']}"
 
-                logger.warning(dirty_msg)
+                logger.info(dirty_msg)
             else:
                 room_msg = f"{room_action} {room.name_take3} room {room.number}"
                 if room.is_swappable:
@@ -272,6 +272,9 @@ class Command(BaseCommand):
                             default=False)
 
     def handle(self, *args, **kwargs):
+        if kwargs['dry_run'] and not kwargs['preserve']:
+            raise CommandError('can only specify --dry-run with --preserve')
+
         if not kwargs['preserve']:
             if len(Room.objects.all()) > 0 or \
                len(Staff.objects.all()) > 0 or \

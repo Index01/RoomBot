@@ -4,7 +4,7 @@ from reservations.models import Room
 class Command(BaseCommand):
     help = "Edit aspects of a room"
     def add_arguments(self, parser):
-        parser.add_argument('number', required=True,
+        parser.add_argument('number',
                             help='The room number')
         parser.add_argument('--primary',
                             help='Specify primary name (blank string to remove)')
@@ -45,18 +45,18 @@ class Command(BaseCommand):
         if kwargs['swappable'] and kwargs['not_swappable']:
             raise CommandError("Cannot specify both --swappable and --not-swappable")
 
-        hotel_name = None
+        hotel = None
         if kwargs['hotel_name'].lower() == 'ballys':
-            hotel_name = 'Ballys'
+            hotel = 'Ballys'
         elif kwargs['hotel_name'].lower() == 'hard rock' or \
            kwargs['hotel_name'].lower() == 'hardrock':
-            hotel_name = 'Hard Rock'
+            hotel = 'Hard Rock'
         else:
             raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
 
         room = None
         try:
-            room = Room.objects.get(number=kwargs['number'])
+            room = Room.objects.get(number=kwargs['number'], name_hotel=hotel)
         except Room.ObjectNotFound as exp:
             raise CommandError(f"Room {kwargs['number']} not found") from exp
 
