@@ -327,46 +327,9 @@ def swap_it_up(request):
             logger.warning("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
 
-        swap_room_mine.guest.room_number = swap_room_theirs.number
-        swap_room_theirs.guest.room_number = swap_room_mine.number
+        Room.swap(swap_room_theirs, swap_room_mine)
+        logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_theirs} {swap_room_mine}")
 
-        swap_room_theirs.swap_code = None
-        guest_id_theirs = swap_room_theirs.guest
-        swap_room_theirs.guest = swap_room_mine.guest
-        swap_room_mine.guest = guest_id_theirs
-
-        swap_room_theirs_primary = swap_room_theirs.primary
-        swap_room_theirs_secondary = swap_room_theirs.secondary
-        swap_room_theirs.primary = swap_room_mine.primary
-        swap_room_mine.primary = swap_room_theirs_primary
-
-        if swap_room_mine.secondary:
-            swap_room_theirs.secondary = swap_room_mine.secondary
-
-        if swap_room_theirs.secondary:
-            swap_room_mine.secondary = swap_room_theirs_secondary
-
-        swap_room_theirs_check_in = swap_room_theirs.check_in
-        swap_room_theirs_check_out = swap_room_theirs.check_out
-        swap_room_theirs.check_in = swap_room_mine.check_in
-        swap_room_theirs.check_out = swap_room_mine.check_out
-        swap_room_mine.check_in = swap_room_theirs_check_in
-        swap_room_mine.check_out = swap_room_theirs_check_out
-
-        swap_room_theirs_guest_notes = swap_room_theirs.guest_notes
-        swap_room_theirs.guest_notes = swap_room_mine.guest_notes
-        swap_room_mine.guest_notes = swap_room_theirs_guest_notes
-
-        swap_room_theirs_sp_ticket_id = swap_room_theirs.sp_ticket_id
-        swap_room_theirs.sp_ticket_id = swap_room_mine.sp_ticket_id
-        swap_room_mine.sp_ticket_id = swap_room_theirs_sp_ticket_id
-
-        logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_mine} {swap_room_theirs}")
-        swap_room_mine.save()
-        swap_room_theirs.save()
         diff_swaps(swap_room_theirs, swap_room_mine)
-
-        swap_room_mine.guest.save()
-        swap_room_theirs.guest.save()
 
         return Response(status=status.HTTP_201_CREATED)

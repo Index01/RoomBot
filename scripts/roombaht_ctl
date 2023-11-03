@@ -81,7 +81,7 @@ elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
     "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:${R_SECRET}"
     scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${R_USER}@${R_HOST}:${R_SCRIPT}"
-    ssh "${R_USER}@${R_HOST}" "sudo bash -c 'export ENV_FILE=${R_SECRET} ; bash ${R_SCRIPT} ${ACTION} '; sudo rm -f ${R_SCRIPT} ${R_SECRET}"
+    ssh "${R_USER}@${R_HOST}" "sudo bash -c 'export ENV_FILE=${R_SECRET} ; bash ${R_SCRIPT} ${ACTION} $*'; sudo rm -f ${R_SCRIPT} ${R_SECRET}"
 elif [ "$ACTION" == "manage" ] ; then
     "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
     scp "$ENV_FILE" "${R_USER}@${R_HOST}:${R_SECRET}"

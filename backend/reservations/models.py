@@ -113,9 +113,7 @@ class Room(DirtyFieldsMixin, models.Model):
     def swappable(self):
         return self.guest \
             and self.is_swappable \
-            and (not self.is_art) \
-            and (not self.is_special) \
-            and (not self.is_comp)
+            and (not self.is_special)
 
     def hotel_sku(self):
         sku = None
@@ -178,3 +176,44 @@ class Room(DirtyFieldsMixin, models.Model):
 
         raise Exception(f"Unable to resolve hotel for {product}")
 
+    @staticmethod
+    def swap(room_one, room_two):
+        room_two.guest.room_number = room_one.number
+        room_one.guest.room_number = room_two.number
+
+        room_one.swap_code = None
+        guest_id_theirs = room_one.guest
+        room_one.guest = room_two.guest
+        room_two.guest = guest_id_theirs
+
+        room_one_primary = room_one.primary
+        room_one_secondary = room_one.secondary
+        room_one.primary = room_two.primary
+        room_two.primary = room_one_primary
+
+        if room_two.secondary:
+            room_one.secondary = room_two.secondary
+
+        if room_one.secondary:
+            room_two.secondary = room_one_secondary
+
+        room_one_check_in = room_one.check_in
+        room_one_check_out = room_one.check_out
+        room_one.check_in = room_two.check_in
+        room_one.check_out = room_two.check_out
+        room_two.check_in = room_one_check_in
+        room_two.check_out = room_one_check_out
+
+        room_one_guest_notes = room_one.guest_notes
+        room_one.guest_notes = room_two.guest_notes
+        room_two.guest_notes = room_one_guest_notes
+
+        room_one_sp_ticket_id = room_one.sp_ticket_id
+        room_one.sp_ticket_id = room_two.sp_ticket_id
+        room_two.sp_ticket_id = room_one_sp_ticket_id
+
+        room_two.save()
+        room_one.save()
+
+        room_two.guest.save()
+        room_one.guest.save()

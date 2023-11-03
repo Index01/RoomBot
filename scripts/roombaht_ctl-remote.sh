@@ -43,8 +43,21 @@ elif [ "$ACTION" == "clone_db" ] ; then
     if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
 	problems "can't clone prod to prod"
     fi
-    dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
-    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T roombaht "$ROOMBAHT_DB"
+    SOURCE_DB="roombaht"
+    while getopts "d:" arg; do
+	case $arg in
+	    d)
+		SOURCE_DB="$OPTARG"
+		;;
+	    *)
+		problems "Unknown option passed to clone"
+		;;
+	esac
+    done
+    if psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
+	dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    fi
+    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$SOURCE_DB" "$ROOMBAHT_DB"
 elif [ "$ACTION" == "wipe" ] ; then
     dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     createdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
