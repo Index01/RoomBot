@@ -163,7 +163,7 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
         if not guest:
             # then check for a guest entry by room number
             try:
-                guest = Guest.objects.get(room_number = room.number)
+                guest = Guest.objects.get(room_number = room.number, hotel = room.name_hotel)
                 logger.info("Found guest %s by room_number in DB for orphan %s %s room %s",
                             guest.email, room.name_take3, room.name_hotel, room.number)
             except Guest.DoesNotExist:
@@ -447,9 +447,11 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 continue
 
             if existing_guest.room_number is not None:
-                existing_room = Room.objects.get(number = existing_guest.room_number)
+                existing_room = Room.objects.get(number = existing_guest.room_number,
+                                                 name_hotel = Room.derive_hotel(guest_obj.product))
             else:
-                return
+                logger.debug("Unable to find existing room for %s" % existing_guest)
+                continue
 
             if guest_entries.count() == 0:
                 # Transferring to new guest...

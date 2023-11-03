@@ -15,7 +15,7 @@ ROOM_LIST = {
         'Hard Rock - Standard 2 Queens (50% fee)'
     ],
 
-    "Double Queen Bed Lake View Balcony": [
+    "Double Queen Beds Lake View Balcony": [
         'Hard Rock - Lakeview Balcony 2 Queens',
         'Hard Rock - Lakeview Balcony 2 Queens (Post Sale)'
     ],
@@ -85,7 +85,7 @@ ROOM_LIST = {
         "Hard Rock - Mountain View Suite"
     ],
 
-    "Pool View Suite": [
+    "King Bed Suite Balcony": [
         "Hard Rock - Pool View Balcony Suite",
         "Hard Rock - Pool View Balcony Suite (Post Sale)"
     ]
