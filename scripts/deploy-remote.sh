@@ -74,6 +74,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@SEND_ONBOARDING@/${ROOMBAHT_SEND_ONBOARDING}/" \
     -e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
     -e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
+    -e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
     "${BACKEND_DIR}/config/roombaht-systemd.conf" \
     > "/etc/systemd/system/roombaht.service"
 chmod o-rwx "/etc/systemd/system/roombaht.service"

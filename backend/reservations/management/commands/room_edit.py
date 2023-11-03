@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Room
+from reservations.management import getch
 
 class Command(BaseCommand):
     help = "Edit aspects of a room"
@@ -38,6 +39,11 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true')
 
+        parser.add_argument('--unassign',
+                            help='Unassign the room. Annoying to undo',
+                            default=False,
+                            action='store_true')
+
     def handle(self, *args, **kwargs):
         if 'number' not in kwargs:
             raise CommandError("Must specify room number")
@@ -59,6 +65,35 @@ class Command(BaseCommand):
             room = Room.objects.get(number=kwargs['number'], name_hotel=hotel)
         except Room.ObjectNotFound as exp:
             raise CommandError(f"Room {kwargs['number']} not found") from exp
+
+        if kwargs['unassign']:
+            if kwargs['swappable'] \
+               or kwargs['not_swappable'] \
+               or kwargs['primary'] \
+               or kwargs['secondary'] \
+               or kwargs['guest_notes']:
+                raise CommandError('do not specify other args when unassigning room')
+
+        if kwargs['unassign']:
+            self.stdout.write((
+                f"Are you sure you want to unassign {room.name_hotel} {room.number}?\n"
+                f"It will be super annoying to undo this\n"
+                f"[y/n]"))
+            if getch().lower() != 'y':
+                raise CommandError('user said nope')
+
+            room.guest.room_number = None
+            room.guest.hotel = None
+            room.guest.save()
+            room.guest = None
+            room.primary = ''
+            room.secondary = ''
+            room.guest_notes = ''
+            room.is_available = True
+            room.is_swappable = True
+            room.save()
+            self.stdout.write("Unassigned room")
+            return
 
         if kwargs['primary'] is not None and kwargs['primary'] != room.primary:
             room.primary = kwargs['primary'].title()
