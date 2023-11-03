@@ -1,6 +1,8 @@
 from django.db import models
+from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
+import datetime
 
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -12,11 +14,30 @@ class Guest(models.Model):
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
     room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
+    hotel = models.CharField("Hotel", max_length=20, null=True, blank=True)
     onboarding_sent = models.BooleanField("OnboardingSent", default=False)
+    can_login = models.BooleanField("CanLogin", default=False)
     last_login = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def traverse_transfer(chain):
+        obj = chain[-1]
+        if not obj.transfer:
+            return chain
+
+        guest = Guest.objects.get(ticket=obj.transfer)
+        chain.append(guest)
+        if guest.transfer:
+            return Guest.traverse_transfer(chain)
+
+        return chain
+
+    def chain(self):
+        return Guest.traverse_transfer([self])
+
 
 class Staff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,6 +60,7 @@ class Room(DirtyFieldsMixin, models.Model):
     is_swappable = models.BooleanField("IsSwappable", default=False)
     is_smoking = models.BooleanField("SmokingRoom", default=False)
     is_lakeview = models.BooleanField("LakeviewRoom", default=False)
+    is_mountainview = models.BooleanField("MountainviewRoom", default=False)
     is_ada = models.BooleanField("ADA", default=False)
     is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
     is_art = models.BooleanField("ArtRoom", default=False)
@@ -66,7 +88,9 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @check_out.setter
     def check_out(self, value):
-        if value != '':
+        if isinstance(value, datetime.date):
+            self._check_out = value
+        elif value != '':
             self._check_out = real_date(value)
         elif value == '':
             self._check_out = None
@@ -77,7 +101,10 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @check_in.setter
     def check_in(self, value):
-        if value != '':
+        if isinstance(value, datetime.date):
+            self._check_in = value
+
+        elif value != '':
             self._check_in = real_date(value)
 
         elif value == '':
@@ -126,3 +153,28 @@ class Room(DirtyFieldsMixin, models.Model):
             sku = (f"{sku} ({','.join(access)})")
 
         return sku
+
+    @staticmethod
+    def short_product_code(product):
+        for a_room, a_product in ROOM_LIST.items():
+            if product in a_product:
+                return a_room
+
+        if product in ROOM_LIST.keys():
+            return product
+
+        raise Exception('Should never not find a short product code tho')
+
+    @staticmethod
+    def derive_hotel(product):
+        if product.lower().startswith('hard rock'):
+            return 'Hard Rock'
+
+        if product.lower().startswith('bally'):
+            return 'Ballys'
+
+        if product.lower().startswith('art room bally'):
+            return 'Ballys'
+
+        raise Exception(f"Unable to resolve hotel for {product}")
+

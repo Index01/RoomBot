@@ -1,18 +1,12 @@
-import argparse
+from datetime import datetime
 import logging
-import os
-import random
-import string
 import sys
-
-import django
-django.setup()
-from reservations.models import Guest, Room, Staff
-from django.forms.models import model_to_dict
-from reservations.helpers import phrasing, ingest_csv, my_url, send_email, real_date
+from django.core.management.base import BaseCommand, CommandError
+from reservations.helpers import ingest_csv, real_date
+from reservations.models import Room, Guest, Staff
+from reservations.helpers import send_email, phrasing, my_url, ingest_csv
 import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
-from datetime import datetime
 from reservations.ingest_models import RoomPlacementListIngest, ValidationError
 from reservations.management import getch
 
@@ -28,7 +22,6 @@ def search_ticket(ticket, guest_entries):
         else:
             continue
     return False
-
 
 def create_rooms_main(args):
     rooms_file = args['rooms_file']
@@ -50,13 +43,13 @@ def create_rooms_main(args):
         except ValidationError as e:
             logger.warning("Validation error for row %s", e)
 
-    logger.info("read in %s rooms for %s", len(rooms_rows), hotel)
+    logger.debug("read in %s rooms for %s", len(rooms_rows), hotel)
 
     for elem in rooms_import_list:
         room = None
         room_action = "Created"
         try:
-            room = Room.objects.get(number=elem.room)
+            room = Room.objects.get(number=elem.room, name_hotel=hotel)
             room_action = "Updated"
         except Room.DoesNotExist:
             # some things are not mutable
@@ -77,21 +70,24 @@ def create_rooms_main(args):
                 room.is_hearing_accessible = True
             if 'ada' in features:
                 room.is_ada = True
-            if 'lakeview' in features:
+            if 'lakeview' in features or 'lake view' in features:
                 room.is_lakeview = True
+            if 'mountainview' in features or 'mountain view' in features:
+                room.is_mountainview = True
             if 'smoking' in features:
                 room.is_smoking = True
 
             if elem.placed_by == 'Roombaht' or \
                (elem.placed_by == '' and args['blank_is_available']):
-                room.is_available = True
-                room.is_swappable = True
                 room.placed_by_roombot = True
+                room.is_available = True
+                if room.name_hotel == 'Ballys':
+                    room.is_swappable = True
 
             if elem.art_room == 'Yes':
                 room.is_art = True
 
-            if len([x for x in ROOM_LIST.keys() if x == room.name_take3]) == 0:
+            if room.name_take3 not in ROOM_LIST:
                 room.is_special = True
                 room.is_available = False
                 room.is_swappable = False
@@ -115,14 +111,16 @@ def create_rooms_main(args):
         # Cannot mark a room as non available based on being set to roombaht
         #   in spreadsheet if it already actually assigned, but you can mark
         #   a room as non available/swappable if it is not assigned yet
-        if elem.placed_by == '' and (not room.is_available):
-            if not room.guest:
-                room.is_available = False
+        if elem.placed_by == '' and not room.is_available:
+            if not room.guest and room.is_swappable:
                 room.is_swappable = False
             else:
                 logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)
 
         # the following per-guest stuff gets a bit more complex
+        # TODO: Note that as we normalize names via .title() to remove chances of capitalization
+        #       drama we lose the fact that some folk have mixed capitalization names i.e.
+        #       Name McName and I guess we need to figure out how to handle that
         primary_name = None
         if elem.first_name_resident != '':
             primary_name = elem.first_name_resident
@@ -131,8 +129,15 @@ def create_rooms_main(args):
             else:
                 primary_name = f"{primary_name} {elem.last_name_resident}"
 
-            if room.primary != primary_name:
-                room.primary = primary_name.title()
+            if room.primary != primary_name.title():
+                if room.guest and room.guest.transfer:
+                    trans_guest = room.guest.chain()[-1]
+                    if trans_guest.name == primary_name.title():
+                        logger.info("Not updating primary name for room %s transfer %s", room.number, room.guest.transfer)
+                    else:
+                        room.primary = primary_name.title()
+                else:
+                    room.primary = primary_name.title()
 
             if elem.placed_by == '':
                 logger.warning("Room %s Reserved w/o placer", room.number)
@@ -162,15 +167,28 @@ def create_rooms_main(args):
 
 	# loaded room, check if room_changed
         if room.is_dirty():
-            room_msg = f"{room_action} {room.name_take3} room {room.number}"
-            if room.is_swappable:
-                room_msg += ", swappable"
+            if args['dry_run']:
+                dirty_msg = f"{room.name_hotel:9}{room.number:4} changes"
+                for field, values in room.get_dirty_fields(verbose=True).items():
+                    dirty_msg=f"{dirty_msg} {field} {values['saved']} -> {values['current']}"
 
-            if not room.is_available:
-                room_msg += f", placed ({primary_name})"
+                logger.info(dirty_msg)
+            else:
+                room_msg = f"{room_action} {room.name_take3} room {room.number}"
+                if room.is_swappable:
+                    room_msg += ', swappable'
 
-            room.save_dirty_fields()
-            logger.debug(room_msg)
+                if room.is_available:
+                    room_msg += ', available'
+
+                if room.is_placed:
+                    room_msg += f", placed ({primary_name})"
+
+                if room.is_special:
+                    room_msg += ", special!"
+
+                room.save_dirty_fields()
+                logger.debug(room_msg)
 
             # build up some ingestion metrics
             room_count_obj = None
@@ -220,107 +238,63 @@ def create_rooms_main(args):
              total_rooms, available_rooms, total_rooms - available_rooms,
              swappable_rooms, art_rooms)
 
-def create_staff(init_file):
-    _staff_fields, staff = ingest_csv(init_file)
+class Command(BaseCommand):
+    help='Create/update rooms'
 
-    for staff_new in staff:
-        existing_staff = None
-        try:
-            existing_staff = Staff.objects.get(email = staff_new['email'])
-        except Staff.DoesNotExist:
-            pass
+    def add_arguments(self, parser):
+        parser.add_argument('rooms_file',
+                            help='Path to Rooms CSV file')
+        parser.add_argument('--force',
+                            dest='force',
+                            help='Force overwriting/updating',
+                            action='store_true',
+                            default=False)
+        parser.add_argument('--hotel-name',
+                            default="ballys",
+                            help='Specify hotel name (ballys, hardrock)')
+        parser.add_argument('--preserve',
+                            dest='preserve',
+                            action='store_true',
+                            default=False,
+                            help='Preserve data, updating rooms in place')
+        parser.add_argument('--blank-placement-is-available',
+                            dest='blank_is_available',
+                            action='store_true',
+                            default=False,
+                            help='When set it treats blank "Placed By" fields as available rooms')
+        parser.add_argument('--default-check-in',
+                            help='Default check in date MM/DD')
+        parser.add_argument('--default-check-out',
+                            help='Default check out date MM/DD')
+        parser.add_argument('-d', '--dry-run',
+                             help='Do not actually make changes',
+                             action='store_true',
+                            default=False)
 
-        if existing_staff:
-            logger.debug("Staff %s already exists", existing_staff.email)
-            continue
+    def handle(self, *args, **kwargs):
+        if kwargs['dry_run'] and not kwargs['preserve']:
+            raise CommandError('can only specify --dry-run with --preserve')
 
-        otp = phrasing()
-        guest=Guest(name=staff_new['name'],
-            email=staff_new['email'],
-            jwt=otp)
-        guest.save()
+        if not kwargs['preserve']:
+            if len(Room.objects.all()) > 0 or \
+               len(Staff.objects.all()) > 0 or \
+               len(Guest.objects.all()) > 0:
+                if not kwargs['force']:
+                    print('Wipe data? [y/n]')
+                    if getch().lower() != 'y':
+                        raise Exception('user said nope')
+                else:
+                    logger.warning('Wiping all data at user request!')
 
-        staff=Staff(name=staff_new['name'],
-            email=staff_new['email'],
-            guest=guest,
-            is_admin=staff_new['is_admin'])
-        staff.save()
-
-        logger.info("Created staff: %s, admin: %s", staff_new['name'], staff_new['is_admin'])
-
-        hostname = my_url()
-
-        body_text = f"""
-                Congratulations, u have been deemed Staff worthy material.
-
-                Email {staff_new['email']}
-                Admin {otp}
-
-                login at {hostname}/login
-                then go to {hostname}/admin
-                Good Luck, Starfighter.
-
-        """
-        send_email([staff_new['email']],
-                    'RoomService RoomBaht - Staff Activation',
-                    body_text)
-
-
-def main(args):
-
-    if not args['preserve']:
-        if len(Room.objects.all()) > 0 or \
-           len(Staff.objects.all()) > 0 or \
-           len(Guest.objects.all()) > 0:
-            if not args['force']:
-                print('Overwrite data? [y/n]')
+            Room.objects.all().delete()
+            Staff.objects.all().delete()
+            Guest.objects.all().delete()
+        else:
+            if not kwargs['force']:
+                print('Update (Room) data in place (experimental!) [y/n]')
                 if getch().lower() != 'y':
                     raise Exception('user said nope')
             else:
-                logger.warning('Overwriting data at user request!')
+                logger.warning('Updating (room) data in place at user request!')
 
-        Room.objects.all().delete()
-        Staff.objects.all().delete()
-        Guest.objects.all().delete()
-    else:
-        if not args['force']:
-            print('Update data in place (experimental!) [y/n]')
-            if getch().lower() != 'y':
-                raise Exception('user said nope')
-        else:
-            logger.warning('Updating data in place at user request!')
-
-    create_rooms_main(args)
-    create_staff(args['staff_file'])
-
-if __name__=="__main__":
-    parser = argparse.ArgumentParser(usage=('like db fixtures but not'),
-                                     description='create staff and rooms')
-    parser.add_argument('rooms_file',
-                        help='Path to Rooms CSV file')
-    parser.add_argument('staff_file',
-                        help='Path to Staff CSV file')
-    parser.add_argument('--force',
-                        dest='force',
-                        help='Force overwriting',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--hotel-name',
-                        default="ballys",
-                        help='Specify hotel name (ballys, hardrock)')
-    parser.add_argument('--preserve',
-                        dest='preserve',
-                        action='store_true',
-                        default=False,
-                        help='Preserve data, updating rooms in place')
-    parser.add_argument('--blank-placement-is-available',
-                        dest='blank_is_available',
-                        action='store_true',
-                        default=False,
-                        help='When set it treats blank "Placed By" fields as available rooms')
-    parser.add_argument('--default-check-in',
-                        help='Default check in date MM/DD')
-    parser.add_argument('--default-check-out',
-                        help='Default check out date MM/DD')
-    args = vars(parser.parse_args())
-    main(args)
+        create_rooms_main(kwargs)

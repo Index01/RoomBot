@@ -38,7 +38,7 @@ def my_rooms(request):
         except IndexError:
             return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
 
-        rooms = Room.objects.all()
+        rooms = Room.objects.filter(name_hotel='Ballys')
         rooms_mine = [elem for elem in rooms if elem.guest is not None and elem.guest.email==email]
 
         data = {
@@ -69,7 +69,8 @@ def room_list(request):
         rooms = Room.objects \
                     .filter(is_swappable=True,
                             is_available=False,
-                            is_special=False) \
+                            is_special=False,
+                            name_hotel='Ballys') \
                     .exclude(guest=None)
         guest_entries = Guest.objects.filter(email=email)
         room_types = []
@@ -78,7 +79,7 @@ def room_list(request):
                        if guest.room_number is not None]
         for guest_room_number in guest_room_numbers:
             try:
-                guest_room = Room.objects.get(number=guest_room_number)
+                guest_room = Room.objects.get(number=guest_room_number, name_hotel='Ballys')
                 if guest_room.name_take3 not in room_types \
                    and guest_room.swappable():
                     room_types.append(guest_room.name_take3)
@@ -122,7 +123,7 @@ def room_reserve(request):
 
         try:
             guest = Guest.objects.filter(email=email)
-            room = Room.objects.filter(number=room_number)
+            room = Room.objects.filter(number=room_number, name_hotel='Ballys')
             room.update(is_available=False, guest=guest[0])
             room[0].save()
         except IndexError as e:
@@ -180,7 +181,7 @@ def swap_request(request):
 
         swap_room = None
         try:
-            swap_room = Room.objects.get(number=room_num)
+            swap_room = Room.objects.get(number=room_num, name_hotel='Ballys')
         except Room.ObjectNotFound:
             return Response("Room not found", status=status.HTTP_404_NOT_FOUND)
 
@@ -191,7 +192,7 @@ def swap_request(request):
         requester_swappable = []
         for room_number in requester_room_numbers:
             try:
-                room = Room.objects.get(number=room_number)
+                room = Room.objects.get(number=room_number, name_hotel='Ballys')
                 if room.name_take3 == swap_room.name_take3 and room.swappable():
                     requester_swappable.append(room_number)
             except Room.ObjectNotFound:
@@ -258,7 +259,7 @@ def swap_gen(request):
             guest_id = guest_instances[0].id
         except IndexError as e:
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
-        room = Room.objects.get(number=room_num)
+        room = Room.objects.get(number=room_num, name_hotel='Ballys')
         phrase=phrasing()
         room.swap_code=phrase
         room.swap_time=make_aware(datetime.datetime.utcnow())
@@ -297,8 +298,8 @@ def swap_it_up(request):
             logger.warning(f"[+] No guest found")
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
 
-        rooms_swap_match = Room.objects.filter(swap_code=swap_req)
-        swap_room_mine = Room.objects.filter(number=room_num)[0]
+        rooms_swap_match = Room.objects.filter(swap_code=swap_req, name_hotel='Ballys')
+        swap_room_mine = Room.objects.filter(number=room_num, name_hotel='Ballys')[0]
         logger.info(f"[+] Swap match {rooms_swap_match}")
         try:
             swap_room_theirs = rooms_swap_match[0]

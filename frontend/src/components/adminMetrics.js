@@ -9,7 +9,9 @@ import ProgressBar from 'react-bootstrap/ProgressBar';
 
 export default class BasicVis extends React.Component {
   state = {
-    metrics : [],
+    metrics : {
+      rooms: {}
+    }
   }
   componentDidMount() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
@@ -79,14 +81,9 @@ export default class BasicVis extends React.Component {
           </Col>
           <Col xs lg="4">
               <h5> Unoccupied</h5>
-              <div className="card-subtitle mb-2 text-muted">Queens: {this.state.metrics.Queen_unoccupied} of {this.state.metrics.Queen_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">King: {this.state.metrics.King_unoccupied} of {this.state.metrics.King_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">KingSierraSuite: {this.state.metrics.King_Sierra_Suite_unoccupied} of {this.state.metrics.King_Sierra_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">QueenSierraSuite: {this.state.metrics.Queen_Sierra_Suite_unoccupied} of {this.state.metrics.Queen_Sierra_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">ExecutiveSuite: {this.state.metrics.Executive_Suite_unoccupied} of {this.state.metrics.Executive_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">TahoeSuite: {this.state.metrics.Tahoe_Suite_unoccupied} of {this.state.metrics.Tahoe_Suite_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">WeddingOffice: {this.state.metrics.Wedding_Office_unoccupied} of {this.state.metrics.Wedding_Office_total} total</div>
-              <div className="card-subtitle mb-2 text-muted">Chapel: {this.state.metrics.Chapel_unoccupied} of {this.state.metrics.Chapel_total} total</div>
+	      {Object.keys(this.state.metrics.rooms).map((roomType, index) => {
+	        return (<div key={index} className="card-subtitle mb-2 text-muted">{roomType}: {this.state.metrics.rooms[roomType]['unoccupied']} of {this.state.metrics.rooms[roomType]['total']} total</div>)
+	      })}
           </Col>
         </Row>
       </Container>

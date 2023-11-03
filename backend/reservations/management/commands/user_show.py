@@ -25,7 +25,7 @@ class Command(BaseCommand):
         if guest.onboarding_sent:
             onboarding = 'yes'
 
-        rooms = ','.join([x.room_number for x in guest_entries if x.room_number])
+        rooms = ','.join([f"{x.hotel} {x.room_number}" for x in guest_entries if x.room_number])
         if len(rooms) == 0:
             rooms = 'none'
 
@@ -44,5 +44,5 @@ class Command(BaseCommand):
         except Staff.DoesNotExist:
             pass
 
-        self.stdout.write(f"User {guest.name},{adult} otp: {guest.jwt}, last login: {last_login}")
+        self.stdout.write(f"User {guest.name},{adult} otp: {guest.jwt}, can login: {guest.can_login}, last login: {last_login}")
         self.stdout.write(f"    rooms: {rooms}, tickets: {tickets}, onboarding sent: {onboarding}")

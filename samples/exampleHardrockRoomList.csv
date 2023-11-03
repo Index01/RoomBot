@@ -1,0 +1,34 @@
+Placement Verified,Floor,Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",Connected To Room,First Name (Resident),Last Name (Resident),Secondary Name,Room Owned By (Secret Party),Check-in Date,Check-out Date,Art Room,Art Room Type,Art Name / Placed Name,Placed By,Changeable,Change Reason,Guest Restriction Notes,Room Notes,Placement Team Notes,Paying guest?,Department,Ticket ID in SecretParty
+# Generic rooms, and their features
+FALSE,1,100,King,Hearing Accessible,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,101,Queen,Smoking,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,102,Lake View King,Lakeview,,,,,,,,,,,Roombaht,,,,,,,,
+# some comp'd placed rooms
+FALSE,1,103,Queen,,,Staff,Staffy,,,,,,,,Foo Placer,,,,,,Comp,,
+FALSE,1,104,Queen,,,Staff,Staffy,,,,,,,,Foo Placer,,,,,,Comp,,
+# a placed purchased room
+FALSE,1,105,Queen,Balcony,,Hat,Fob,,,,,,,,Foo Placer,,,,,,Yes,,hhh010
+FALSE,1,106,Queen,"Balcony, ADA, Smoking",,,,,,,,,,,Roombaht,,,,,,,,
+# placed transfer
+FALSE,1,107,King,Balcony,,,,,,,,,,,Roombaht,,,,,,,,
+# placed / compd room
+FALSE,1,108,King,Mountain View,,Fop,Hat,,,,,,,,Foo Placer,,,,,,Comp,,
+# placed transfer
+FALSE,1,109,King,MountainView,,Moo,Foo,,,,,,,,Foo Placer,,,,,Yes,,,hhh017
+# more generic rooms
+FALSE,1,110,King,"Mountain View, Balcony",,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,111,Mountain View Suite,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,112,Lake View Suite,,,Mat,Foo,,,,,,,,Foo Placer,,,,,Yes,,,hhh011
+FALSE,1,113,Lake View Suite,Balcony,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,114,Pool View Suite,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,115,Pool View Suite,Balcony,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,116,Lake View Queen,Balcony,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,117,Lake View Queen,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,118,Lake View Queen,Smoking,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,119,Pool View Suite,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,120,Pool View Suite,"Balcony, Smoking, ADA",,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,1,121,Lake View King,Balcony,,,,,,,,,,,Roombaht,,,,,,,,
+# this room is a normal purchase that gets transferred
+FALSE,2,200,Mountain View Suite,,,,,,,,,,,,Roombaht,,,,,,,,
+# comp'd suite that is also art
+FALSE,2,201,Mountain View Suite,,,Mop,Fob,Mop Buddy,,,,Yes,,Some Kinda Art Thing,Foo Placer,,,,,Comp,,,

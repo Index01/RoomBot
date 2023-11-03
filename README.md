@@ -37,6 +37,8 @@ Configuration is handled through environment variables, which are stored encrypt
 * `ROOMBAHT_DB_HOST` This is the postgres hostname for production. This must be set, there is no default.
 * `ROOMBAHT_EMAIL_HOST_USER` This is the SMTP user and it must be set, there is no default.
 * `ROOMBAHT_EMAIL_HOST_PASSWORD` This is the SMTP password and it must be set, there is no default.
+* `ROOMBAHT_SWAPS_ENABLED` Is a boolean which controls whether swaps are enabled or not. Defaults to `True`.
+* `ROOMBAHT_GUEST_HOTELS` Is a CSV list of hotel names that will be processed during guest ingestion. Defaults to `Ballys`.
 
 # Local Dev
 
@@ -107,7 +109,14 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 * You can directly invoke a the django management tool, which gives you access to a variety of administrative tools.
   * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage shell` - invoke the django shell will full access to the orm and every module in the project.
   * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_show name@noop.com` the `user_show` command will display information on a guest.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_edit --help` the `user_edit` can edit limited aspects of a guest.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_edit --help` the `user_edit` command can edit limited aspects of a guest.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage room_show --help` the `room_show` command will show details on a room.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage room_edit --help` the `room_edit` command will allow editing of limited aspects of a room. There is no undo.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage find_drama --help` the `find_drama` command will attempt to locate rooms and guests with known data corruption issues.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage fix_room --help` the `fix_room` command will fix rooms with known data corruption issues. Pairs well with `find_drama`. There is no undo.
+    * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage fix_room --help` the `fix_room` command will fix rooms with known data corruption issues. Pairs well with `find_drama`. There is no undo.
+    * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_staff --help` the `create_staff` script replaces one half of the old `createStaffAndRooms.py` script. It will create and/also update staff entries.
+	* `./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms --help` the `create_rooms` script replaces one half of the old `createStaffAndRooms.py` script. It will create (and optionally - use caution and always `--dry-run` first) rooms. Make sure to specify `--hotel`. There is no undo other than a DB restore.
 
 # Data Population
 
@@ -118,7 +127,7 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 ```
 source backend/venv/bin/activate
 source dev.env
-python backend/createStaffAndRooms.py samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+make sample_data
 ```
 
 To get a guest password, you can use a Django management command.
@@ -131,10 +140,20 @@ User Foo Bar, otp: SomeOtp, last login: never
 
 ## Remote
 
-This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name.
+This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name. This script is meant to only run after the DB is fully initialized.
 
 ```
-./scripts/roombaht_ctl user 127.0.0.1 init <env> samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+$ ./scripts/roombaht_ctl user 127.0.0.1 <env> init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+```
+
+To update rooms after the fact, or to add rooms for a different hotel, there is (not yet) `roombot_ctl` tooling.
+
+```
+$ scp <path to rooms csv> user@127.0.0.1:/tmp/rooms.csv
+# if updating a hotel, always dry run, and check data closely
+$ ./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms /tmp/rooms.csv --hotel <hotel> --preserve --dry-run
+# if data looks good then
+$ ./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms /tmp/rooms.csv --hotel <hotel> --preserve
 ```
 
 ## Images

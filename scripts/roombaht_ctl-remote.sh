@@ -36,9 +36,9 @@ if [ "$ACTION" == "init" ] ; then
     STAFF_FILE="$2"
     shift 2
     "/opt/roombaht-backend/venv/bin/python3" \
-	"/opt/roombaht-backend/createStaffAndRooms.py" \
-	"${ROOM_FILE}" \
-	"${STAFF_FILE}"
+	"/opt/roombaht-backend/manage.py" "create_rooms" "${ROOM_FILE}" --hotel ballys
+    "/opt/roombaht-backend/venv/bin/python3" \
+	"/opt/roombaht-backend/manage.py" "create_staff" "${STAFF_FILE}"
 elif [ "$ACTION" == "clone_db" ] ; then
     if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
 	problems "can't clone prod to prod"
