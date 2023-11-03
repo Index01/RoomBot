@@ -1,6 +1,5 @@
 ROOM_LIST = {
     'Queen': [
-        'Hard Rock - Standard 2 Queens (50% fee)',
         "Bally's - Standard 2 Queens",
         "Bally's - Standard 2 Queens (50% fee)",
         "Bally's - Standard 2 Queens (Direct Sale)",
@@ -12,21 +11,32 @@ ROOM_LIST = {
         "Art Room Bally's - Standard 2 Queens (Post Sale)"
     ],
 
-    "Lake View Queen": [
-        'Hard Rock - Lakeview 2 Queens',
-        'Hard Rock - Lakeview 2 Queens (Post Sale)',
+    "Double Queen Beds": [
+        'Hard Rock - Standard 2 Queens (50% fee)'
+    ],
+
+    "Double Queen Bed Lake View Balcony": [
         'Hard Rock - Lakeview Balcony 2 Queens'
     ],
+
+    "Double Queen Beds Lake View": [
+        'Hard Rock - Lakeview 2 Queens',
+        'Hard Rock - Lakeview 2 Queens (Post Sale)'
+    ],
+
     'Queen Sierra Suite': [
         "Bally's - Sierra 2 Queens Suite",
         "Bally's - Sierra 2 Queens Suite (Post Sale)",
         "Bally's - Suite Upgrade from King to Queen (Post)"
     ],
 
-    "King": [
+    "King Bed": [
         'Hard Rock - Standard King',
         'Hard Rock - Standard King (Post Sale)',
         'Hard Rock - Standard King (RFP Sale)',
+    ],
+
+    "King": [
         "Bally's - Standard King",
         "Bally's - Standard King (Direct Sale)",
         "Bally's - Standard King (Post Sale)",
@@ -35,15 +45,16 @@ ROOM_LIST = {
         "Art Room Bally's - Standard King (Post Sale)"
     ],
 
-    "Lake View King": [
+    "King Bed Lake View": [
         'Hard Rock - Lakeview King'
     ],
 
-    "Lake View Balcony King": [
+    "King Bed Lake View Balcony": [
         'Hard Rock - Lakeview Balcony King',
         'Hard Rock - Lakeview Balcony King (Post Sale)'
     ],
-    "Balcony King": [
+
+    "King Bed Balcony": [
         'Hard Rock - Balcony King',
         'Hard Rock - Balcony King (RFP Sale)'
     ],
@@ -66,9 +77,11 @@ ROOM_LIST = {
         "Hard Rock - Lakeview Balcony Suite",
         "Hard Rock - Lakeview Balcony Suite (RFP Sale)"
     ],
-    "Mountain View Suite": [
+
+    "King Bed Suite Mountain View": [
         "Hard Rock - Mountain View Suite"
     ],
+
     "Pool View Suite": [
         "Hard Rock - Pool View Balcony Suite",
         "Hard Rock - Pool View Balcony Suite (Post Sale)"

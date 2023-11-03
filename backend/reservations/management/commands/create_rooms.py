@@ -129,8 +129,13 @@ def create_rooms_main(args):
             else:
                 primary_name = f"{primary_name} {elem.last_name_resident}"
 
-            if room.primary != primary_name.title():
-                room.primary = primary_name.title()
+            if room.primary != '' and room.primary != primary_name.title():
+                if room.guest.transfer:
+                    trans_guest = room.guest.chain()[-1]
+                    if trans_guest.name == primary_name.title():
+                        logger.info("Not updating primary name for room %s transfer %s", room.number, room.guest.transfer)
+                    else:
+                        room.primary = primary_name.title()
 
             if elem.placed_by == '':
                 logger.warning("Room %s Reserved w/o placer", room.number)

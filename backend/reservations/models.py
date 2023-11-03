@@ -21,6 +21,23 @@ class Guest(models.Model):
     def __str__(self):
         return self.name
 
+    @staticmethod
+    def traverse_transfer(chain):
+        obj = chain[-1]
+        if not obj.transfer:
+            return chain
+
+        guest = Guest.objects.get(ticket=obj.transfer)
+        chain.append(guest)
+        if guest.transfer:
+            return Guest.traverse_transfer(chain)
+
+        return chain
+
+    def chain(self):
+        return Guest.traverse_transfer([self])
+
+
 class Staff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -154,3 +171,4 @@ class Room(DirtyFieldsMixin, models.Model):
             return 'Ballys'
 
         raise Exception(f"Unable to resolve hotel for {product}")
+
