@@ -155,6 +155,7 @@ def rooming_list_export(hotel):
         "secondary_name", 
         "check_in_date",
         "check_out_date",
+        "placed_by_roombaht",
         "is_comp",
         "sp_ticket_id",
     ]
@@ -191,6 +192,7 @@ def rooming_list_export(hotel):
         else:
             row['check_in'] = 'TBD'
             row['check_out'] = 'TBD'
+        row["placed_by_roombaht"] = room.placed_by_roombot
         row["paying_guest"] = "Comp" if room.is_comp else "Yes"
         if room.sp_ticket_id and not room.is_comp:
             row['sp_ticket_id'] = room.sp_ticket_id
