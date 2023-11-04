@@ -39,10 +39,41 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true')
 
+        parser.add_argument('--art',
+                            help='Marks a room as art',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--not-art',
+                            help='Marks a room as not art',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--placed',
+                            help='Marks a room as placed',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--not-placed',
+                            help='Marks a room as not placed',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--roombaht',
+                            help='Marks a room as roombaht',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--not-roombaht',
+                            help='Marks a room as not roombaht',
+                            default=False,
+                            action='store_true')
+
         parser.add_argument('--unassign',
                             help='Unassign the room. Annoying to undo',
                             default=False,
                             action='store_true')
+
 
     def handle(self, *args, **kwargs):
         if 'number' not in kwargs:
@@ -117,6 +148,21 @@ class Command(BaseCommand):
             room.is_swappable = True
         elif kwargs['not_swappable'] and room.is_swappable:
             room.is_swappable = False
+
+        if kwargs['art'] and not room.is_art:
+            room.is_art = True
+        elif kwargs['not_art'] and room.is_art:
+            room.is_art = False
+
+        if kwargs['placed'] and not room.is_placed:
+            room.is_placed = True
+        elif kwargs['not_placed'] and room.is_placed:
+            room.is_placed = False
+
+        if kwargs['roombaht'] and not room.placed_by_roombot:
+            room.placed_by_roombot = True
+        elif kwargs['not_roombaht'] and room.placed_by_roombot:
+            room.placed_by_roombot = False
 
         if room.is_dirty():
             self.stdout.write(f"Updated room: {kwargs['number']}")
