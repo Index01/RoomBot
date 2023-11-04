@@ -388,6 +388,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
         elif trans_code != "":
             # Transfered ticket...
             existing_guest = None
+            transfer_room = None
             try:
                 existing_guest = Guest.objects.get(ticket=trans_code)
             except Guest.DoesNotExist:
@@ -399,29 +400,38 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     continue
 
                 for chain_guest in chain:
-                    # add stub guests
-                    stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
-                    stub = Guest(name=stub_name,
-                                 email=chain_guest.email,
-                                 ticket=chain_guest.ticket_code)
-                    logger.debug("Created stub guest %s with ticket %s",
-                                 chain_guest.email, chain_guest.ticket_code)
+                    # add stub guests (if does not already exist)
+                    try:
+                        _maybe_guest = Guest.objects.get(ticket=chain_guest.ticket_code)
+                    except Guest.DoesNotExist:
+                        stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
+                        stub = Guest(name=stub_name,
+                                     email=chain_guest.email,
+                                     ticket=chain_guest.ticket_code)
+                        logger.debug("Created stub guest %s with ticket %s",
+                                     chain_guest.email, chain_guest.ticket_code)
 
-                    if chain_guest.transferred_from_code:
-                        stub.transfer = chain_guest.transferred_from_code
+                        if chain_guest.transferred_from_code:
+                            stub.transfer = chain_guest.transferred_from_code
 
-                    stub.save()
+                        stub.save()
 
-                    transferred_tickets.append(chain_guest.ticket_code)
+                        transferred_tickets.append(chain_guest.ticket_code)
 
-                room = find_room(guest_obj.product)
 
-                if not room:
-                    logger.warning("No empty rooms of product %s available for %s",
-                                   guest_obj.product,
-                                   guest_obj.email)
-                    room_counts.shortage(Room.short_product_code(guest_obj.product))
-                    continue
+                existing_guest = Guest.objects.get(ticket=chain[-1].ticket_code)
+                if existing_guest.room_number:
+                    transfer_room = Room.objects.get(number=existing_guest.room_number,
+                                                     name_hotel = Room.derive_hotel(guest_obj.product))
+                else:
+                    transfer_room = find_room(guest_obj.product)
+
+                    if not transfer_room:
+                        logger.warning("No empty rooms of product %s available for %s",
+                                       guest_obj.product,
+                                       guest_obj.email)
+                        room_counts.shortage(Room.short_product_code(guest_obj.product))
+                        continue
 
                 email_chain = ','.join([x.email for x in chain])
                 if guest_entries.count() == 0:
@@ -431,7 +441,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj.email)
                     otp = phrasing()
-                    guest_update(guest_obj, otp, room)
+                    guest_update(guest_obj, otp, transfer_room)
                 else:
                     logger.debug("Processing transfer %s (%s) from %s to %s",
                                  trans_code,
@@ -439,10 +449,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj.email)
                     otp = guest_entries[0].jwt
-                    guest_update(guest_obj, otp, room)
+                    guest_update(guest_obj, otp, transfer_room)
 
-                room_counts.allocated(room.name_take3)
-                room_counts.transfer(room.name_take3)
+                room_counts.allocated(transfer_room.name_take3)
+                room_counts.transfer(transfer_room.name_take3)
 
                 continue
 
@@ -591,7 +601,8 @@ def request_metrics(request):
                    "percent_placed": percent_placed,
                    "rooms_swap_code_count": rooms_swap_code_count,
                    "rooms_swap_success_count": diff_swaps_count(),
-                   "rooms": room_metrics
+                   "rooms": room_metrics,
+                   "version": roombaht_config.VERSION
                    }
 
         resp = str(json.dumps(metrics))

@@ -1,4 +1,7 @@
 import os
+from importlib import resources as impresources
+import reservations
+
 
 DEV = os.environ.get('ROOMBAHT_DEV', 'FALSE').lower() == 'true'
 DEV_MAIL = os.environ.get('ROOMBAHT_DEV_MAIL', '')
@@ -19,3 +22,5 @@ TEMP_DIR = os.environ.get('ROOMBAHT_TMP', '/tmp')
 IGNORE_TRANSACTIONS = os.environ.get('ROOMBAHT_IGNORE_TRANSACTIONS', '').split(',')
 SWAPS_ENABLED = os.environ.get('ROOMBAHT_SWAPS_ENABLED', 'true').lower() == 'true'
 GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys').split(',')
+
+VERSION = impresources.read_text(reservations, "version")
