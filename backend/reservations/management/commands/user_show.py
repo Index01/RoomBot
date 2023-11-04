@@ -4,16 +4,42 @@ from reservations.models import Guest, Staff
 class Command(BaseCommand):
     help = "Show information on a guest/user"
     def add_arguments(self, parser):
-        parser.add_argument('email',
-                            help='The email to search for')
+        parser.add_argument('search',
+                            help='The item to search for. Defaults to email.')
+        parser.add_argument('--ticket',
+                            help='Search by ticket instead of email.',
+                            action='store_true',
+                            default=False)
+        parser.add_argument('--transfer',
+                            help='Search by transfer instead of email.',
+                            action='store_true',
+                            default=False)
+        parser.add_argument('--name',
+                            help='Search by full name instead of email.',
+                            action='store_true',
+                            default=False)
 
     def handle(self, *args, **kwargs):
-        if 'email' not in kwargs:
-            raise CommandError("Must specify email")
+        if 'search' not in kwargs:
+            raise CommandError("Must specify item to search for")
 
-        guest_entries = Guest.objects.filter(email=kwargs['email'])
+        if (kwargs['ticket'] and (kwargs['transfer'] or kwargs['name'])) \
+           or (kwargs['transfer'] and (kwargs['ticket'] or kwargs['name'])) \
+           or (kwargs['name'] and (kwargs['ticket'] or kwargs['transfer'])):
+            raise CommandError('If searching by other than email must specify only one of --ticket, --transfer, or --name')
+
+        guest_entries = None
+        if kwargs['ticket']:
+            guest_entries = Guest.objects.filter(ticket=kwargs['search'])
+        elif kwargs['transfer']:
+            guest_entries = Guest.objects.filter(transfer=kwargs['search'])
+        elif kwargs['name']:
+            guest_entries = Guest.objects.filter(name=kwargs['search'])
+        else:
+            guest_entries = Guest.objects.filter(email=kwargs['search'])
+
         if guest_entries.count() == 0:
-            raise CommandError(f"No user found with email {kwargs['email']}")
+            raise CommandError(f"No user found with search term {kwargs['search']} - did you specify right search type?")
 
         guest = guest_entries[0]
         last_login = 'never'

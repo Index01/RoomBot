@@ -2,7 +2,18 @@ from django.db import models
 from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
+import reservations.config as roombaht_config
 import datetime
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
+logger = logging.getLogger('__name__')
+
+class SwapError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+        super().__init__(f"Unable to complete swap: {msg}")
 
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -113,9 +124,7 @@ class Room(DirtyFieldsMixin, models.Model):
     def swappable(self):
         return self.guest \
             and self.is_swappable \
-            and (not self.is_art) \
-            and (not self.is_special) \
-            and (not self.is_comp)
+            and (not self.is_special)
 
     def hotel_sku(self):
         sku = None
@@ -178,3 +187,60 @@ class Room(DirtyFieldsMixin, models.Model):
 
         raise Exception(f"Unable to resolve hotel for {product}")
 
+    @staticmethod
+    def swap(room_one, room_two):
+        if room_two.name_take3 != room_two.name_take3:
+            logger.warning("Attempt to swap mismatched room types %s (%s) - %s (%s)",
+                           room_one.number, room_two.name_take3,
+                           room_two.number, room_two.name_take3)
+            raise SwapError('mismatched room type')
+
+        if not room_one.swappable():
+            logger.warning("Attempted to swap non swappable room %s %s",
+                           room_one.name_hotel, room_one.number)
+            raise SwapError('Room one is not swappable')
+
+        if not room_two.swappable():
+            logger.warning("Attempted to swap non swappable room %s %s",
+                           room_two.name_hotel, room_two.number)
+            raise SwapError('Room two is not swappable')
+
+        room_two.guest.room_number = room_one.number
+        room_one.guest.room_number = room_two.number
+
+        room_one.swap_code = None
+        guest_id_theirs = room_one.guest
+        room_one.guest = room_two.guest
+        room_two.guest = guest_id_theirs
+
+        room_one_primary = room_one.primary
+        room_one_secondary = room_one.secondary
+        room_one.primary = room_two.primary
+        room_two.primary = room_one_primary
+
+        if room_two.secondary:
+            room_one.secondary = room_two.secondary
+
+        if room_one.secondary:
+            room_two.secondary = room_one_secondary
+
+        room_one_check_in = room_one.check_in
+        room_one_check_out = room_one.check_out
+        room_one.check_in = room_two.check_in
+        room_one.check_out = room_two.check_out
+        room_two.check_in = room_one_check_in
+        room_two.check_out = room_one_check_out
+
+        room_one_guest_notes = room_one.guest_notes
+        room_one.guest_notes = room_two.guest_notes
+        room_two.guest_notes = room_one_guest_notes
+
+        room_one_sp_ticket_id = room_one.sp_ticket_id
+        room_one.sp_ticket_id = room_two.sp_ticket_id
+        room_two.sp_ticket_id = room_one_sp_ticket_id
+
+        room_two.save()
+        room_one.save()
+
+        room_two.guest.save()
+        room_one.guest.save()

@@ -53,6 +53,15 @@ class Command(BaseCommand):
                     except Guest.DoesNotExist:
                         msg = f"{msg}    SP Ticket {room.sp_ticket_id} transfer owner not found??\n{alt_msg}"
 
+            # general corruption which could bubble up during orm/sql manipulation
+            if room.sp_ticket_id and room.is_comp:
+                msg = f"{msg}    SP Ticket {room.sp_ticket_id} on comp'd room {room.name_hotel} {room.number}\n"
+
+            if room.check_in is None:
+                msg = f"{msg}    Room {room.name_hotel} {room.number} has blank check_in date"
+
+            if room.check_out is None:
+                msg = f"{msg}    Room {room.name_hotel} {room.number} has blank check_out date"
 
             if len(msg) > 0:
                 print(f"Room {room.number} Mismatch!\n{room.hotel_sku()} - art:{room.is_art} comp:{room.is_comp} placed:{room.is_placed}\n{msg}")

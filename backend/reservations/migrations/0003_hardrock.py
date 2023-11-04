@@ -2,10 +2,13 @@
 
 from django.db import migrations, models
 
-def populate_guest_hotel(app, _schema_editor):
+def update_guest_record(app, _schema_editor):
     Guest = app.get_model("reservations", "Guest")
     for guest in Guest.objects.all():
         guest.hotel = 'Ballys'
+        if guest.room_number is not None and guest.can_login is False:
+            guest.can_login = True
+
         guest.save()
 
 class Migration(migrations.Migration):
@@ -30,5 +33,5 @@ class Migration(migrations.Migration):
             name='is_mountainview',
             field=models.BooleanField(default=False, verbose_name='MountainviewRoom'),
         ),
-        migrations.RunPython(populate_guest_hotel)
+        migrations.RunPython(update_guest_record)
     ]
