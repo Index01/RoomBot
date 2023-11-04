@@ -2,10 +2,12 @@ import datetime
 import logging
 import jwt
 import sys
+from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 import reservations.config as roombaht_config
 from reservations.models import Guest, Staff
+from reservations.helpers import send_email, phrasing
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 logger = logging.getLogger('ViewLogger_auth')
@@ -24,18 +26,18 @@ def authenticate(request):
         logger.warning("[-] Unable to decode jwt ip:%s", request.META['REMOTE_ADDR'])
         return None
 
-    dthen = datetime.datetime.fromisoformat(dec["datetime"])
-    dnow = datetime.datetime.utcnow()
+    dthen = make_aware(datetime.datetime.fromisoformat(dec["datetime"]))
+    dnow = make_aware(datetime.datetime.utcnow())
 
     email = dec['email']
     if dnow - dthen > datetime.timedelta(days=1):
         logger.info("[-] JWT has expired email:%s ip:%s", request.META['REMOTE_ADDR'], email)
         return None
 
-    try:
-        _guest = Guest.objects.filter(email=dec['email'])
-    except Guest.DoesNotExist:
+    guest_entries = Guest.objects.filter(email=dec['email'])
+    if len(guest_entries) == 0:
         logger.warning("[-] No guest found. email:%s ip:%s", email, request.META['REMOTE_ADDR'])
+        return None
 
     return {'email': email, 'admin': False}
 
@@ -58,3 +60,21 @@ def authenticate_admin(request):
 
 def unauthenticated():
     return Response("[-] Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+def reset_otp(email):
+    new_pass = phrasing()
+    body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strange happening in the neghborhood. Please report any suspicious activity.\nGood luck."
+    guests = Guest.objects.filter(email=email, can_login=True)
+    if guests.count() > 0:
+        logger.info("Resetting password for %s", email)
+        for guest in guests:
+            guest.jwt = new_pass
+            guest.save()
+
+        send_email([email],
+                       'RoomService RoomBaht - Password Reset',
+                       body_text
+                       )
+
+    else:
+        logger.warning("Password reset for unknwon user %s", email)

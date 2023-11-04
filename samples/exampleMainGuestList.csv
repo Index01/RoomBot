@@ -1,6 +1,6 @@
 ticket_code,last_name,first_name,email,product,transferred_from_code,transferred_from_email
 # manually placed in room 305
-aaa001,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (RFP Sale),,
+aaa001,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (Direct Sale),,
 # manually placed in room 306
 aaa002,Baz,Foo,foo.baz@noop.com,Bally's - Standard 2 Queens (Direct Sale),,
 # these two should be auto placed
@@ -25,3 +25,51 @@ aaa012,Bag,Foo,foo.bag@noop.com,Bally's - Standard 2 Queens,aaa011,
 aaa013,TxBar,Foo,foo.txbar@noop.com,Bally's - Standard 2 Queens,,
 aaa014,TxBaz,Foo,foo.txbaz@noop.com,Bally's - Standard 2 Queens,aaa013,
 aaa015,TxBam,Foo,foo.txbam@noop.com,Bally's - Standard 2 Queens,aaa014,
+# transfer for placed room
+aaa016,Kar,Foo,foo.kar@noop.com,Bally's - Standard 2 Queens,,
+aaa017,Jar,Foo,foo.jar@noop.com,Bally's - Standard 2 Queens,aaa016,
+# manually placed in room 305 but also bought another room of same type
+aaa018,Bar,Foo,foo.bar@noop.com,Bally's - Standard 2 Queens (RFP Sale),,
+# manually placed in room 306 but also bought another room of different type
+aaa019,Baz,Foo,foo.baz@noop.com,Bally's - Standard King (Direct Sale),,
+# transferred placed room twice
+aaa020,TxBar,Fob,fob.txbar@noop.com,Bally's - Standard 2 Queens,,
+aaa021,TxBaz,Fod,fod.txbaz@noop.com,Bally's - Standard 2 Queens,aaa020,
+aaa022,TxBam,Fom,fom.txbam@noop.com,Bally's - Standard 2 Queens,aaa021,
+## a special person with special rooms (for complex swap testing)
+# this room is placed in 410
+aaa023,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard King,,
+# these rooms are not placed
+aaa024,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard King,,
+aaa025,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard 2 Queens,,
+# just a buncha people in hard rock
+hhh000,Ham,Foo,foo.ham@noop.com,Hard Rock - Standard 2 Queens (50% fee),,
+hhh001,Han,Foo,foo.han@noop.com,Hard Rock - Lakeview 2 Queens,,
+hhh002,Hao,Foo,foo.hao@noop.com,Hard Rock - Lakeview Balcony 2 Queens,,
+hhh003,Hap,Foo,foo.hap@noop.com,Hard Rock - Lakeview Balcony 2 Queens,,
+hhh004,Haq,Foo,foo.haq@noop.com,Hard Rock - Standard King,,
+hhh005,Har,Foo,foo.har@noop.com,Hard Rock - Standard King (Post Sale),,
+hhh006,Maa,Foo,foo.maa@noop.com,Hard Rock - Pool View Balcony Suite,,
+hhh007,Mab,Foo,foo.mab@noop.com,Hard Rock - Pool View Balcony Suite,,
+# transferring a hard rock room
+hhh008,Has,Foo,foo.has@noop.com,Hard Rock - Mountain View Suite,,
+hhh009,Hat,Foo,foo.hat@noop.com,Hard Rock - Mountain View Suite,hhh008,
+# purchased placed room
+hhh010,Hat,Fob,fob.hat@noop.com,Hard Rock - Standard 2 Queens (50% fee),,
+# double transfer placed suite
+hhh011,Mat,Fob,fob.mat@noop.com,Hard Rock - Lakeview Balcony Suite,,
+hhh012,Mat,Foz,foz.mat@noop.com,Hard Rock - Lakeview Balcony Suite,hhh011,
+hhh013,Mat,Foo,foo.mat@noop.com,Hard Rock - Lakeview Balcony Suite,hhh012,
+# non-placed rooms
+hhh014,Mat,Fon,fon.mat@noop.com,Hard Rock - Lakeview Balcony Suite,,
+hhh015,Map,Fon,fon.map@noop.com,Hard Rock - Lakeview King,,
+# non-placed transfer which will happen under update
+hhh016,Noo,Foo,foo.noo@noop.com,Hard Rock - Standard King,,
+# placed transfer which will happen under update
+hhh017,Moo,Foo,foo.moo@noop.com,Hard Rock - Standard King,,
+# non-placed double transfer that will happen under initial and update
+hhh018,Moo,Aoo,aoo.moo@noop.com,Hard Rock - Pool View Balcony Suite,,
+hhh019,Moo,Boo,boo.moo@noop.com,Hard Rock - Pool View Balcony Suite,hhh018,
+# non-placed rooms for high roller
+hhh020,Bar,Foo,foo.bar@noop.com,Hard Rock - Pool View Balcony Suite,,
+hhh021,Bar,Foo,foo.bar@noop.com,Hard Rock - Standard 2 Queens (50% fee),,

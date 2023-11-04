@@ -4,6 +4,7 @@ import random
 import sys
 
 from datetime import datetime
+from django.utils.dateparse import parse_date
 from csv import DictReader, DictWriter
 from django.core.mail import EmailMessage, get_connection
 import reservations.config as roombaht_config
@@ -12,6 +13,31 @@ logging.basicConfig(stream=sys.stdout,
                     level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('Helpers')
+
+def real_date(a_date: str, year=None):
+    """Convert string date into python date
+
+    Args:
+        a_date (str): date string,
+            expected format: "Mon - 11/7", "11/7"
+        year (Optional[int]): year, in 4-digit format
+            Allows specification of year, otherwise is in current year at runtime
+    Returns:
+        date: python `date` object
+    """
+    year = year or datetime.now().year
+    date_bits = a_date.split("-")
+    date = None
+    if len(date_bits) == 1:
+        date = date_bits[0]
+    elif len(date_bits) == 2:
+        date = date_bits[1]
+    else:
+        raise Exception(f"Unexpected date format {a_date}")
+
+    month, day = date.lstrip().split('/')
+    return parse_date("%s-%s-%s" % (year, month, day))
+
 
 def egest_csv(items, fields, filename):
     with open(filename, 'w') as output_handle:
@@ -82,25 +108,20 @@ def send_email(addresses, subject, body, attachments=[]):
 
     real_addresses = []
     for address in addresses:
-        if not roombaht_config.DEV:
-            # normal production email sending
+        if '@noop.com' not in address:
+            # always send to normal emails
             real_addresses.append(address)
         else:
-            # development mode is a bit more special
-            if '@noop.com' not in address:
-                # always send to normal emails
-                real_addresses.append(address)
+            if roombaht_config.DEV_MAIL != '':
+                # if the ROOMBAHT_DEV_MAIL var is set then insert the address part
+                #   of the @noop.com email address as a suffix and treat as normal
+                email_address, _email_host = address.split('@')
+                dev_address, dev_host = roombaht_config.DEV_MAIL.split('@')
+                real_addresses.append(f"{dev_address}+{email_address}@{dev_host}")
             else:
-                if roombaht_config.DEV_MAIL != '':
-                    # if the ROOMBAHT_DEV_MAIL var is set then insert the address part
-                    #   of the @noop.com email address as a suffix and treat as normal
-                    email_address, _email_host = address.split('@')
-                    dev_address, dev_host = roombaht_config.DEV_MAIL.split('@')
-                    real_addresses.append(f"{dev_address}+{email_address}@{dev_host}")
-                else:
-                    # otherwise just pretend to send the email
-                    logger.debug("Would have sent email to %s, subject: %s", address, subject)
-                    return
+                # otherwise just pretend to send the email
+                logger.debug("Not really sending noop dot com email to %s, subject: %s", address, subject)
+                return
 
     msg = EmailMessage(subject=subject,
                        body=body,

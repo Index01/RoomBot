@@ -1,13 +1,15 @@
 Placement Verified,Floor,Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",Connected To Room,First Name (Resident),Last Name (Resident),Secondary Name,Room Owned By (Secret Party),Check-in Date,Check-out Date,Art Room,Art Room Type,Art Name / Placed Name,Placed By,Changeable,Change Reason,Guest Restriction Notes,Room Notes,Placement Team Notes,Paying guest?,Department,Ticket ID in SecretParty
+# A Special Room
+FALSE,3,300,Laboratory,,,,,,,,,,,,,,,,This Is A Special Room,,,,
 # generic rooms, and their features
 FALSE,3,301,King,Hearing Accessible,,,,,,,,,,,Roombaht,,,,,,,,
 # generic room, smoking
 FALSE,3,302,Queen,Smoking,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,3,303,King,Lakeview,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,3,304,Queen,ADA,,,,,,,,,,,Roombaht,,,,,,,,
-# Simple assigned room w/o check-in/check-out
+# Simple placed room w/o check-in/check-out
 FALSE,3,305,Queen,,,Foo,Bar,,,,,,,,Foo Placer,,,,,,,,aaa001
-# Simple assigned room with check-in/check-out
+# Simple placed room with check-in/check-out
 FALSE,3,306,Queen,,,Foo,Baz,,,Fri - 11/10,Mon - 11/13,,,,Foo Placer,,,,,,,,aaa002
 # two generic art rooms
 FALSE,3,307,King,,,Foo,Baa,Foos Friend,,Wed - 11/08,Mon - 11/13,Yes,Shiny,Foo Baa Art,Foo Placer,No,,,,Foo Baa Likes Art,Yes,,aaa005
@@ -24,3 +26,19 @@ FALSE,4,401,Queen,,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,4,402,Queen,,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,4,403,Queen,,,,,,,,,,,,Roombaht,,,,,,,,
 FALSE,4,404,King,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,405,Queen,,,Foo,Kar,,,,,,,,Foo Placer,,,,,,,,aaa016
+# placed room that will be transfered twice
+FALSE,4,406,Queen,,,Fob,TxBar,,,,,,,,Foo Placer,,,,,,,,aaa020
+# batch of rooms for a special person
+FALSE,4,407,Queen,,,Rock,Lobster,,,,,,,,Foo Placer,,,,,,Comp,,
+FALSE,4,408,King,,,Rock,Lobster,,,,,,,,Foo Placer,,,,,,Comp,,
+FALSE,4,409,Dungeon,,,Rock,Lobster,Rock Buddy,,,,Yes,,What you think it is,Foo Placer,,,,,,Comp,,
+FALSE,4,410,King,,,Rock,Lobster,,,,,,,,Foo Placer,,,,,,Yes,,aaa023
+# more free rooms
+FALSE,4,411,Queen,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,412,King,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,413,King,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,414,King,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,415,Queen,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,416,King,,,,,,,,,,,,Roombaht,,,,,,,,
+FALSE,4,417,Queen,,,,,,,,,,,,Roombaht,,,,,,,,

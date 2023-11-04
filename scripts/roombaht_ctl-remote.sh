@@ -2,7 +2,9 @@
 
 set -e
 
-ENV_FILE="/tmp/secrets.env"
+if [ -z "$ENV_FILE" ] ; then
+    ENV_FILE="/tmp/secrets.env"
+fi
 
 problems() {
     2>&1 echo "Error: $*"
@@ -26,12 +28,12 @@ cleanup() {
 }
 
 backend_wipe() {
-    psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "DROP DATABASE ${ROOMBAHT_DB}";
+    dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
 }
 
 backend_migrate() {
     if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
-	psql -h "$ROOMBAHT_DB_HOST" -U postgres -tAc "CREATE DATABASE ${ROOMBAHT_DB};"
+	createdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     fi
     systemctl stop roombaht
     "/opt/roombaht-backend/venv/bin/python3" \
@@ -120,7 +122,7 @@ trap cleanup EXIT
 [ "$#" -ge 1 ] || problems "invalid args"
 ACTION="$1"
 shift
-eval `cat "$ENV_FILE"`
+source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
 if [ "$ACTION" == "init" ] ; then
@@ -128,9 +130,28 @@ if [ "$ACTION" == "init" ] ; then
     STAFF_FILE="$2"
     shift 2
     "/opt/roombaht-backend/venv/bin/python3" \
-	"/opt/roombaht-backend/createStaffAndRooms.py" \
-	"${ROOM_FILE}" \
-	"${STAFF_FILE}"
+	"/opt/roombaht-backend/manage.py" "create_rooms" "${ROOM_FILE}" --hotel ballys
+    "/opt/roombaht-backend/venv/bin/python3" \
+	"/opt/roombaht-backend/manage.py" "create_staff" "${STAFF_FILE}"
+elif [ "$ACTION" == "clone_db" ] ; then
+    if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
+	problems "can't clone prod to prod"
+    fi
+    SOURCE_DB="roombaht"
+    while getopts "d:" arg; do
+	case $arg in
+	    d)
+		SOURCE_DB="$OPTARG"
+		;;
+	    *)
+		problems "Unknown option passed to clone"
+		;;
+	esac
+    done
+    if psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
+	dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    fi
+    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$SOURCE_DB" "$ROOMBAHT_DB"
 elif [ "$ACTION" == "wipe" ] ; then
     backend_wipe
     backend_migrate

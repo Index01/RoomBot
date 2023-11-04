@@ -37,6 +37,8 @@ Configuration is handled through environment variables, which are stored encrypt
 * `ROOMBAHT_DB_HOST` This is the postgres hostname for production. This must be set, there is no default.
 * `ROOMBAHT_EMAIL_HOST_USER` This is the SMTP user and it must be set, there is no default.
 * `ROOMBAHT_EMAIL_HOST_PASSWORD` This is the SMTP password and it must be set, there is no default.
+* `ROOMBAHT_SWAPS_ENABLED` Is a boolean which controls whether swaps are enabled or not. Defaults to `True`.
+* `ROOMBAHT_GUEST_HOTELS` Is a CSV list of hotel names that will be processed during guest ingestion. Defaults to `Ballys`.
 
 # Local Dev
 
@@ -92,19 +94,29 @@ $ API_ENV=staging make archive
 There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
 
 * `./scripts/provision user 127.0.0.1` is to be run when a host is first created and when any baseline non-application changes are desired. It will execute `./scripts/provision-remote.sh` on the remote host.
-* `./scripts/deploy user 127.0.0.1 <env>` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. You must specify the `prod` or `staging` environment. Make sure you are pointing the right environment at the right host! This includes
+* `./scripts/deploy user 127.0.0.1 <env>` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. You must specify the `prod` or `staging` environment. Make sure you are pointing the right environment at the right host! This deployment includes
   * python `virtualenv` management
   * `nginx` configuration
   * `systemd` for the django bits
+  * running any available database migrations
 * Run `init` to load the Rooms and Staff tables, generally after a `wipe` and/or `deploy`
-  * `./scripts/roombaht_ctl user 127.0.0.1 init ${ROOM_FILE} ${STAFF_FILE}`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> init ${ROOM_FILE} ${STAFF_FILE}`
 * You can easily view frontend (nginx) and backend (django/wsgi) logs remotely
-  * `./scripts/roombaht_ctl user 127.0.0.1 frontend-log`
-  * `./scripts/roombaht_ctl user 127.0.0.1 backend-log`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> frontend-log`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> backend-log`
 * You can completely wipe the database as well. Helpful during pre-season development and a terrible idea once the gates have opened. After a helful confirmation prompt, this will wipe the database and re-run the migrations.
-  * `./scripts/roombaht_ctl user 127.0.0.1 wipe`
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> wipe`
 * You can directly invoke a the django management tool, which gives you access to a variety of administrative tools.
-  * `./scripts/roombaht_ctl user 127.0.0.1 manage shell` - invoke the djangok shell will full access to the orm and every module in the project
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage shell` - invoke the django shell will full access to the orm and every module in the project.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_show name@noop.com` the `user_show` command will display information on a guest.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_edit --help` the `user_edit` command can edit limited aspects of a guest.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage room_show --help` the `room_show` command will show details on a room.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage room_edit --help` the `room_edit` command will allow editing of limited aspects of a room. There is no undo.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage find_drama --help` the `find_drama` command will attempt to locate rooms and guests with known data corruption issues.
+  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage fix_room --help` the `fix_room` command will fix rooms with known data corruption issues. Pairs well with `find_drama`. There is no undo.
+    * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage fix_room --help` the `fix_room` command will fix rooms with known data corruption issues. Pairs well with `find_drama`. There is no undo.
+    * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_staff --help` the `create_staff` script replaces one half of the old `createStaffAndRooms.py` script. It will create and/also update staff entries.
+	* `./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms --help` the `create_rooms` script replaces one half of the old `createStaffAndRooms.py` script. It will create (and optionally - use caution and always `--dry-run` first) rooms. Make sure to specify `--hotel`. There is no undo other than a DB restore.
 
 # Data Population
 
@@ -115,29 +127,38 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 ```
 source backend/venv/bin/activate
 source dev.env
-python backend/createStaffAndRooms.py samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+make sample_data
 ```
 
-To get a guest password, you can go to the Django management console.
+To get a guest password, you can use a Django management command.
 First, already have a running backend.
-Then, run `python backend/manage.py shell`
-And in the python terminal, enter
-```python
-from reservations.models import Guest
-Guest.objects.filter(email="mpesaven@gmail.com")[0].jwt
+```
+$ python backend/manage.py user_show name@noop.com
+User Foo Bar, otp: SomeOtp, last login: never
+    rooms: 305, tickets: aaa001, onboarding sent: yes
 ```
 
 ## Remote
 
-This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name.
+This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name. This script is meant to only run after the DB is fully initialized.
 
 ```
-./scripts/roombaht_ctl user 127.0.0.1 init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+$ ./scripts/roombaht_ctl user 127.0.0.1 <env> init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+```
+
+To update rooms after the fact, or to add rooms for a different hotel, there is (not yet) `roombot_ctl` tooling.
+
+```
+$ scp <path to rooms csv> user@127.0.0.1:/tmp/rooms.csv
+# if updating a hotel, always dry run, and check data closely
+$ ./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms /tmp/rooms.csv --hotel <hotel> --preserve --dry-run
+# if data looks good then
+$ ./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms /tmp/rooms.csv --hotel <hotel> --preserve
 ```
 
 ## Images
 
-Images are kinda like data? There is a script that will either work based on an existing downloaded folder (i.e. if you have GDrive setup on a computer) or will attempt to use `gdown` to fetch the folder magially. It will then generate thumbnails and put the images in the right place. Not these images will _not_ end up in the git repo.
+Images are kinda like data? There is a script that will either work based on an existing downloaded folder (i.e. if you have GDrive setup on a computer) or will attempt to use `gdown` to fetch the folder magially. It will then generate thumbnails and put the images in the right place. Not these images will _not_ end up in the git repo. Images will be fetched during the `frontend_build` step if they are not present.
 
 ```
 ./scripts/fetch-images

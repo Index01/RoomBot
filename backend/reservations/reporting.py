@@ -102,7 +102,7 @@ def hotel_export(hotel):
         'primary_name',
         'secondary_name'
     ]
-    rooms = Room.objects.filter(name_hotel = hotel.capitalize())
+    rooms = Room.objects.filter(name_hotel = hotel.title())
     if rooms.count() == 0:
         raise Exception("No rooms found for hotel %s" % hotel)
 

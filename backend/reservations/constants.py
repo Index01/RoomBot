@@ -1,9 +1,5 @@
 ROOM_LIST = {
     'Queen': [
-#        'Hard Rock - Standard 2 Queens (50% fee)',
-#        'Hard Rock - Lakeview 2 Queens',
-#        'Hard Rock - Lakeview 2 Queens (Post Sale)',
-#        'Hard Rock - Lakeview Balcony 2 Queens',
         "Bally's - Standard 2 Queens",
         "Bally's - Standard 2 Queens (50% fee)",
         "Bally's - Standard 2 Queens (Direct Sale)",
@@ -15,40 +11,83 @@ ROOM_LIST = {
         "Art Room Bally's - Standard 2 Queens (Post Sale)"
     ],
 
+    "Double Queen Beds": [
+        'Hard Rock - Standard 2 Queens (50% fee)'
+    ],
+
+    "Double Queen Beds Lake View Balcony": [
+        'Hard Rock - Lakeview Balcony 2 Queens',
+        'Hard Rock - Lakeview Balcony 2 Queens (Post Sale)'
+    ],
+
+    "Double Queen Beds Lake View": [
+        'Hard Rock - Lakeview 2 Queens',
+        'Hard Rock - Lakeview 2 Queens (Post Sale)'
+    ],
+
     'Queen Sierra Suite': [
         "Bally's - Sierra 2 Queens Suite",
         "Bally's - Sierra 2 Queens Suite (Post Sale)",
         "Bally's - Suite Upgrade from King to Queen (Post)"
     ],
 
+    "King Bed": [
+        'Hard Rock - Standard King',
+        'Hard Rock - Standard King (Post Sale)',
+        'Hard Rock - Standard King (RFP Sale)'
+    ],
+
     "King": [
-#        'Hard Rock - Standard King',
-#        'Hard Rock - Standard King (Post Sale)',
-#        'Hard Rock - Standard King (RFP Sale)'
-#        'Hard Rock - Lakeview King',
-#        'Hard Rock - Lakeview Balcony King',
-#        'Hard Rock - Lakeview Balcony King (Post Sale)',
-#        'Hard Rock - Balcony King',
-#        'Hard Rock - Balcony King (RFP Sale)',
         "Bally's - Standard King",
         "Bally's - Standard King (Direct Sale)",
         "Bally's - Standard King (Post Sale)",
         "Bally's - Standard King (RFP Sale)",
-        "Art Room Bally's - Standard King"
+        "Art Room Bally's - Standard King",
+        "Art Room Bally's - Standard King (Post Sale)"
+    ],
+
+    "King Bed Lake View": [
+        'Hard Rock - Lakeview King',
+        'Hard Rock - Lakeview King (Post Sale)'
+    ],
+
+    "King Bed Lake View Balcony": [
+        'Hard Rock - Lakeview Balcony King',
+        'Hard Rock - Lakeview Balcony King (Post Sale)'
+    ],
+
+    "King Bed Balcony": [
+        'Hard Rock - Balcony King',
+        'Hard Rock - Balcony King (RFP Sale)',
+        "Hard Rock - Balcony King (Post Sale)"
     ],
 
     'King Sierra Suite': [
         "Bally's - Sierra King Suite",
-        "Bally's - Sierra King Suite (Post Sale)",
+        "Bally's - Sierra King Suite (Post Sale)"
     ],
 
     'Tahoe Suite': [
         "Bally's - Tahoe King Suite",
-        "Bally's - Tahoe King Suite (Post Sale)",
+        "Bally's - Tahoe King Suite (Post Sale)"
     ],
 
     "Executive Suite": [
-        "Bally's - Executive King Suite",
+        "Bally's - Executive King Suite"
+    ],
+
+    "King Bed Suite Lake View Balcony": [
+        "Hard Rock - Lakeview Balcony Suite",
+        "Hard Rock - Lakeview Balcony Suite (RFP Sale)"
+    ],
+
+    "King Bed Suite Mountain View": [
+        "Hard Rock - Mountain View Suite"
+    ],
+
+    "King Bed Suite Balcony": [
+        "Hard Rock - Pool View Balcony Suite",
+        "Hard Rock - Pool View Balcony Suite (Post Sale)"
     ]
 }
 
