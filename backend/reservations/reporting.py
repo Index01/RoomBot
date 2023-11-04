@@ -143,8 +143,8 @@ def hotel_export(hotel):
 
 def rooming_list_export(hotel):
     rooms = Room.objects.filter(name_hotel = hotel.title())
-    guests = Guest.objects.filter(name_hotel = hotel.title())
     if rooms.count() == 0:
+        msg = "No rooms found for hotel %s" % hotel
         raise Exception("No rooms found for hotel %s" % hotel)
     
     cols = [
@@ -161,10 +161,6 @@ def rooming_list_export(hotel):
         "guest_notes",
         "is_art",
     ]
-    
-    rooms = Room.objects.filter(name_hotel = hotel.title())
-    if rooms.count() == 0:
-        raise Exception("No rooms found for hotel %s" % hotel)
 
     rows = []
     for room in rooms:
@@ -202,6 +198,7 @@ def rooming_list_export(hotel):
             row['sp_ticket_id'] = "n/a"
         else:
             # shouldnt have any of these, but here we are
+            logger.warning(f"No SP ticket state found for room: {room.number}")
             row['sp_ticket_id'] = ""
         row["guest_notes"] = room.guest_notes
         row["is_art"] = room.is_art
