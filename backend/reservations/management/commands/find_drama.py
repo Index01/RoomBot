@@ -30,6 +30,9 @@ class Command(BaseCommand):
 
                 except Guest.DoesNotExist:
                     msg = f"{msg}    SP Ticket {room.sp_ticket_id} original owner not found??\n"
+                except Guest.MultipleObjectsReturned:
+                    msg = f"{msg}    SP Ticket {room.sp_ticket_id} returned multiple owners??\n"
+                    continue
 
                 if room.guest is None:
                     print(f"Room {room.number} {room.primary} sp_ticket_id {room.sp_ticket_id} but no guest. Missing / corrupt guests import?\n")
@@ -65,3 +68,21 @@ class Command(BaseCommand):
 
             if len(msg) > 0:
                 print(f"Room {room.number} Mismatch!\n{room.hotel_sku()} - art:{room.is_art} comp:{room.is_comp} placed:{room.is_placed}\n{msg}")
+
+        # not freeing rooms when parsing (long) transfer chain in single update
+        double_rooms = []
+        for guest in Guest.objects.all():
+            chain = guest.chain()
+            if len(chain) > 1:
+                last_guest = chain[-1]
+                if last_guest.room_number is not None:
+                    if last_guest.room_number in double_rooms:
+                        continue
+
+                    double_room = Room.objects.get(number = last_guest.room_number,
+                                                   name_hotel = last_guest.hotel)
+                    print((f"Room {double_room.name_hotel} {double_room.number}"
+                           f" {double_room.hotel_sku()} not freed on transfer"
+                           f" by {last_guest.ticket}->{chain[0].ticket}"
+                           f" {last_guest.name}->{chain[0].name}"))
+                    double_rooms.append(double_room.number)

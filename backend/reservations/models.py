@@ -39,7 +39,30 @@ class Guest(models.Model):
         if not obj.transfer:
             return chain
 
-        guest = Guest.objects.get(ticket=obj.transfer)
+        # under some data corruption conditions, multiple objects may be found
+        # so we check that ticket/transfer are the same and if not we
+        # throw an exception. and we always pick the one with a room number.
+        # and there should never be more than two (based on known drama)
+        guests = Guest.objects.filter(ticket=obj.transfer)
+        guest = None
+        if guests.count() == 1:
+            guest = guests[0]
+        elif guests.count() == 2:
+            for check_guest in guests:
+                if guest is None and check_guest.room_number:
+                    guest = check_guest
+
+                for v_guest in guests:
+                    if check_guest.ticket != v_guest.ticket or \
+                       check_guest.transfer != v_guest.transfer:
+                        raise Exception((
+                            f"Multiple guests found for ticket {obj.transfer} but"
+                            f" with inconsistent data tickets:{check_guest.ticket}/{v_guest.ticket}"
+                            f" transfer:{check_guest.transfer}/{v_guest.transfer}"))
+
+        elif guests.count() > 2:
+            raise Exception(f"Found more than two guest records for ticket {obj.transfer}")
+
         chain.append(guest)
         if guest.transfer:
             return Guest.traverse_transfer(chain)
