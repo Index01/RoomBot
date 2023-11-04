@@ -158,6 +158,8 @@ def rooming_list_export(hotel):
         "placed_by_roombaht",
         "is_comp",
         "sp_ticket_id",
+        "guest_notes",
+        "is_art",
     ]
     
     rooms = Room.objects.filter(name_hotel = hotel.title())
@@ -199,7 +201,10 @@ def rooming_list_export(hotel):
         elif room.is_comp:
             row['sp_ticket_id'] = "n/a"
         else:
+            # shouldnt have any of these, but here we are
             row['sp_ticket_id'] = ""
+        row["guest_notes"] = room.guest_notes
+        row["is_art"] = room.is_art
 
         rows.append(row)
 
