@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import sys
+from fuzzywuzzy import fuzz
 from django.core.management.base import BaseCommand, CommandError
 from reservations.helpers import ingest_csv, real_date
 from reservations.models import Room, Guest, Staff
@@ -10,20 +11,21 @@ from reservations.constants import ROOM_LIST
 from reservations.ingest_models import RoomPlacementListIngest, ValidationError
 from reservations.management import getch
 
-logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
-logger = logging.getLogger('createStaffAndRooms')
+def changes(room):
+    msg = f"{room.name_hotel:9}{room.number:4} changes\n"
+    for field, values in room.get_dirty_fields(debug=True).items():
+        saved = values['saved']
+        if room.guest and field == 'primary' :
+            saved = f"{saved} (owner {room.guest.name})"
+        msg=f"{msg}    {field} {saved} -> {values['current']}\n"
 
-def search_ticket(ticket, guest_entries):
-    while(len(guest_entries)>0):
-        guest = guest_entries.pop()
-        logger.debug(f'guest.ticket: {guest.ticket}, ticket: {ticket}')
-        if(guest.ticket == ticket):
-            return True
-        else:
-            continue
-    return False
+    return msg
 
-def create_rooms_main(args):
+def debug(cmd, args, msg):
+    if args['debug']:
+        cmd.stderr.write(msg)
+
+def create_rooms_main(cmd, args):
     rooms_file = args['rooms_file']
     hotel = None
     if args['hotel_name'] == 'ballys':
@@ -41,16 +43,16 @@ def create_rooms_main(args):
             room_data = RoomPlacementListIngest(**r)
             rooms_import_list.append(room_data)
         except ValidationError as e:
-            logger.warning("Validation error for row %s", e)
+            cmd.stderr.write(f"Validation error for row {e}")
 
-    logger.debug("read in %s rooms for %s", len(rooms_rows), hotel)
+    debug(cmd, args, "read in {len(rooms_rows)} rooms for {hotel}")
 
     for elem in rooms_import_list:
         room = None
-        room_action = "Created"
+        room_update = False
         try:
             room = Room.objects.get(number=elem.room, name_hotel=hotel)
-            room_action = "Updated"
+            room_update = True
         except Room.DoesNotExist:
             # some things are not mutable
             # * room features
@@ -107,7 +109,6 @@ def create_rooms_main(args):
         if elem.room_notes != room.notes:
             room.notes = elem.room_notes
 
-
         # Cannot mark a room as non available based on being set to roombaht
         #   in spreadsheet if it already actually assigned, but you can mark
         #   a room as non available/swappable if it is not assigned yet
@@ -115,7 +116,7 @@ def create_rooms_main(args):
             if not room.guest and room.is_swappable:
                 room.is_swappable = False
             else:
-                logger.warning("Not marking assigned room %s as available, despite spreadsheet change", room.number)
+                cmd.stderr.write(f"Not marking assigned room {room.number} as available, despite spreadsheet change")
 
         # the following per-guest stuff gets a bit more complex
         # TODO: Note that as we normalize names via .title() to remove chances of capitalization
@@ -125,22 +126,32 @@ def create_rooms_main(args):
         if elem.first_name_resident != '':
             primary_name = elem.first_name_resident
             if elem.last_name_resident == '':
-                logger.warning("No last name for room %s", room.number)
+                cmd.stderr.write(f"No last name for room {room.number}")
             else:
                 primary_name = f"{primary_name} {elem.last_name_resident}"
 
             if room.primary != primary_name.title():
                 if room.guest and room.guest.transfer:
                     trans_guest = room.guest.chain()[-1]
-                    if trans_guest.name == primary_name.title():
-                        logger.info("Not updating primary name for room %s transfer %s", room.number, room.guest.transfer)
+                    if elem.ticket_id_in_secret_party == room.guest.ticket:
+                        fuzziness = fuzz.ratio(room.primary, primary_name)
+                        if fuzziness >= int(args['fuzziness']):
+                            room.primary = primary_name.title()
+                        else:
+                            cmd.stderr.write((
+                                f"Not updating primary name for room {room.number} transfer {room.guest.transfer}"
+                                f" {room.primary}->{primary_name} ({fuzziness} fuzziness exceeds threshold of {args['fuzziness']}"))
+                    elif trans_guest.name == primary_name.title():
+                            cmd.stderr.write((
+                                f"Not updating primary name for room {room.number} transfer {room.guest.transfer}"
+                                f" {room.primary} -> {primary_name}"))
                     else:
                         room.primary = primary_name.title()
                 else:
                     room.primary = primary_name.title()
 
             if elem.placed_by == '':
-                logger.warning("Room %s Reserved w/o placer", room.number)
+                cmd.stderr.write("Room {room.number} Reserved w/o placer")
 
             if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:
                 room.is_placed = True
@@ -158,7 +169,7 @@ def create_rooms_main(args):
             room.guest_notes = ''
             room.secondary = ''
 
-        if elem.paying_guest == 'Comp' and not room.is_comp:
+        if elem.paying_guest == 'Comp':
             room.is_comp = True
 
         if (elem.ticket_id_in_secret_party != room.sp_ticket_id
@@ -168,13 +179,20 @@ def create_rooms_main(args):
 	# loaded room, check if room_changed
         if room.is_dirty():
             if args['dry_run']:
-                dirty_msg = f"{room.name_hotel:9}{room.number:4} changes"
-                for field, values in room.get_dirty_fields(verbose=True).items():
-                    dirty_msg=f"{dirty_msg} {field} {values['saved']} -> {values['current']}"
-
-                logger.info(dirty_msg)
+                cmd.stdout.write(changes(room))
             else:
-                room_msg = f"{room_action} {room.name_take3} room {room.number}"
+                if room_update and not args['force']:
+                    msg = f"Proposed {changes(room)} [y/n/q (to stop process)]"
+                    cmd.stdout.write(msg)
+                    a_key = getch()
+                    if a_key == 'q':
+                        cmd.stderr.write("Giving up on update process")
+                        sys.exit(1)
+                    elif a_key != 'y':
+                        cmd.stdout.write(f"Not updating {room.name_hotel} {room.number}")
+                        continue
+
+                room_msg = f"{'Updated' if room_update else 'Created'} {room.name_take3} room {room.number}"
                 if room.is_swappable:
                     room_msg += ', swappable'
 
@@ -184,11 +202,14 @@ def create_rooms_main(args):
                 if room.is_placed:
                     room_msg += f", placed ({primary_name})"
 
+                if room.is_comp:
+                    room_msg += f", compd"
+
                 if room.is_special:
                     room_msg += ", special!"
 
                 room.save_dirty_fields()
-                logger.debug(room_msg)
+                cmd.stdout.write(room_msg)
 
             # build up some ingestion metrics
             room_count_obj = None
@@ -215,28 +236,24 @@ def create_rooms_main(args):
             rooms[room.name_take3] = room_count_obj
 
         else:
-            logger.debug("No changes to room %s", room.number)
+            debug(cmd, args, f"No changes to room {room.number}")
 
     total_rooms = 0
     available_rooms = 0
     swappable_rooms = 0
     art_rooms = 0
     for r_counts, counts in rooms.items():
-        logger.info("room %s total:%s, available:%s, swappable:%s, art:%s",
-                    r_counts,
-                    counts['count'],
-                    counts['available'],
-                    counts['swappable'],
-                    counts['art'])
+        cmd.stdout.write((
+            f"room {r_counts} total:{counts['count']}, available:{counts['available']}"
+            f", swappable:{counts['swappable']}, art:{counts['art']}"))
 
         total_rooms += counts['count']
         available_rooms += counts['available']
         swappable_rooms += counts['swappable']
         art_rooms += counts['art']
+        placed_rooms = total_rooms - available_rooms
 
-    logger.info("total:%s, available:%s, placed:%s, swappable:%s, art:%s",
-             total_rooms, available_rooms, total_rooms - available_rooms,
-             swappable_rooms, art_rooms)
+        cmd.stdout.write(f"total:{total_rooms}, available:{available_rooms}, placed:{placed_rooms}, swappable:{swappable_rooms}, art:{art_rooms}")
 
 class Command(BaseCommand):
     help='Create/update rooms'
@@ -267,8 +284,15 @@ class Command(BaseCommand):
         parser.add_argument('--default-check-out',
                             help='Default check out date MM/DD')
         parser.add_argument('-d', '--dry-run',
-                             help='Do not actually make changes',
-                             action='store_true',
+                            help='Do not actually make changes',
+                            action='store_true',
+                            default=False)
+        parser.add_argument('--fuzziness',
+                            help='Fuzziness confidence factor for updating name changes (default 95)',
+                            default='95')
+        parser.add_argument('--debug',
+                            help='Debug Mode. Much Debug. Wow.',
+                            action='store_true',
                             default=False)
 
     def handle(self, *args, **kwargs):
@@ -284,17 +308,22 @@ class Command(BaseCommand):
                     if getch().lower() != 'y':
                         raise Exception('user said nope')
                 else:
-                    logger.warning('Wiping all data at user request!')
+                    self.stderr.write('Wiping all data at user request!')
 
             Room.objects.all().delete()
             Staff.objects.all().delete()
             Guest.objects.all().delete()
         else:
-            if not kwargs['force']:
-                print('Update (Room) data in place (experimental!) [y/n]')
-                if getch().lower() != 'y':
-                    raise Exception('user said nope')
+            if kwargs['dry_run']:
+                self.stdout.write('Dry run for update (no changes will be made)')
             else:
-                logger.warning('Updating (room) data in place at user request!')
+                if not kwargs['force']:
+                    self.stdout.write('Update (Room) data in place (experimental!) [y/n]')
+                    if getch().lower() != 'y':
+                        raise Exception('user said nope')
 
-        create_rooms_main(kwargs)
+                    self.stdout.write('Updating (room) data in place at user request!')
+                else:
+                    self.stdout.write('Updating (room) data in place.')
+
+        create_rooms_main(self, kwargs)
