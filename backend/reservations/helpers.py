@@ -12,7 +12,7 @@ import reservations.config as roombaht_config
 logging.basicConfig(stream=sys.stdout,
                     level=roombaht_config.LOGLEVEL)
 
-logger = logging.getLogger('Helpers')
+logger = logging.getLogger(__name__)
 
 def real_date(a_date: str, year=None):
     """Convert string date into python date

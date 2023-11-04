@@ -13,7 +13,7 @@ import reservations.config as roombaht_config
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
-logger = logging.getLogger('ReportingLogger')
+logger = logging.getLogger(__name__)
 
 
 def diff_swaps(swap_from, swap_to):
