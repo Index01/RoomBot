@@ -13,7 +13,7 @@ from reservations.management import getch
 
 def changes(room):
     msg = f"{room.name_hotel:9}{room.number:4} changes\n"
-    for field, values in room.get_dirty_fields(debug=True).items():
+    for field, values in room.get_dirty_fields(verbose=True).items():
         saved = values['saved']
         if room.guest and field == 'primary' :
             saved = f"{saved} (owner {room.guest.name})"
@@ -156,12 +156,6 @@ def create_rooms_main(cmd, args):
             if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:
                 room.is_placed = True
 
-            if elem.guest_restriction_notes != room.guest_notes:
-                room.guest_notes = elem.guest_restriction_notes
-
-            if elem.secondary_name != room.secondary:
-                room.secondary = elem.secondary_name.title()
-
             room.available = False
         elif room.primary != '' and (not room.guest) and room.is_available:
             # Cannot unassign an already unavailable room
@@ -169,8 +163,16 @@ def create_rooms_main(cmd, args):
             room.guest_notes = ''
             room.secondary = ''
 
+        if elem.guest_restriction_notes != room.guest_notes:
+            room.guest_notes = elem.guest_restriction_notes
+
+        if elem.secondary_name != room.secondary:
+            room.secondary = elem.secondary_name.title()
+
         if elem.paying_guest == 'Comp':
             room.is_comp = True
+        else:
+            room.is_comp = False
 
         if (elem.ticket_id_in_secret_party != room.sp_ticket_id
             and elem.ticket_id_in_secret_party != 'n/a'):
@@ -251,9 +253,11 @@ def create_rooms_main(cmd, args):
         available_rooms += counts['available']
         swappable_rooms += counts['swappable']
         art_rooms += counts['art']
-        placed_rooms = total_rooms - available_rooms
 
-        cmd.stdout.write(f"total:{total_rooms}, available:{available_rooms}, placed:{placed_rooms}, swappable:{swappable_rooms}, art:{art_rooms}")
+    placed_rooms = total_rooms - available_rooms
+    cmd.stdout.write((
+        f"total:{total_rooms}, available:{available_rooms}, placed:{placed_rooms}"
+        f", swappable:{swappable_rooms}, art:{art_rooms}"))
 
 class Command(BaseCommand):
     help='Create/update rooms'
