@@ -2,7 +2,18 @@ from django.db import models
 from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
+import reservations.config as roombaht_config
 import datetime
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
+logger = logging.getLogger('__name__')
+
+class SwapError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+        super().__init__(f"Unable to complete swap: {msg}")
 
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -178,6 +189,22 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @staticmethod
     def swap(room_one, room_two):
+        if room_two.name_take3 != room_two.name_take3:
+            logger.warning("Attempt to swap mismatched room types %s (%s) - %s (%s)",
+                           room_one.number, room_two.name_take3,
+                           room_two.number, room_two.name_take3)
+            raise SwapError('mismatched room type')
+
+        if not room_one.swappable():
+            logger.warning("Attempted to swap non swappable room %s %s",
+                           room_one.name_hotel, room_one.number)
+            raise SwapError('Room one is not swappable')
+
+        if not room_two.swappable():
+            logger.warning("Attempted to swap non swappable room %s %s",
+                           room_two.name_hotel, room_two.number)
+            raise SwapError('Room two is not swappable')
+
         room_two.guest.room_number = room_one.number
         room_one.guest.room_number = room_two.number
 

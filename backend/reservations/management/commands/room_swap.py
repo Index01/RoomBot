@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from reservations.models import Room
+from reservations.models import Room, SwapError
 
 class Command(BaseCommand):
     help = "Manually swap a room"
@@ -8,10 +8,10 @@ class Command(BaseCommand):
                             help='The first room in The Arrangement')
         parser.add_argument('room_two',
                             help='The second room in The Arrangement')
-        parser.add_argument('hotel_one',
+        parser.add_argument('--hotel_one',
                             help='The hotel the first room is associated with. Defaults to Ballys.',
                             default='Ballys')
-        parser.add_argument('hotel_two',
+        parser.add_argument('--hotel_two',
                             help='The hotel the second room is associated with. Defaults to Ballys.',
                             default='Ballys')
 
@@ -38,5 +38,9 @@ class Command(BaseCommand):
         if not room_two.swappable():
             raise CommandError(f"room {kwargs['hotel_two']} {kwargs['room_two']} is not swappable")
 
-        Room.swap(room_one, room_two)
-        self.stdout.write("Swapped {kwargs['hotel_one']} {kwargs['room_one']} and {kwargs['hotel_two']} {kwargs['room_two']}")
+        try:
+            Room.swap(room_one, room_two)
+        except SwapError as exp:
+            raise CommandError(f"Unable to swap room {exp.msg}") from exp
+
+        self.stdout.write(f"Swapped {kwargs['hotel_one']} {kwargs['room_one']} and {kwargs['hotel_two']} {kwargs['room_two']}")

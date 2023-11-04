@@ -12,6 +12,7 @@ from rest_framework import status
 from django.utils.timezone import make_aware
 from ..models import Guest
 from ..models import Room
+from ..models import SwapError
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
@@ -307,27 +308,17 @@ def swap_it_up(request):
             logger.warning("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
 
-        if not swap_room_mine.swappable():
-            logger.warning("Attempted to swap non swappable room %s", swap_room_mine.number)
-            return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
-
-        if not swap_room_theirs.swappable():
-            logger.warning("Attempted to swap non swappable room %s", swap_room_theirs.number)
-            return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
-
-        if swap_room_mine.name_take3 != swap_room_theirs.name_take3:
-            logger.warning("Attempt to swap mismatched room types %s (%s) - %s (%s)",
-                           swap_room_mine.number, swap_room_mine.name_take3,
-                           swap_room_theirs.number, swap_room_theirs.name_take3)
-            return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
-
         expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=3600)
 
         if(expiration.timestamp() < make_aware(datetime.datetime.utcnow()).timestamp()):
             logger.warning("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
 
-        Room.swap(swap_room_theirs, swap_room_mine)
+        try:
+            Room.swap(swap_room_theirs, swap_room_mine)
+        except SwapError:
+            return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
+
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_theirs} {swap_room_mine}")
 
         diff_swaps(swap_room_theirs, swap_room_mine)
