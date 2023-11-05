@@ -207,7 +207,7 @@ def rooming_list_export(hotel):
 
         rows.append(row)
 
-    rooming_list_export_file = f"{roombaht_config.TEMP_DIR}/hotel_{hotel.lower()}_export-{ts_suffix()}.csv"
-
+    report_filename = f"roominglist_hotel_{hotel.replace(' ', '').lower()}-{ts_suffix()}.csv"
+    rooming_list_export_file = os.path.join(roombaht_config.TEMP_DIR, report_filename)
     egest_csv(rows, cols, rooming_list_export_file)
     return rooming_list_export_file
