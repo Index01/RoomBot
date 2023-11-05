@@ -19,7 +19,7 @@ export default class BasicVis extends React.Component {
       this.setState({error: 'auth'});
       return;
     }
-    axios.post("${window.location.protocol}//${window.location.hostname}/api/request_metrics/", { jwt: jwt["jwt"] })
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/request_metrics/", { jwt: jwt["jwt"] })
       .then((result) => {
         var jresp = JSON.parse(result.data)
         console.log("Data resp");

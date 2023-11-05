@@ -17,7 +17,7 @@ export function ModalRequestSwap(props) {
     if (contacts === null) {
         return;
     }
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_request/', {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_request/", {
         jwt: jwt["jwt"],
         number: row.number,
 	    contact_info: contacts
@@ -107,7 +107,7 @@ export function ModalEnterCode(props) {
   const row = props.row.number;
 
   const handleAPICall = (code) => {
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_it_up/', {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_it_up/", {
         jwt: jwt['jwt'],
         number: row,
         swap_code: code
@@ -190,7 +190,7 @@ export function ModalCreateCode(props) {
   const row = props.row.number;
   const handleAPICall = () => {
 
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/swap_gen/', {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000//api/swap_gen/", {
             jwt: jwt['jwt'],
             number: {row},
       })
