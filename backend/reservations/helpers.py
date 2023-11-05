@@ -38,16 +38,15 @@ def real_date(a_date: str, year=None):
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (year, month, day))
 
-def take3_date(date_str: str):
+def take3_date(date_obj):
     """Converts date string "mm-dd-yyyy" to "day - mm/dd"
 
     Args:
-        date_str (str): date string "mm-dd-yyyy"
+        date_str (datetime.date): date string "mm-dd-yyyy"
 
     Returns:
         _type_: output format with abbreviated day of week
     """
-    date_obj = datetime.strptime(date_str, '%m/%d/%Y')
     formatted_date = date_obj.strftime('%a - %m/%d')
     return formatted_date
 
