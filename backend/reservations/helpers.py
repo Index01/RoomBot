@@ -110,7 +110,8 @@ def my_url():
 
 def ts_suffix():
     now = datetime.now()
-    return "%s-%s-%s-%s-%s" % (now.day, now.month, now.year, now.hour, now.minute)
+    return now.strftime('%Y-%m-%d-%H-%M')
+
 
 def send_email(addresses, subject, body, attachments=[]):
     if not roombaht_config.SEND_MAIL:

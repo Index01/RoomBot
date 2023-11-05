@@ -195,9 +195,9 @@ def rooming_list_export(hotel):
         row["placed_by_roombaht"] = room.placed_by_roombot
         row["paying_guest"] = "Comp" if room.is_comp else "Yes"
         
-        if room.sp_ticket_id:
-            row['sp_ticket_id'] = room.sp_ticket_id
-        elif not room.sp_ticket_id and room.is_comp:
+        if room.guest and room.guest.ticket:
+            row['sp_ticket_id'] = room.guest.ticket
+        elif room.guest and not room.guest.ticket and room.is_comp:
             row['sp_ticket_id'] = "n/a"
         else:
             # shouldnt have any of these, but here we are
