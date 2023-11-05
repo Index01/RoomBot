@@ -12,21 +12,45 @@ problems() {
 
 cleanup() {
     if [ -e "$ENV_FILE" ] ; then
-	if [ -n "$SSH_HOST" ] ; then
-	    ssh "$SSH_HOST" "sudo rm /tmp/secrets.env"
-	fi
 	rm "$ENV_FILE"
+	if [ -n "$SSH_HOST" ] && [ -n "$R_SECRET" ] ; then
+	    ssh -o 'ControlMaster no' "$SSH_HOST" "sudo rm -f /tmp/${R_SECRET}"
+	fi
     fi
 
 }
 
 usage() {
-    echo "roombaht_ctl <user> <hostname> <env> init <rooms dot csv> <staff dot csv>"
+    echo "roombaht_ctl <user> <env> init <rooms dot csv> <staff dot csv>"
     echo "                             -f         force wipe, otherwise asks"
     echo
-    echo "roombaht_ctl <user> <hostname> <env> frontend-log"
-    echo "roombaht_ctl <user> <hostname> <env> backend-log"
-    echo "roombaht_ctl <user> <hostname> <env> wipe"
+    echo "roombaht_ctl <user> <env> frontend-log"
+    echo "roombaht_ctl <user> <env> backend-log"
+    echo "roombaht_ctl <user> <env> wipe"
+}
+
+yeet_command() {
+    local COMMAND="$1"
+    ssh -t -o 'ControlMaster no' "${SSH_HOST}" "$COMMAND"
+}
+
+yeet_file() {
+    local SRC="$1"
+    local DEST="$2"
+    if [ ! -e "$SRC" ] ; then
+	problems "Unable to find source file ${SRC}"
+    fi
+    scp -q "$SRC" "${SSH_HOST}:/tmp/${DEST}"
+}
+
+yeet_script() {
+    yeet_file "$ENV_FILE" "$R_SECRET"
+    yeet_file "${SCRIPTDIR}/roombaht_ctl-remote.sh" "$R_SCRIPT"
+}
+
+yeet_ctl() {
+    local CTL="$1"
+    yeet_command "sudo bash -c 'export ENV_FILE=/tmp/${R_SECRET} ; bash /tmp/${R_SCRIPT} ${CTL}'; sudo rm -f /tmp/${R_SCRIPT} /tmp/${R_SECRET}"
 }
 
 trap cleanup EXIT
@@ -44,44 +68,43 @@ ENC_FILE="${ROOTDIR}/config/${R_ENV}.enc"
 [ -e "$ENV_FILE" ] && problems "plaintext secrets present"
 [ -e "$ENC_FILE" ] || problems "env file not found"
 
-# keep it random, allows for multiple invocations
-R_SCRIPT="/tmp/roombaht_ctl-remote-${RANDOM}.sh"
-R_SECRET="/tmp/secrets-${RANDOM}.env"
-
-# always copy secrets over and extract ssh host
+# always extract ssh host
 "${SCRIPTDIR}/secrets" decrypt "$R_ENV"
+# shellcheck disable=1090
 source "$ENV_FILE"
 [ -n "$ROOMBAHT_HOST" ] || problems "unable to determine deployment host"
 SSH_HOST="${R_USER}@${ROOMBAHT_HOST}"
-scp "$ENV_FILE" "${SSH_HOST}:${R_SECRET}"
+# keep it random, allows for multiple invocations
+R_SCRIPT="roombaht_ctl-remote-${RANDOM}.sh"
+R_SECRET="secrets-${RANDOM}.env"
 
 if [ "$ACTION" == "init" ] ; then
-    ROOM_FILE="$1"
-    STAFF_FILE="$2"
-    shift 2
-    if [ ! -e "$ROOM_FILE" ] ; then
-	problems "room file ${ROOM_FILE} not found"
+    BALLYS_SRC="$1"
+    HARDROCK_SRC="$2"
+    STAFF_SRC="$3"
+    shift 3
+    if [ ! -e "$BALLYS_FILE" ] ; then
+	problems "room file ${BALLYS_FILE} not found"
+    fi
+    if [ ! -e "$HARDROCK_FILE" ] ; then
+	problems "room file ${HARDROCK_FILE} not found"
     fi
     if [ ! -e "$STAFF_FILE" ] ; then
 	problems "staff file ${STAFF_FILE} not found"
     fi
-    ROOM_FILE="$(basename "$ROOM_FILE")"
-    STAFF_FILE="$(basename "$STAFF_FILE")"
-    ssh -o 'ControlMaster: no' \
-	-t "$SSH_HOST" \
-	"sudo bash /tmp/roombaht_ctl-remote.sh init '/tmp/${ROOM_FILE}' '/tmp/${STAFF_FILE}' ; sudo rm /tmp/roombaht_ctl-remote.sh"
+    BALLYS_DEST="/tmp/$(basename "$BALLYS_SRC")"
+    STAFF_DEST="/tmp/$(basename "$STAFF_SRC")"
+    HARDROCK_DEST="/tmp/$(basename "$HARDROCK_SRC")"
+    yeet_file "$BALLYS_SRC" "$BALLYS_DEST"
+    yeet_file "$HARDROCK_SRC" "$HARDROCK_DEST"
+    yeet_file "$STAFF_SRC" "$STAFF_DEST"
+    yeet_ctl "init  ${BALLYS_DEST} ${HARDROCK_DEST} ${STAFF_DEST}"
 elif [ "$ACTION" == "backend-log" ] ; then
-    ssh -o 'ControlMaster: no' \
-	-t "${SSH_HOST}" \
-	"sudo journalctl -f -u roombaht -u cron.service -t roombaht-oob -t uwsgi -n 100"
+    yeet_command "sudo journalctl -f -u roombaht -u cron.service -t roombaht-oob -t uwsgi -n 100"
 elif [ "$ACTION" == "frontend-log" ] ; then
-    ssh -o 'ControlMaster: no' \
-	-t "$SSH_HOST" \
-	"sudo tail -n 50 -f /var/log/nginx/access.log /var/log/nginx/error.log"
+    yeet_command "sudo tail -n 50 -f /var/log/nginx/access.log /var/log/nginx/error.log"
 elif [ "$ACTION" == "backend-restart" ] ; then
-    ssh -o 'ControlMaster: no' \
-	-t "$SSH_HOST" \
-	"sudo systemctl restart roombaht"
+    yeet_command "sudo systemctl restart roombaht"
 elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
     echo "This will completely wipe the database and it will be super annoying to get it back."
     echo "Are you sure? [y/n]"
@@ -92,14 +115,16 @@ elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
     if [ "$ACTION" == "clone_db" ] && [ "$R_ENV" == "prod" ] ; then
 	problems "cannot clone prod -> prod"
     fi
-    scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${SSH_HOST}:${R_SCRIPT}"
-    ssh -o 'ControlMaster: no' "${SSH_HOST}" \
-	"sudo bash -c 'export ENV_FILE=${R_SECRET} ; bash ${R_SCRIPT} ${ACTION} $*'; sudo rm -f ${R_SCRIPT} ${R_SECRET}"
+    yeet_script
+    yeet_ctl "${ACTION} $*"
+elif [ "$ACTION" == "deploy" ] || [ "$ACTION" == "quick_deploy" ] ; then
+    yeet_script
+    yeet_file "${ROOTDIR}/build/roombaht-backend.tgz" "$BACKEND_ARTIFACT"
+    yeet_file "${ROOTDIR}/build/roombaht-frontend.tgz" "$FRONTEND_ARTIFACT"
+    yeet_ctl "$ACTION"
 elif [ "$ACTION" == "manage" ] ; then
-    scp "${SCRIPTDIR}/roombaht_ctl-remote.sh" "${SSH_HOST}:${R_SCRIPT}"
-    ssh -o 'ControlMaster: no' \
-	-t "${SSH_HOST}" \
-	"sudo bash -c 'export ENV_FILE=${R_SECRET} ; bash ${R_SCRIPT} manage $*' ; sudo rm -f ${R_SCRIPT} ${R_SECRET}"
+    yeet_script
+    yeet_ctl "manage $*"
 elif [ "$ACTION" == "help" ] ; then
     usage
 else

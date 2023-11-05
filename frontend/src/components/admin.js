@@ -25,7 +25,7 @@ function GuestsCard() {
         jwt: jwt["jwt"],
         guest_list: file,
     }
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/guest_upload/', guest )
+    axios.post("${window.location.protocol}//${window.location.hostname}/api/guest_upload/", guest )
       .then(res => {
         setPhrase(res.data);
         console.log("form uploaded");
@@ -83,7 +83,7 @@ function GuestsCard() {
 
   useEffect(() => {
     if (isLoading) {
-      axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/create_guests/', { jwt: jwt['jwt'] }).then((res) => {
+      axios.post("${window.location.protocol}//${window.location.hostname}/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
         console.log("results");
         console.log(res.data.results);
 	setLoading(false);
@@ -151,7 +151,7 @@ function ReportCard() {
       jwt: jwt["jwt"],
     }
     if (isLoading) {
-       axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/run_reports/', data )
+       axios.post("${window.location.protocol}//${window.location.hostname}/api/run_reports/", data )
          .then((respText) => {
            console.log(JSON.parse(respText.data).admins);
            setLoading(false);

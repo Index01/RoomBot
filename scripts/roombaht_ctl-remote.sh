@@ -2,9 +2,19 @@
 
 set -e
 
+BACKEND_ARTIFACT="/tmp/roombaht-backend.tgz"
+FRONTEND_ARTIFACT="/tmp/roombaht-frontend.tgz"
+
+BACKEND_DIR="/opt/roombaht-backend"
+FRONTEND_DIR="/opt/roombaht-frontend"
+
+NOW="$(date '+%m%d%Y-%H%M')"
+OLD_RELEASES=5
+
 if [ -z "$ENV_FILE" ] ; then
     ENV_FILE="/tmp/secrets.env"
 fi
+
 
 problems() {
     2>&1 echo "Error: $*"
@@ -12,26 +22,46 @@ problems() {
 }
 
 cleanup() {
-    rm "$ENV_FILE"
-    if [ -n "$ROOM_FILE" ] ; then
-	rm "$ROOM_FILE"
+    if [ -n "$ENV_FILE" ] && [ -e "$ENV_FILE" ] ; then
+	rm "$ENV_FILE"
     fi
-    if [ -n "$STAFF_FILE" ] ; then
+    if [ -n "$BALLYS_FILE" ] && [ -e "$BALLYS_FILE" ] ; then
+	rm "$BALLYS_FILE"
+    fi
+    if [ -n "$HARDROCK_FILE" ] && [ -e "$HARDROCK_FILE" ] ; then
+	rm "$HARDROCK_FILE"
+    fi
+    if [ -n "$STAFF_FILE" ] && [ -e "$STAFF_FILE" ]; then
 	rm "$STAFF_FILE"
     fi
-    if [ -n "$BACKEND_ARTIFACT" ] ; then
+    if [ -n "$BACKEND_ARTIFACT" ] && [ -e "$BACKEND_ARTIFACT" ]; then
 	rm "$BACKEND_ARTIFACT"
     fi
-    if [ -n "$FRONTEND_ARTIFACT" ] ; then
+    if [ -n "$FRONTEND_ARTIFACT" ] && [ -e "$FRONTEND_ARTIFACT" ]; then
 	rm "$FRONTEND_ARTIFACT"
     fi
 }
 
-backend_wipe() {
-    dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+# wipe the database if present
+db_wipe() {
+    if psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
+	dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    fi
 }
 
-backend_migrate() {
+# clone production into a new db
+db_clone() {
+    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$SOURCE_DB" "$ROOMBAHT_DB"
+}
+
+# clone db into snapshot
+db_snapshot() {
+    local DEST_DB="${ROOMBAHT_DB}-${NOW}"
+    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$ROOMBAHT_DB" "$DEST_DB"
+}
+
+# create database if needed and then issue migrations
+db_migrate() {
     if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
 	createdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     fi
@@ -51,8 +81,6 @@ backend_venv() {
 }
 
 backend_deploy() {
-    BACKEND_ARTIFACT="/tmp/roombaht-backend.tgz"
-    BACKEND_DIR="/opt/roombaht-backend"
     # keep some archives for rollback
     if [ -d "$BACKEND_DIR" ] ; then
 	mv "$BACKEND_DIR" "${BACKEND_DIR}-${NOW}"
@@ -66,6 +94,7 @@ backend_deploy() {
     chmod -R o-rwx "$BACKEND_DIR"
 }
 
+# update backend config and cron, which is kinda config
 backend_config() {
     sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
 	-e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
@@ -80,15 +109,36 @@ backend_config() {
 	-e "s/@LOGLEVEL@/${ROOMBAHT_LOGLEVEL}"/ \
 	-e "s/@SEND_ONBOARDING@/${ROOMBAHT_SEND_ONBOARDING}/" \
 	-e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
+	-e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
+	-e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
 	"${BACKEND_DIR}/config/roombaht-systemd.conf" \
 	> "/etc/systemd/system/roombaht.service"
     chmod o-rwx "/etc/systemd/system/roombaht.service"
     systemctl daemon-reload
+    sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
+	-e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
+	-e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
+	-e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
+	-e "s/@DB_NAME@/${ROOMBAHT_DB}/" \
+	-e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
+	-e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
+	-e "s%@TEMP@%${ROOMBAHT_TMP}%" \
+	-e "s/@JWT_KEY@/${ROOMBAHT_JWT_KEY}/" \
+	-e "s/@HOST@/${ROOMBAHT_HOST}/" \
+	-e "s/@LOGLEVEL@/${ROOMBAHT_LOGLEVEL}"/ \
+	-e "s/@SEND_ONBOARDING@/${ROOMBAHT_SEND_ONBOARDING}/" \
+	-e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
+	-e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
+	-e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
+	"${BACKEND_DIR}/scripts/roombaht-oob.sh" \
+	> "/opt/roombaht-backend/scripts/roombaht-oob"
+    chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"
+    chown roombaht: "/opt/roombaht-backend/scripts/roombaht-oob"
+    cp /opt/roombaht-backend/scripts/roombaht-oob.cron \
+       /etc/cron.d/roombaht-oob
 }
 
 frontend_deploy() {
-    FRONTEND_ARTIFACT="/tmp/roombaht-frontend.tgz"
-    FRONTEND_DIR="/opt/roombaht-frontend"
     # load the frontend
     if [ -d "$FRONTEND_DIR" ] ; then
 	mv "$FRONTEND_DIR" "${FRONTEND_DIR}-${NOW}"
@@ -122,8 +172,14 @@ trap cleanup EXIT
 [ "$#" -ge 1 ] || problems "invalid args"
 ACTION="$1"
 shift
+# shellcheck disable=SC1090
 source "$ENV_FILE"
 export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
+
+# FOR NOW
+if [ "$ROOMBAHT_DB" == "production" ] ; then
+    problems "not yet for prod tee-hee"
+fi
 
 if [ "$ACTION" == "init" ] ; then
     ROOM_FILE="$1"
@@ -148,24 +204,25 @@ elif [ "$ACTION" == "clone_db" ] ; then
 		;;
 	esac
     done
-    if psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
-	dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
-    fi
-    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$SOURCE_DB" "$ROOMBAHT_DB"
+    db_wipe
+    db_clone
 elif [ "$ACTION" == "wipe" ] ; then
-    backend_wipe
-    backend_migrate
+    db_wipe
+    db_migrate
 elif [ "$ACTION" == "manage" ] ; then
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" $*
 elif [ "$ACTION" == "deploy" ] ; then
-    backend_venv
     backend_deploy
+    backend_venv
     backend_config
-    backend_migrate
+    db_migrate
     frontend_deploy
     nginx_config
+elif [ "$ACTION" == "quick_deploy" ] ; then
+    backend_deploy
+    backend_config
+    frontend_deploy
 else
     echo "invalid args"
-
 fi

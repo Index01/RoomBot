@@ -23,6 +23,7 @@ cleanup() {
 usage() {
     echo "deploy <username> <hostname> <env>"
     echo "             -f force through confirmations"
+    echo "             -q quick deploy skips virtualenv, migrations, nginx config"
     echo
     echo "this script will deploy the most recently built (local) artifact to the remote host"
     echo "it will perform migrations, restart services, and not make you a martini. this script"
@@ -40,10 +41,14 @@ R_ENV="$2"
 shift 2
 
 FORCE=""
-while getopts "f" arg; do
+QUICK=""
+while getopts "fq" arg; do
     case $arg in
 	f)
 	    FORCE="yes"
+	    ;;
+	q)
+	    QUICK="yes"
 	    ;;
 	*)
 	    usage
@@ -78,4 +83,9 @@ if [ -n "$DIRTY" ] ; then
     fi
 fi
 
-"${SCRIPTDIR}/roombaht_ctl" "$R_USER" "$R_ENV" deploy
+API_ENV="$R_ENV" make archive
+if [ -z "$QUICK" ] ; then
+    "${SCRIPTDIR}/roombaht_ctl" "$R_USER" "$R_ENV" deploy
+else
+    "${SCRIPTDIR}/roombaht_ctl" "$R_USER" "$R_ENV" quick_deploy
+fi
