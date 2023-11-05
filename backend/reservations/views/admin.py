@@ -14,7 +14,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail, EmailMessage, get_connection
-from fuzzywuzzy import process, fuzz
+from fuzzywuzzy import fuzz
 from ..models import Staff
 from ..models import Guest
 from ..models import Room
