@@ -60,6 +60,7 @@ archive: backend_archive frontend_archive
 backend_archive:
 	mkdir -p build && \
 	cp -r backend build/roombaht-backend && \
+	./scripts/version > build/roombaht-backend/reservations/version && \
 	tar -cvz \
 		-C build \
 		--exclude "__pycache__" \
