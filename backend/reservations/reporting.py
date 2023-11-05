@@ -148,16 +148,14 @@ def rooming_list_export(hotel):
         raise Exception("No rooms found for hotel %s" % hotel)
 
     cols = [
-        "room",
-        "room_type",
         "room_number",
+        "room_type",
         "first_name",
         "last_name",
         "secondary_name",
         "check_in_date",
         "check_out_date",
         "placed_by_roombaht",
-        "is_comp",
         "sp_ticket_id",
         "guest_notes",
         "is_art",
@@ -194,9 +192,9 @@ def rooming_list_export(hotel):
             row['check_out_date'] = 'TBD'
         row["placed_by_roombaht"] = room.placed_by_roombot
         row["paying_guest"] = "Comp" if room.is_comp else "Yes"
-        if room.sp_ticket_id and not room.is_comp:
+        if room.sp_ticket_id:
             row['sp_ticket_id'] = room.sp_ticket_id
-        elif room.is_comp:
+        elif not room.sp_ticket_id and room.is_comp:
             row['sp_ticket_id'] = "n/a"
         else:
             # shouldnt have any of these, but here we are
@@ -206,8 +204,11 @@ def rooming_list_export(hotel):
         row["is_art"] = room.is_art
 
         rows.append(row)
+        
+    # sort by room number
+    sorted_rooms = sorted(rows, key=lambda x: x['room_number'])
 
     report_filename = f"roominglist_hotel_{hotel.replace(' ', '').lower()}-{ts_suffix()}.csv"
     rooming_list_export_file = os.path.join(roombaht_config.TEMP_DIR, report_filename)
-    egest_csv(rows, cols, rooming_list_export_file)
+    egest_csv(sorted_rooms, cols, rooming_list_export_file)
     return rooming_list_export_file
