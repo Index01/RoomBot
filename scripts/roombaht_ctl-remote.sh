@@ -82,14 +82,17 @@ backend_venv() {
 
 backend_deploy() {
     # keep some archives for rollback
+    BACKEND_OLD="${BACKEND_DIR}-${NOW}"
     if [ -d "$BACKEND_DIR" ] ; then
-	mv "$BACKEND_DIR" "${BACKEND_DIR}-${NOW}"
+	mv "$BACKEND_DIR" "$BACKEND_OLD"
 	for old in `find /opt -name 'roombaht-backend-*' -type d | sort | head -n "-${OLD_RELEASES}"` ; do
 	    rm -rf "$old"
 	done
     fi
-
     tar -C "/opt" -xzvf "$BACKEND_ARTIFACT"
+    if [ -d "${BACKEND_OLD}/venv" ] ; then
+	cp -r "${BACKEND_OLD}/venv" "${BACKEND_DIR}/venv"
+    fi
     chown -R roombaht: "$BACKEND_DIR"
     chmod -R o-rwx "$BACKEND_DIR"
 }
@@ -209,6 +212,8 @@ elif [ "$ACTION" == "clone_db" ] ; then
 elif [ "$ACTION" == "wipe" ] ; then
     db_wipe
     db_migrate
+elif [ "$ACTION" == "snapshot" ] ; then
+    db_snapshot
 elif [ "$ACTION" == "manage" ] ; then
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" $*
@@ -223,6 +228,15 @@ elif [ "$ACTION" == "quick_deploy" ] ; then
     backend_deploy
     backend_config
     frontend_deploy
+elif [ "$ACTION" == "rooms" ] ; then
+    ROOM_FILE="$1"
+    shift
+    if [ ! -e "$ROOM_FILE" ] ; then
+	problems "Unable to find ${ROOM_FILE}"
+    fi
+    "/opt/roombaht-backend/venv/bin/python3" \
+	"/opt/roombaht-backend/manage.py" \
+	create_rooms "$ROOM_FILE" $*
 else
     echo "invalid args"
 fi

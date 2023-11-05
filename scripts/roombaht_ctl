@@ -105,6 +105,9 @@ elif [ "$ACTION" == "frontend-log" ] ; then
     yeet_command "sudo tail -n 50 -f /var/log/nginx/access.log /var/log/nginx/error.log"
 elif [ "$ACTION" == "backend-restart" ] ; then
     yeet_command "sudo systemctl restart roombaht"
+elif [ "$ACTION" == "snapshot" ] ; then
+    yeet_script
+    yeet_ctl "${ACTION} snapshot"
 elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
     echo "This will completely wipe the database and it will be super annoying to get it back."
     echo "Are you sure? [y/n]"
@@ -118,10 +121,30 @@ elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
     yeet_script
     yeet_ctl "${ACTION} $*"
 elif [ "$ACTION" == "deploy" ] || [ "$ACTION" == "quick_deploy" ] ; then
+    BACKEND_SRC="${ROOTDIR}/build/roombaht-backend.tgz"
+    FRONTEND_SRC="${ROOTDIR}/build/roombaht-frontend.tgz"
+    if [ ! -e "$BACKEND_SRC" ] ; then
+	problems "Unable to find backend artifact locally"
+    fi
+    if [ ! -e "$FRONTEND_SRC" ] ; then
+	problems "Unable to find frontend artifact locally"
+    fi
     yeet_script
-    yeet_file "${ROOTDIR}/build/roombaht-backend.tgz" "$BACKEND_ARTIFACT"
-    yeet_file "${ROOTDIR}/build/roombaht-frontend.tgz" "$FRONTEND_ARTIFACT"
+    yeet_file "$BACKEND_SRC" "$BACKEND_ARTIFACT"
+    yeet_file "$FRONTEND_SRC" "$FRONTEND_ARTIFACT"
     yeet_ctl "$ACTION"
+elif [ "$ACTION" == "rooms" ] ; then
+    HOTEL="$1"
+    ROOM_LIST="$2"
+    shift 2
+    if [ "$HOTEL" != "ballys" ] && [ "$HOTEL" != "hardrock" ] ; then
+	problems "invalid hotel specified"
+    fi
+    ROOM_DEST="$(basename "$ROOM_LIST")"
+    ROOM_DEST="${ROOM_DEST// /_}"
+    yeet_file "$ROOM_LIST" "$ROOM_DEST"
+    yeet_script
+    yeet_ctl "manage create_rooms /tmp/${ROOM_DEST} --hotel ${HOTEL} $*"
 elif [ "$ACTION" == "manage" ] ; then
     yeet_script
     yeet_ctl "manage $*"
