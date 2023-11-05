@@ -19,7 +19,8 @@ from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
-from ..reporting import dump_guest_rooms, diff_latest, hotel_export, diff_swaps_count
+from ..reporting import (dump_guest_rooms, diff_latest, 
+                         hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
 import reservations.config as roombaht_config
@@ -519,11 +520,15 @@ def run_reports(request):
         guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
         hardrock_export_file = hotel_export('Hard Rock')
+        ballys_roomslist_file = rooming_list_export("Ballys")
+        hardrock_roomslist_file = rooming_list_export("Hard Rock")
         attachments = [
             guest_dump_file,
             room_dump_file,
             ballys_export_file,
-            hardrock_export_file
+            hardrock_export_file,
+            ballys_roomslist_file,
+            hardrock_roomslist_file
         ]
         if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
             attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
