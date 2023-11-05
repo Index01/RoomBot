@@ -61,6 +61,11 @@ export default class BasicVis extends React.Component {
             <p></p>
           </Col>
         </Row>
+	<Row>
+	  <Col>
+	    <p>Version: {this.state.metrics.version}</p>
+	  </Col>
+	</Row>
         <Row className="justify-content-md-center">
           <Col xs lg="4">
               <h5> Guests</h5>
