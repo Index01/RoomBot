@@ -136,6 +136,8 @@ def hotel_export(hotel):
         rows.append(row)
 
     hotel_export_file = f"{roombaht_config.TEMP_DIR}/hotel_{hotel.lower()}_export-{ts_suffix()}.csv"
+    report_filename = f"hotel_{hotel.replace(' ', '').lower()}_export-{ts_suffix()}.csv"
+    hotel_export_file = os.path.join(roombaht_config.TEMP_DIR, report_filename)
 
     egest_csv(rows, fields, hotel_export_file)
     return hotel_export_file
