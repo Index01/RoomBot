@@ -8,7 +8,7 @@ from reservations.models import Guest
 from reservations.helpers import my_url, send_email
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
-logger = logging.getLogger('SendOnboarding')
+logger = logging.getLogger(__name__)
 
 def onboarding_email(email, otp):
     hostname = my_url()

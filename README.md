@@ -127,6 +127,7 @@ There are two scripts to be used for modifying deployed hosts. They each take tw
 ```
 source backend/venv/bin/activate
 source dev.env
+make backend_migrations
 make sample_data
 ```
 

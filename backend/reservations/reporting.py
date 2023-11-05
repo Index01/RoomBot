@@ -8,12 +8,12 @@ django.setup()
 from csv import DictReader, DictWriter
 from reservations.models import Guest, Room
 from django.forms.models import model_to_dict
-from reservations.helpers import ts_suffix, egest_csv
+from reservations.helpers import ts_suffix, egest_csv, take3_date
 import reservations.config as roombaht_config
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
-logger = logging.getLogger('ReportingLogger')
+logger = logging.getLogger(__name__)
 
 
 def diff_swaps(swap_from, swap_to):
@@ -136,6 +136,82 @@ def hotel_export(hotel):
         rows.append(row)
 
     hotel_export_file = f"{roombaht_config.TEMP_DIR}/hotel_{hotel.lower()}_export-{ts_suffix()}.csv"
+    report_filename = f"hotel_{hotel.replace(' ', '').lower()}_export-{ts_suffix()}.csv"
+    hotel_export_file = os.path.join(roombaht_config.TEMP_DIR, report_filename)
 
     egest_csv(rows, fields, hotel_export_file)
     return hotel_export_file
+
+
+def rooming_list_export(hotel):
+    rooms = Room.objects.filter(name_hotel = hotel.title())
+    if rooms.count() == 0:
+        msg = "No rooms found for hotel %s" % hotel
+        raise Exception("No rooms found for hotel %s" % hotel)
+
+    cols = [
+        "room_number",
+        "room_type",
+        "first_name",
+        "last_name",
+        "secondary_name",
+        "check_in_date",
+        "check_out_date",
+        "placed_by_roombaht",
+        "sp_ticket_id",
+        "guest_notes",
+        "is_art",
+        "paying_guest"
+    ]
+
+    rows = []
+    for room in rooms:
+        # hacky split to first/last name
+        primary_name = room.primary.split(" ", 1)
+        first_name = primary_name[0]
+        last_name = primary_name[1] if len(primary_name)>1 else ""
+        row = {
+            'room_number': room.number,
+            'room_type': room.hotel_sku(),
+            'first_name': first_name,
+            'last_name': last_name,
+        }
+        if room.secondary != '':
+            row['secondary_name'] = room.secondary
+        if room.check_in and room.check_out:
+            row['check_in_date'] = take3_date(room.check_in)
+            row['check_out_date'] = take3_date(room.check_out)
+        elif room.check_in and not room.check_out:
+            logger.warning("Room %s missing check out date", room.number)
+            row['check_in_date'] = take3_date(room.check_in)
+            row['check_out_date'] = 'TBD'
+        elif room.check_out and not room.check_in:
+            logger.warning("Room %s missing check in date", room.number)
+            row['check_in_date'] = 'TBD'
+            row['check_out_date'] = take3_date(room.check_out)
+        else:
+            row['check_in_date'] = 'TBD'
+            row['check_out_date'] = 'TBD'
+        row["placed_by_roombaht"] = room.placed_by_roombot
+        row["paying_guest"] = "Comp" if room.is_comp else "Yes"
+        
+        if room.guest and room.guest.ticket:
+            row['sp_ticket_id'] = room.guest.ticket
+        elif room.guest and not room.guest.ticket and room.is_comp:
+            row['sp_ticket_id'] = "n/a"
+        else:
+            # shouldnt have any of these, but here we are
+            logger.warning(f"No SP ticket state found for room: {room.number}")
+            row['sp_ticket_id'] = ""
+        row["guest_notes"] = room.guest_notes
+        row["is_art"] = room.is_art
+
+        rows.append(row)
+        
+    # sort by room number
+    sorted_rooms = sorted(rows, key=lambda x: int(x['room_number']))
+
+    report_filename = f"roominglist_hotel_{hotel.replace(' ', '').lower()}-{ts_suffix()}.csv"
+    rooming_list_export_file = os.path.join(roombaht_config.TEMP_DIR, report_filename)
+    egest_csv(sorted_rooms, cols, rooming_list_export_file)
+    return rooming_list_export_file

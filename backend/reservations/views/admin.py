@@ -14,12 +14,13 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail, EmailMessage, get_connection
-from fuzzywuzzy import process, fuzz
+from fuzzywuzzy import fuzz
 from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
-from ..reporting import dump_guest_rooms, diff_latest, hotel_export, diff_swaps_count
+from ..reporting import (dump_guest_rooms, diff_latest, 
+                         hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
 import reservations.config as roombaht_config
@@ -388,6 +389,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
         elif trans_code != "":
             # Transfered ticket...
             existing_guest = None
+            transfer_room = None
             try:
                 existing_guest = Guest.objects.get(ticket=trans_code)
             except Guest.DoesNotExist:
@@ -399,29 +401,38 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     continue
 
                 for chain_guest in chain:
-                    # add stub guests
-                    stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
-                    stub = Guest(name=stub_name,
-                                 email=chain_guest.email,
-                                 ticket=chain_guest.ticket_code)
-                    logger.debug("Created stub guest %s with ticket %s",
-                                 chain_guest.email, chain_guest.ticket_code)
+                    # add stub guests (if does not already exist)
+                    try:
+                        _maybe_guest = Guest.objects.get(ticket=chain_guest.ticket_code)
+                    except Guest.DoesNotExist:
+                        stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
+                        stub = Guest(name=stub_name,
+                                     email=chain_guest.email,
+                                     ticket=chain_guest.ticket_code)
+                        logger.debug("Created stub guest %s with ticket %s",
+                                     chain_guest.email, chain_guest.ticket_code)
 
-                    if chain_guest.transferred_from_code:
-                        stub.transfer = chain_guest.transferred_from_code
+                        if chain_guest.transferred_from_code:
+                            stub.transfer = chain_guest.transferred_from_code
 
-                    stub.save()
+                        stub.save()
 
-                    transferred_tickets.append(chain_guest.ticket_code)
+                        transferred_tickets.append(chain_guest.ticket_code)
 
-                room = find_room(guest_obj.product)
 
-                if not room:
-                    logger.warning("No empty rooms of product %s available for %s",
-                                   guest_obj.product,
-                                   guest_obj.email)
-                    room_counts.shortage(Room.short_product_code(guest_obj.product))
-                    continue
+                existing_guest = Guest.objects.get(ticket=chain[-1].ticket_code)
+                if existing_guest.room_number:
+                    transfer_room = Room.objects.get(number=existing_guest.room_number,
+                                                     name_hotel = Room.derive_hotel(guest_obj.product))
+                else:
+                    transfer_room = find_room(guest_obj.product)
+
+                    if not transfer_room:
+                        logger.warning("No empty rooms of product %s available for %s",
+                                       guest_obj.product,
+                                       guest_obj.email)
+                        room_counts.shortage(Room.short_product_code(guest_obj.product))
+                        continue
 
                 email_chain = ','.join([x.email for x in chain])
                 if guest_entries.count() == 0:
@@ -431,7 +442,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj.email)
                     otp = phrasing()
-                    guest_update(guest_obj, otp, room)
+                    guest_update(guest_obj, otp, transfer_room)
                 else:
                     logger.debug("Processing transfer %s (%s) from %s to %s",
                                  trans_code,
@@ -439,10 +450,10 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                  email_chain,
                                  guest_obj.email)
                     otp = guest_entries[0].jwt
-                    guest_update(guest_obj, otp, room)
+                    guest_update(guest_obj, otp, transfer_room)
 
-                room_counts.allocated(room.name_take3)
-                room_counts.transfer(room.name_take3)
+                room_counts.allocated(transfer_room.name_take3)
+                room_counts.transfer(transfer_room.name_take3)
 
                 continue
 
@@ -519,11 +530,15 @@ def run_reports(request):
         guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
         hardrock_export_file = hotel_export('Hard Rock')
+        ballys_roomslist_file = rooming_list_export("Ballys")
+        hardrock_roomslist_file = rooming_list_export("Hard Rock")
         attachments = [
             guest_dump_file,
             room_dump_file,
             ballys_export_file,
-            hardrock_export_file
+            hardrock_export_file,
+            ballys_roomslist_file,
+            hardrock_roomslist_file
         ]
         if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
             attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
@@ -591,7 +606,8 @@ def request_metrics(request):
                    "percent_placed": percent_placed,
                    "rooms_swap_code_count": rooms_swap_code_count,
                    "rooms_swap_success_count": diff_swaps_count(),
-                   "rooms": room_metrics
+                   "rooms": room_metrics,
+                   "version": roombaht_config.VERSION
                    }
 
         resp = str(json.dumps(metrics))

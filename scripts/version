@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPTDIR=$( cd "${0%/*}" && pwd)
+ROOTDIR="${SCRIPTDIR%/*}"
+
+problems() {
+    2>&1 echo "Error: $*"
+    exit 1
+}
+
+VSN="$(git tag --contains)"
+if [ -z "$VSN" ] ; then
+    VSN="$(git rev-parse HEAD)"
+    VSN="${VSN:0:8}"
+fi
+if [ -z "$VSN" ] ; then
+    problems "Unable to determine version!"
+fi
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$BRANCH" != "main" ] ; then
+    VSN="${VSN}-${BRANCH}"
+fi
+if [ "$( (git status --porcelain || true) | wc -l)" != "0" ] ; then
+    VSN="${VSN} [dirty]"
+fi
+echo "$VSN"

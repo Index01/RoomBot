@@ -12,7 +12,7 @@ import reservations.config as roombaht_config
 logging.basicConfig(stream=sys.stdout,
                     level=roombaht_config.LOGLEVEL)
 
-logger = logging.getLogger('Helpers')
+logger = logging.getLogger(__name__)
 
 def real_date(a_date: str, year=None):
     """Convert string date into python date
@@ -38,6 +38,17 @@ def real_date(a_date: str, year=None):
     month, day = date.lstrip().split('/')
     return parse_date("%s-%s-%s" % (year, month, day))
 
+def take3_date(date_obj):
+    """Converts date string "mm-dd-yyyy" to "day - mm/dd"
+
+    Args:
+        date_str (datetime.date): date string "mm-dd-yyyy"
+
+    Returns:
+        _type_: output format with abbreviated day of week
+    """
+    formatted_date = date_obj.strftime('%a - %m/%d')
+    return formatted_date
 
 def egest_csv(items, fields, filename):
     with open(filename, 'w') as output_handle:
@@ -99,7 +110,8 @@ def my_url():
 
 def ts_suffix():
     now = datetime.now()
-    return "%s-%s-%s-%s-%s" % (now.day, now.month, now.year, now.hour, now.minute)
+    return now.strftime('%Y-%m-%d-%H-%M')
+
 
 def send_email(addresses, subject, body, attachments=[]):
     if not roombaht_config.SEND_MAIL:

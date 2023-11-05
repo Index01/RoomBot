@@ -22,7 +22,7 @@ from reservations.ingest_models import SecretPartyGuestIngest, RoomPlacementList
 logging.basicConfig(stream=sys.stdout,
                     level=os.environ.get('ROOMBAHT_LOGLEVEL', 'INFO').upper())
 
-logger = logging.getLogger('MassageCSV')
+logger = logging.getLogger(__name__)
 
 def getch():
     def _getch():
