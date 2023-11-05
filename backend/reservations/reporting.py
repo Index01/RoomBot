@@ -146,13 +146,14 @@ def rooming_list_export(hotel):
     if rooms.count() == 0:
         msg = "No rooms found for hotel %s" % hotel
         raise Exception("No rooms found for hotel %s" % hotel)
-    
+
     cols = [
         "room",
         "room_type",
+        "room_number",
         "first_name",
         "last_name",
-        "secondary_name", 
+        "secondary_name",
         "check_in_date",
         "check_out_date",
         "placed_by_roombaht",
@@ -160,6 +161,7 @@ def rooming_list_export(hotel):
         "sp_ticket_id",
         "guest_notes",
         "is_art",
+        "paying_guest"
     ]
 
     rows = []
@@ -177,19 +179,19 @@ def rooming_list_export(hotel):
         if room.secondary != '':
             row['secondary_name'] = room.secondary
         if room.check_in and room.check_out:
-            row['check_in'] = take3_date(room.check_in)
-            row['check_out'] = take3_date(room.check_out)
+            row['check_in_date'] = take3_date(room.check_in)
+            row['check_out_date'] = take3_date(room.check_out)
         elif room.check_in and not room.check_out:
             logger.warning("Room %s missing check out date", room.number)
-            row['check_in'] = take3_date(room.check_in)
-            row['check_out'] = 'TBD'
+            row['check_in_date'] = take3_date(room.check_in)
+            row['check_out_date'] = 'TBD'
         elif room.check_out and not room.check_in:
             logger.warning("Room %s missing check in date", room.number)
-            row['check_in'] = 'TBD'
-            row['check_out'] = take3_date(room.check_out)
+            row['check_in_date'] = 'TBD'
+            row['check_out_date'] = take3_date(room.check_out)
         else:
-            row['check_in'] = 'TBD'
-            row['check_out'] = 'TBD'
+            row['check_in_date'] = 'TBD'
+            row['check_out_date'] = 'TBD'
         row["placed_by_roombaht"] = room.placed_by_roombot
         row["paying_guest"] = "Comp" if room.is_comp else "Yes"
         if room.sp_ticket_id and not room.is_comp:
