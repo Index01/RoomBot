@@ -194,6 +194,7 @@ def rooming_list_export(hotel):
             row['check_out_date'] = 'TBD'
         row["placed_by_roombaht"] = room.placed_by_roombot
         row["paying_guest"] = "Comp" if room.is_comp else "Yes"
+        
         if room.sp_ticket_id:
             row['sp_ticket_id'] = room.sp_ticket_id
         elif not room.sp_ticket_id and room.is_comp:
@@ -208,7 +209,7 @@ def rooming_list_export(hotel):
         rows.append(row)
         
     # sort by room number
-    sorted_rooms = sorted(rows, key=lambda x: x['room_number'])
+    sorted_rooms = sorted(rows, key=lambda x: int(x['room_number']))
 
     report_filename = f"roominglist_hotel_{hotel.replace(' ', '').lower()}-{ts_suffix()}.csv"
     rooming_list_export_file = os.path.join(roombaht_config.TEMP_DIR, report_filename)
