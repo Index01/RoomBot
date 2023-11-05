@@ -172,7 +172,8 @@ function ReportCard() {
           <ListGroup.Item>Diff Swaps</ListGroup.Item>
           <ListGroup.Item>Guest Dump</ListGroup.Item>
           <ListGroup.Item>Room Dump</ListGroup.Item>
-          <ListGroup.Item>Ballys Export</ListGroup.Item>
+          <ListGroup.Item>Hotel Exports</ListGroup.Item>
+          <ListGroup.Item>Hotel Rooming Lists</ListGroup.Item>
         </ListGroup>
 
         <ol className="card-subtitle mb-2 text-muted">
