@@ -6,6 +6,8 @@ import axios from 'axios';
 import React from "react";
 import { Navigate } from "react-router-dom";
 import ProgressBar from 'react-bootstrap/ProgressBar';
+import toast, { Toaster } from 'react-hot-toast';
+const notifyError = (msg) => toast.error("Error: " + msg);
 
 export default class BasicVis extends React.Component {
   state = {
@@ -32,8 +34,9 @@ export default class BasicVis extends React.Component {
 	  if (error.response.status === 401) {
 	    this.setState({ error: 'auth' });
           } else if (error.request) {
-            console.log("network error");
+	    notifyError("Network error.");
           } else {
+	    notifyError("Mysterious error is mysterious.");
             console.log("unhandled error " + error.response.status + ", " + error.response.data);
           }
 	}

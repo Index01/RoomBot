@@ -101,7 +101,7 @@ class Room(DirtyFieldsMixin, models.Model):
     def check_out(self, value):
         if isinstance(value, datetime.date):
             self._check_out = value
-        elif value != '':
+        elif value and value != '':
             self._check_out = real_date(value)
         elif value == '':
             self._check_out = None
@@ -115,7 +115,7 @@ class Room(DirtyFieldsMixin, models.Model):
         if isinstance(value, datetime.date):
             self._check_in = value
 
-        elif value != '':
+        elif value and value != '':
             self._check_in = real_date(value)
 
         elif value == '':

@@ -14,12 +14,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail, EmailMessage, get_connection
-from fuzzywuzzy import fuzz
+from fuzzywuzzy import process, fuzz
 from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from .rooms import phrasing
-from ..reporting import (dump_guest_rooms, diff_latest, 
+from ..reporting import (dump_guest_rooms, diff_latest,
                          hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
