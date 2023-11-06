@@ -2,8 +2,9 @@ import "../styles/Login.css";
 import React from 'react';
 import axios from 'axios';
 import { useState } from 'react';
-
-
+import toast, { Toaster } from 'react-hot-toast';
+const notifyReset = () => toast.success("New password sent, assuming a valid account is found.");
+const notifyLoginError = (msg) => toast.error("Login error: " + msg);
 
 class SubmitForm extends React.Component {
     state = {
@@ -18,8 +19,7 @@ class SubmitForm extends React.Component {
             jwt: this.state.pass
         }
         if(this.state.pass==""){
-            console.log("empty pass");
-            window.location = "/login"
+            notifyLoginError("password cannot be empty");
         }
         else{
             axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/", guest )
@@ -29,6 +29,17 @@ class SubmitForm extends React.Component {
                 console.log(res.data);
                 window.location = "/rooms"
             })
+	    .catch((error) => {
+	      if (error.response) {
+		if (error.response.status == 401) {
+		  notifyLoginError("invalid credentials");
+		} else if (error.request) {
+		  notifyLoginError("network error");
+		} else if (error.request) {
+		  notifyLoginError("unknown error");
+		}
+	      }
+	    });
         }
     }
 
@@ -40,9 +51,20 @@ class SubmitForm extends React.Component {
         console.log("Attempting reset request");
         axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login_reset/", { guest })
         .then(res=>{
-            console.log(res.data);
-            window.location = "/login"
+          console.log(res.data);
+          notifyReset();
         })
+        .catch((error) => {
+	  if (error.response) {
+	    if (error.response.status) {
+	      notifyLoginError("Unable to reset password");
+	    } else if (error.request) {
+	      notifyLoginError("network error");
+	    } else if (error.request) {
+	      notifyLoginError("unknown error");
+	    }
+	  }
+	});
     }
 
     handleChange = event =>{
@@ -82,6 +104,7 @@ class SubmitForm extends React.Component {
                     <button type="submit" className="btn btn-primary" onClick={this.handleReset}> RequestReset </button>
                 </div>
                 </form>
+	        <Toaster />
             </div>
         </span>
         );

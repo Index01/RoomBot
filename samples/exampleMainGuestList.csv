@@ -64,7 +64,7 @@ hhh013,Mat,Foo,foo.mat@noop.com,Hard Rock - Lakeview Balcony Suite,hhh012,
 hhh014,Mat,Fon,fon.mat@noop.com,Hard Rock - Lakeview Balcony Suite,,
 hhh015,Map,Fon,fon.map@noop.com,Hard Rock - Lakeview King,,
 # non-placed transfer which will happen under update
-hhh016,Noo,Foo,foo.noo@noop.com,Hard Rock - Standard King,,
+hhh016,Noo,Foo,foo.noo@noop.com,Hard Rock - Balcony King,,
 # placed transfer which will happen under update
 hhh017,Moo,Foo,foo.moo@noop.com,Hard Rock - Standard King,,
 # non-placed double transfer that will happen under initial and update

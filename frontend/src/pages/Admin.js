@@ -3,7 +3,7 @@ import RoombotAdmin from '../components/admin.js';
 import BasicVis from '../components/adminMetrics.js';
 import "../styles/RoombotAdmin.css";
 import React from 'react';
-
+import { Toaster } from 'react-hot-toast';
 
 const AppAdmin = () => {
     return(
@@ -13,14 +13,14 @@ const AppAdmin = () => {
 	         <img src="roombaht_header.png" alt="RoomBaht9000" />
             </div>
 
-            <div className="DTApp"> Roombot Metrics 
+            <div className="DTApp"> Roombot Metrics
               <BasicVis/>
             </div>
-             
-            <div className="DTApp"> Roombot Admin 
+
+            <div className="DTApp"> Roombot Admin
               <RoombotAdmin/>
             </div>
-
+            <Toaster />
         </div>
     );
 };

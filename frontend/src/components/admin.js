@@ -8,7 +8,9 @@ import Spinner from 'react-bootstrap/Spinner';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Form from 'react-bootstrap/Form';
-
+import toast, { Toaster } from 'react-hot-toast';
+const notifyOK = (msg) => toast.success(msg);
+const notifyError = (msg) => toast.error("Error: " + msg);
 
 function GuestsCard() {
   const [phrase, setPhrase] = useState("");
@@ -28,20 +30,19 @@ function GuestsCard() {
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/guest_upload/", guest )
       .then(res => {
         setPhrase(res.data);
-        console.log("form uploaded");
-        console.log(file);
-        console.log(phrase);
+	notifyOK("File uploaded succesfully.");
       })
       .catch((error) => {
         if (error.response) {
-          console.log("server responded");
-          console.log(error.response.data);
-          setPhrase("server responded with error. contact placement@take3presents.com");
+	  if (error.response.status == 400) {
+	    notifyError("File is in wrong format.");
+	  } else {
+	    notifyError("Unable to upload file");
+	  }
         } else if (error.request) {
-          console.log("network error");
-          setPhrase("---Network failed! please try later---");
+	  notifyError("Network error!");
         } else {
-          console.log(error);
+	  notifyError("Mysterious error is mysterious.");
         }
       });
   };
@@ -84,14 +85,15 @@ function GuestsCard() {
   useEffect(() => {
     if (isLoading) {
       axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
-        console.log("results");
+	notifyOK("Guests processed");
         console.log(res.data.results);
 	setLoading(false);
         setRespText(JSON.parse(JSON.stringify(res.data)).results);
         setPhrase("");
       })
       .catch((error) => {
-          console.log(error);
+	notifyError("Unable to process guests");
+        console.log(error);
         setLoading(false);
       });
     }

@@ -16,6 +16,7 @@ export ROOMBAHT_SEND_ONBOARDING="@SEND_ONBOARDING@"
 export ROOMBAHT_IGNORE_TRANSACTIONS="@IGNORE_TRANSACTIONS@"
 export ROOMBAHT_ONBOARDING_BATCH="@ONBOARDING_BATCH@"
 export ROOMBAHT_DEV_MAIL="@DEV_MAIL@"
+export ROOMBAHT_SWAPS_ENABLED="@SWAPS_ENABLED@"
 
 if [ "${ROOMBAHT_SEND_ONBOARDING,,}" == "true" ] ; then
     /opt/roombaht-backend/venv/bin/python3 /opt/roombaht-backend/manage.py send_onboarding
