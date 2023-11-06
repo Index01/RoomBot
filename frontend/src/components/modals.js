@@ -4,7 +4,9 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import axios from 'axios';
+import toast, { Toaster } from 'react-hot-toast';
 import "../styles/modals.css";
+const swapError = (msg) => toast.error("Swap error: " + msg);
 
 export function ModalRequestSwap(props) {
   const [show, setShow] = useState(false);
@@ -27,13 +29,17 @@ export function ModalRequestSwap(props) {
       })
       .catch((error) => {
         if (error.response) {
-          console.log("server responded");
-          console.log(error.response.data);
-          setPhrase("server responded with error. contact placement@take3presents.com");
+	  if ( error.response.status == 400 ) {
+	    swapError("Unacceptable swap requested")
+	  } else {
+            console.log("server responded");
+            console.log(error.response.data);
+	    swapError("Server responded with error. contact placement@take3presents.com");
+	  }
         } else if (error.request) {
-          console.log("network error");
-          setPhrase("---Network failed! please try later---");
+	  swapError("Network error. Please try again later.");
         } else {
+	  swapError("Mysterious error is mysterious.");
           console.log(error);
         }
       });
@@ -119,13 +125,17 @@ export function ModalEnterCode(props) {
       })
       .catch((error) => {
         if (error.response) {
-          console.log("server responded");
-          console.log(error.response.data);
-          setPhrase(error.response.data);
+	  if ( error.response.status == 400 ) {
+	    swapError("Unacceptable swap requested")
+	  } else {
+            console.log("server responded");
+            console.log(error.response.data);
+	    swapError("Server responded with error. contact placement@take3presents.com");
+	  }
         } else if (error.request) {
-          console.log("network error");
-          setPhrase("---Network failed! please try later---");
+	  swapError("Network error. Please try again later.");
         } else {
+	  swapError("Mysterious error is mysterious.");
           console.log(error);
         }
       });
@@ -201,13 +211,17 @@ export function ModalCreateCode(props) {
       })
       .catch((error) => {
         if (error.response) {
-          console.log("server responded");
-          console.log(error.response);
+	  if ( error.response.status == 400 ) {
+	    swapError("Unacceptable swap requested")
+	  } else {
+            console.log("server responded");
+            console.log(error.response.data);
+	    swapError("Server responded with error. contact placement@take3presents.com");
+	  }
         } else if (error.request) {
-          console.log("network error");
-          setPhrase("---Network failed! please try later---");
-          handleShow();
+	  swapError("Network error. Please try again later.");
         } else {
+	  swapError("Mysterious error is mysterious.");
           console.log(error);
         }
       });

@@ -1,0 +1,30 @@
+* {
+  margin:0;
+  padding:0;
+  }
+  html, body {
+  height:100%;
+  }
+  body {
+  text-align:center;
+  }
+  #container {
+  margin:0 auto;
+  width:640px;
+  clear:left;
+  height:480px;
+  position:relative;
+  text-align:left;
+  }
+  #container div {
+  float:right;
+  }
+  #filler {
+  width:1px;
+  height:50%;
+  float:left;
+  margin-bottom:-240px;
+  }
+
+  body {background-image: url("images/static.gif")}
+
