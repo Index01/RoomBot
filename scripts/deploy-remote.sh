@@ -75,6 +75,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
     -e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
     -e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
+    -e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
     "${BACKEND_DIR}/config/roombaht-systemd.conf" \
     > "/etc/systemd/system/roombaht.service"
 chmod o-rwx "/etc/systemd/system/roombaht.service"
@@ -99,6 +100,7 @@ sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
     -e "s/@IGNORE_TRANSACTIONS@/${ROOMBAHT_IGNORE_TRANSACTIONS}/" \
     -e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
     -e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
+    -e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
     "${BACKEND_DIR}/scripts/roombaht-oob.sh" \
     > "/opt/roombaht-backend/scripts/roombaht-oob"
 chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"
