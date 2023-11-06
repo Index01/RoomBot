@@ -25,7 +25,7 @@ export function ModalRequestSwap(props) {
 	    contact_info: contacts
     })
       .then(res => {
-        setPhrase(res.data);
+	toast.success("Swap request sent.");
       })
       .catch((error) => {
         if (error.response) {

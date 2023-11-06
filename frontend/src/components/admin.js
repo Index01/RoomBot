@@ -30,7 +30,7 @@ function GuestsCard() {
     axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/guest_upload/', guest )
       .then(res => {
         setPhrase(res.data);
-	notifyOK();
+	notifyOK("File uploaded succesfully.");
       })
       .catch((error) => {
         if (error.response) {
