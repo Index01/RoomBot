@@ -15,12 +15,23 @@ import React from "react";
 import ModalImage from "react-modal-image";
 import {ModalRequestSwap} from "./modals.js";
 
+function SwapStatus({enabled}) {
+  if (!enabled) {
+    return (
+      <span className="justify-content-md-center">
+	Room swaps have been disabled for the remainder of the event.
+      </span>
+    );
+  }
+}
+
 export default class RoomDataTable extends React.Component {
   state = {
     rooms : [],
     jwt: "",
     sortColumn: "number", // default column to sort by
-    sortDirection: "asc", // default sort direction
+    sortDirection: "asc", // default sort direction,
+    swaps_enabled: true
   }
 
   // utility function for sorting table room # strings as numbers
@@ -122,11 +133,13 @@ export default class RoomDataTable extends React.Component {
 	      }
       });
     this.sortData();
-  }
+  }					
 
   render(){
     let {error} = this.state;
     return(
+      <div>
+      <SwapStatus enabled={this.state.swaps_enabled} />
       <DatatableWrapper
         body={this.state.rooms}
         headers={this.storyHeaderFactory(this.state.swaps_enabled)}
@@ -167,6 +180,7 @@ export default class RoomDataTable extends React.Component {
           <TableBody />
         </Table>
       </DatatableWrapper>
+      </div>
     )
   }
 }
