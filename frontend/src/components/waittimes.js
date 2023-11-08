@@ -32,7 +32,7 @@ class aaaHowLongTho extends React.Component {
       hours: '',
       lenght: 0
     }
-    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/" + this.state.short_name + "/";
+    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/" + this.state.short_name + "/";
   }
   componentDidMount() {
     axios.get(this.wait_url)
@@ -40,7 +40,6 @@ class aaaHowLongTho extends React.Component {
 	var hours = Math.floor(result.data.time / 3600);
 	var minutes = Math.floor((result.data.time - (hours * 3600)) / 60);
 	var seconds = result.data.time - (hours * 3600) - (minutes * 60);
-	console.log("AAAA " + result.data.time + "," + hours + "," + minutes + "," + seconds);
 	this.setState({name: result.data.name,
 		       hours: hours,
 		       minutes: minutes,
@@ -53,7 +52,7 @@ class aaaHowLongTho extends React.Component {
       <>
 	<Row>
 	  <Col>
-	    Wait Time for {this.state.name}
+	    <a href="/waittime">Wait Time</a> for {this.state.name}
 	  </Col>
 	</Row>
 	<Row>
@@ -89,7 +88,7 @@ export class TheTimers extends React.Component {
 
   loadWaits() {
     console.log("Whuuuut");
-    axios.get(window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/")
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/")
       .then((result) => {
 	console.log("Lolooll " + JSON.stringify(result.data));
 	this.setState({waittimes: result.data});
@@ -113,7 +112,7 @@ export class TheTimers extends React.Component {
       },
       {
 	prop: "button",
-	cell: (row) => ( <WaittimeDelete short_name={row.short_name} reload={this.loadWaits}/> )
+	cell: (row) => ( <WaittimeDelete key={Math.random()} short_name={row.short_name} reload={this.loadWaits}/> )
       }
 
     ];

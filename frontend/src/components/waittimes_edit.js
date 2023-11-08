@@ -21,7 +21,7 @@ export class WaittimeDelete extends React.Component {
       show: this.props.show,
       name: ''
     }
-    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/" + this.state.short_name + "/";
+    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/" + this.state.short_name + "/";
     this.plzDelete = this.plzDelete.bind(this);
     this.startDelete = this.startDelete.bind(this);
     this.setPassword = this.setPassword.bind(this);
@@ -123,9 +123,12 @@ export class WaittimeEdit extends React.Component {
       show: this.props.show,
       is_new: true,
       has_password: false,
-      password: true
+      password: true,
+      hours: 0,
+      minutes: 0,
+      seconds: 0
     };
-    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/";
+    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/";
     this.startEdit = this.startEdit.bind(this);
     this.handleClose = this.handleClose.bind(this);
     this.setTime = this.setTime.bind(this);
@@ -134,6 +137,10 @@ export class WaittimeEdit extends React.Component {
     this.setShortName = this.setShortName.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.setPassword = this.setPassword.bind(this);
+    this.setHours = this.setHours.bind(this);
+    this.setMinutes = this.setMinutes.bind(this);
+    this.setSeconds = this.setSeconds.bind(this);
+
   }
 
   startEdit(event) {
@@ -144,9 +151,15 @@ export class WaittimeEdit extends React.Component {
     if (! this.state.is_new) {
       axios.get(this.wait_url + this.state.short_name + "/")
 	.then(res => {
+	  var hours = Math.floor(res.data.time / 3600);
+	  var minutes = Math.floor((res.data.time - (hours * 3600)) / 60);
+	  var seconds = res.data.time - (hours * 3600) - (minutes * 60);
 	  this.setState({
 	    name: res.data.name,
-	    time: res.data.time
+	    time: res.data.time,
+	    hours: hours,
+	    minutes: minutes,
+	    seconds: seconds
 	  });
 	  if (res.data.has_password) {
 	    this.setState({has_password: true});
@@ -171,7 +184,9 @@ export class WaittimeEdit extends React.Component {
   }
 
   setShortName(event) {
-    this.setState({short_name: event.target.value});
+    var short_name = event.target.value
+	.replaceAll(/[^a-zA-Z0-9-_]/g, '');
+    this.setState({short_name: short_name});
   }
 
   setNewPassword(event) {
@@ -182,6 +197,24 @@ export class WaittimeEdit extends React.Component {
     this.setState({password: event.target.value});
   }
 
+  setHours(event) {
+    this.setState({
+      hours: parseInt(event.target.value),
+    });
+  }
+
+  setMinutes(event) {
+    this.setState({
+      minutes: parseInt(event.target.value)
+    });
+  }
+
+  setSeconds(event) {
+    this.setState({
+      seconds: parseInt(event.target.value)
+    });
+  }
+
   handleClose() {
     this.setState({show: false});
   }
@@ -190,11 +223,11 @@ export class WaittimeEdit extends React.Component {
     let data;
     if (! this.state.is_new) {
       data = {
-	time: this.state.time
+	time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600),
       }
     } else {
       data = {
-	time: this.state.time,
+	time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600),
 	name: this.state.name,
 	short_name: this.state.short_name
       }
@@ -283,8 +316,12 @@ export class WaittimeEdit extends React.Component {
               <Form.Control type="text" name="inputName" value={this.state.name} onChange={this.setName}/>
 	    </Form.Group>
             <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
-              <Form.Label>The Wait Time Is</Form.Label>
-              <Form.Control type="text" name="inputWaitTime" value={this.state.time} onChange={this.setTime}/>
+              <Form.Label>Hours</Form.Label>
+              <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours}/>
+	      <Form.Label>Minutes</Form.Label>
+              <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes}/>
+	      <Form.Label>Seconds</Form.Label>
+              <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds}/>
             </Form.Group>
             <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea2">
               <Form.Label>New Password</Form.Label>
