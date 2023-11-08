@@ -22,7 +22,7 @@ class SubmitForm extends React.Component {
             notifyLoginError("password cannot be empty");
         }
         else{
-            axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/login/', guest )
+            axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/", guest )
             .then(res=>{
                 window.localStorage.setItem('jwt', res.data);
                 console.log(res);
@@ -49,7 +49,7 @@ class SubmitForm extends React.Component {
             email: this.state.email,
         }
         console.log("Attempting reset request");
-        axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/login_reset/', { guest })
+        axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login_reset/", { guest })
         .then(res=>{
           console.log(res.data);
           notifyReset();
