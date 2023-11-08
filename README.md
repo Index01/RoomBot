@@ -12,35 +12,14 @@ Facilitates participants trading accomodations and answering the critical questi
 
 # Environment / Configuration
 
-Configuration is handled through environment variables, which are stored encrypted in GitHub. Secret management is handled through the `./scripts/secrets` script. You must have a file named `.secret` in the top level of the Git repository. Contact an adult for the contents of this file.
+Configuration is handled through environment variables, which are stored encrypted in GitHub. Secret management is handled through the `./scripts/secrets` script. You must have a file named `.secret` in the top level of the Git repository. Contact an adult for the contents of this file. See below for full list of configurable settings.
 
 * `./scripts/decrypt` generate the `secrets.env` file from encrypted source
 * `./scripts/encrypt` encrypt the `secrets.env` file
 * `./scripts/show` display all the env vars in a format suitable for `eval`
 * `./scripts show VAR` display the contents of the desired env var, stripped of quotes
 
-## Settings
-
-* `ROOMBAHT_DEV` Should be set to `true` on dev and never on prod. Controls DB usage and enables some local dev functionality. Defaults to `false`.
-* `ROOMBAHT_DEV_MAIL` if this is set to an email address then any address for the `@noop.com` domain will be converted to be a prefix email. Example `foo@gmail.com` and `bar@noop.com` would convert to `foo+bar@gmail.com`. Helpful for testing room swaps. Defaults to disabled.
-* `ROOMBAHT_SEND_MAIL` Needs to be set to `true` for email to be sent. Defaults to `false`.
-* `ROOMBAHT_SEND_ONBOARDING` Needs to be set to `true` for the onboarding emails to be sent during Secret Party export ingestion. Defaults to `false`.
-* `ROOMBAHT_LOGLEVEL` Controls the Python log level. Should be set to one of `ERROR`, `WARNING`, `INFO`, `DEBUG`. Defaults to `INFO` on prod and `DEBUG` on dev.
-* `ROOMBAHT_HOST` is the hostname part of the url to be used when generating our url in emails and wherever else. Defaults to `localhost`.
-* `ROOMBAHT_PORT` is the port part of the url to be used when generating our url in emails and wherever else. Defaults to `80`.
-* `ROOMBAHT_SCHEMA` is the schema part of the url. Defaults to `http`.
-* `ROOMBAHT_TMP` is where we yeet temporary files. Defaults to `/tmp`.
-* `ROOMBAHT_IGNORE_TRANSACTIONS` This is a CSV list of transactionts to not care about.
-* `ROOMBAHT_JWT_KEY` is basically the salt for o ur auth tokens. This must be set, there is no default.
-* `ROOMBAHT_DJANGO_SECRET_KEY` Might not even be used since we don't use Django sessions?
-* `ROOMBAHT_DB_PASSWORD` This is the postgres password for production. This must be set, there is no default.
-* `ROOMBAHT_DB_HOST` This is the postgres hostname for production. This must be set, there is no default.
-* `ROOMBAHT_EMAIL_HOST_USER` This is the SMTP user and it must be set, there is no default.
-* `ROOMBAHT_EMAIL_HOST_PASSWORD` This is the SMTP password and it must be set, there is no default.
-* `ROOMBAHT_SWAPS_ENABLED` Is a boolean which controls whether swaps are enabled or not. Defaults to `True`.
-* `ROOMBAHT_GUEST_HOTELS` Is a CSV list of hotel names that will be processed during guest ingestion. Defaults to `Ballys`.
-
-# Local Dev
+# Local Development
 
 ## Requirements
 
@@ -56,105 +35,116 @@ Configuration is handled through environment variables, which are stored encrypt
 
 ## Frontend
 
-```
-$ DEV=true make frontend_dev
+This will compile the frontend and run a local server on port `3000`.
+
+```sh
+$ make frontend_dev
 ```
 
 This should build a docker image, use it to generate the react static, and then start react in dev mode listening on port 3000.
 
 ## Backend
 
-To run the backend in dev mode, you will need something like the following env vars:
+To configure and run the local development server, simply invoke the `backend_dev` target. This will ensure you have a properly configured virtualenv, load the default [dev configuration](https://github.com/Index01/RoomBot/blob/main/dev.env), run migrations, and start the server. If it works, you will have an API server running on port `8000`.
+
 ```sh
-export ROOMBAHT_DEV="true"
-export ROOMBAHT_DJANGO_SECRET_KEY="narrative"
-export ROOMBAHT_EMAIL_HOST_PASSWORD="words"
-export ROOMBAHT_EMAIL_HOST_USER="words"
-export ROOMBAHT_SEND_MAIL="true"
+$ make backend_dev
 ```
-You can run `source dev.env` to export the example values stored in that file.
 
-To run the local dev django server, call
+You may (optionally) specify a different configuration file when testing locally. This can be done by setting `ROOMBAHT_CONFIG` to the full path of a configuration file.
+
 ```sh
-make backend_dev
+$ ROOMBAHT_CONFIG=/path/to/my/special.env make backend_dev
 ```
 
-This should ensure proper depdendencies, initialize and run migrations on sqlite, and start the backend running on port 8080.
+ As part of the startup, the full configuration will be shown, so you can confirm the right file was loaded.
 
+## Local Data Management
 
-# Managing a Real Host
+Local development also requires sample data. You may rapidly get up and running by leveraging our sample data. This will leverage a variety of the django management commands (see below).
 
-Use `make archive` to generate the frontend and backend artifacts. By default this will build the frontend pointing at the production frontend host. To point at a different environment, specify the `API_ENV` variable.
-
-```
-$ API_ENV=dev make archive
-$ API_ENV=staging make archive
-```
-
-There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
-
-* `./scripts/provision user 127.0.0.1` is to be run when a host is first created and when any baseline non-application changes are desired. It will execute `./scripts/provision-remote.sh` on the remote host.
-* `./scripts/deploy user 127.0.0.1 <env>` is used to move the generated artifacts to the deployed host and perform the various steps needed for them to be active. You must specify the `prod` or `staging` environment. Make sure you are pointing the right environment at the right host! This deployment includes
-  * python `virtualenv` management
-  * `nginx` configuration
-  * `systemd` for the django bits
-  * running any available database migrations
-* Run `init` to load the Rooms and Staff tables, generally after a `wipe` and/or `deploy`
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> init ${ROOM_FILE} ${STAFF_FILE}`
-* You can easily view frontend (nginx) and backend (django/wsgi) logs remotely
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> frontend-log`
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> backend-log`
-* You can completely wipe the database as well. Helpful during pre-season development and a terrible idea once the gates have opened. After a helful confirmation prompt, this will wipe the database and re-run the migrations.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> wipe`
-* You can directly invoke a the django management tool, which gives you access to a variety of administrative tools.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage shell` - invoke the django shell will full access to the orm and every module in the project.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_show name@noop.com` the `user_show` command will display information on a guest.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage user_edit --help` the `user_edit` command can edit limited aspects of a guest.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage room_show --help` the `room_show` command will show details on a room.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage room_edit --help` the `room_edit` command will allow editing of limited aspects of a room. There is no undo.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage find_drama --help` the `find_drama` command will attempt to locate rooms and guests with known data corruption issues.
-  * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage fix_room --help` the `fix_room` command will fix rooms with known data corruption issues. Pairs well with `find_drama`. There is no undo.
-    * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage fix_room --help` the `fix_room` command will fix rooms with known data corruption issues. Pairs well with `find_drama`. There is no undo.
-    * `./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_staff --help` the `create_staff` script replaces one half of the old `createStaffAndRooms.py` script. It will create and/also update staff entries.
-	* `./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms --help` the `create_rooms` script replaces one half of the old `createStaffAndRooms.py` script. It will create (and optionally - use caution and always `--dry-run` first) rooms. Make sure to specify `--hotel`. There is no undo other than a DB restore.
-
-# Data Population
-
-*Note* This data population is meant to run only once after the initial DB migrations are applied. It has slightly different invocation for local dev and remote. This script will create the initial set of rooms and "staff" users. If the script detects that it has already been run on a database, it will ask for a confirmation. Because it does need to wipe the tables and start anew.
-
-## Local
-
-```
-source backend/venv/bin/activate
-source dev.env
-make backend_migrations
-make sample_data
+```sh
+# in one terminal
+$ make backend_dev
+# in another terminal
+$ make sample_data
 ```
 
-To get a guest password, you can use a Django management command.
-First, already have a running backend.
-```
+To get a guest password, you can use a Django management command. First, already have a running backend.
+```sh
 $ python backend/manage.py user_show name@noop.com
 User Foo Bar, otp: SomeOtp, last login: never
     rooms: 305, tickets: aaa001, onboarding sent: yes
 ```
 
-## Remote
+# Managing a Real Host
 
-This script will handle secrets and moving files to the remote host for you. Remember to ask an adult for your username and a host name. This script is meant to only run after the DB is fully initialized.
+There are a variety of scripts used for managing either the production (`prod`) or staging/dev (`staging`) environments. Please contact an adult for information on SSH access, hostnames, and the location of a perfect dry martini. May of these commands are accessed via the `roombaht_ctl` script, which provides a commmon execution interface.
 
+```sh
+$ ./scripts/roombaht_ctl <user> <env> <command> <arg1> <arg2> ....
 ```
-$ ./scripts/roombaht_ctl user 127.0.0.1 <env> init samples/exampleMainRoomList.csv samples/exampleMainStaffList.csv
+
+## Initial / Baseline Host Configuration
+
+The `provision` script expects the existence of Ubuntu 20.04 server edition. This script is to be run when a host is first created and when any baseline non-application changes are desired. It will execute [`./scripts/provision-remote.sh`](https://github.com/Index01/RoomBot/blob/main/scripts/provision-remote.sh) on the remote host.
+
+```sh
+$ `./scripts/provision <user> <host>
 ```
 
-To update rooms after the fact, or to add rooms for a different hotel, there is (not yet) `roombot_ctl` tooling.
+## Deployment
 
+The `deploy` script will handle deployment to either the production (`prod`) or staging/dev (`staging`) environments. It handles the creation of artifacts, shipping and installing the artifacts, and configuring the remote host, database migrations, and other things needed for a running `roombaht` instance. The deployment script will ask for manual confirmation if you are deploying from a branch other than `main` or if the local git repository is dirty. You may bypass the confirmation by passing the `-f` option. But you shouldn't.
+
+```sh
+$ ./scripts/deploy <user> <env>
 ```
-$ scp <path to rooms csv> user@127.0.0.1:/tmp/rooms.csv
-# if updating a hotel, always dry run, and check data closely
-$ ./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms /tmp/rooms.csv --hotel <hotel> --preserve --dry-run
-# if data looks good then
-$ ./scripts/roombaht_ctl user 127.0.0.1 <env> manage create_rooms /tmp/rooms.csv --hotel <hotel> --preserve
+
+You may optionally execute a "quick" deployment. This skips the management of the virtualenv, database migrations, and the nginx configuration. Good for emergency fixes. Use with care.
+
+```sh
+$ ./scripts/deploy <user> <env> -q
+# shit's on fire yo and i just want to ship a code fix
+$ ./scripts/deploy <user> <env> -q -f
+```
+
+## Logs
+
+There are shortcut commands which allow for easy viewing of backend (`roombaht` uwsgi / `roombaht` out-of-band) and frontend (`nginx` access and error) logs. These commands are accessed via `roombaht_ctl`.
+
+```sh
+$ ./scripts/roombaht_ctl <user> <env> backend-logs
+$ ./scripts/roombaht_ctl <user> <env> frontend-logs
+```
+
+## Data Management
+
+Managing data on remote hosts is a whole _thing_. Please read this section carefully and make sure to leverage the DB Snapshot functionality (see below) for risky operations.
+
+### Initial DB Population
+
+This command should be run only once. It will populate the database with both sets of hotel files and the initial staff. Ask an adult before running this outside of staging.
+
+```sh
+./scripts/roombaht_ctl <user>  <env> init /path/to/ballys-rooms.csv /path/to/hardrock-rooms.csv /path/to/staff.csv
+```
+
+*Note* This data population is meant to run only once after the initial DB migrations are applied. It has slightly different invocation for local dev and remote. This script will create the initial set of rooms and "staff" users. If the script detects that it has already been run on a database, it will ask for a confirmation. Because it does need to wipe the tables and start anew.
+
+### Room Creation / Updating
+
+Create and optionally update hotel rooms. When updating you may also execute a dry run to verify changes. Note that when updating, every change requires a manual confirmation. You may bypass this with `--force` but you probably should not. Additional logging is available via `--debug`. View all options with `--help`
+
+```sh
+# view help
+$ ./scripts/roombaht_ctl <user> <env> create_rooms --help
+# create initial room set
+$ ./scripts/roombaht_ctl <user> <env> create_rooms /path/to/ballys-rooms.csv --hotel ballys
+# check for changes
+$ ./scripts/roombaht_ctl <user> <env> create_rooms /path/to/ballys-rooms.csv --hotel ballys --preserve --dry-run
+# actually apply the changes. user input will be required for all changes.
+$ ./scripts/roombaht_ctl <user> <env> create_rooms /path/to/ballys-rooms.csv --hotel ballys --preserve
 ```
 
 ## Images
@@ -193,6 +183,93 @@ For the room list, the following changes are made
 ```
 python ./backend/scripts/massage_csv.py /tmp/SecretPartyExport.csv /tmp/RoomsSheetExport.csv --weight placed:30,art:10
 ```
+
+## Database Manipulation
+
+There are three commands which allow for wiping, creating snapshots, and cloning either production or a specific database. These commands are accessed via `roombaht_ctl`.
+
+### Wipe
+
+This command will fully wipe (via drop / create) the database for the specified environment. Migrations will need to be performed after this so it should be followed by a deployment. Note it is super annoying (if actually possible, under certain circumstances) to undo. So be careful.
+
+```sh
+$ ./scripts/roombaht_ctl <user> <env> wipe
+```
+
+### Snapshot
+
+This command will create a new database using the specified environment as a template. The naming format will be `<ROOMBAHT_DB>-MMDDYYYY-HHMM`.
+
+```sh
+./scripts/roombaht_ctl <user> <env> snapshot
+```
+
+### Clone
+
+This command is super helpful for testing in staging. It will create a new database, using either production on a specified database as the template. Note this can _only_ be run on staging.
+
+```sh
+# clone production
+./scripts/roombaht_ctl <user> <env> clone
+# clone the production snapshot from a funny date and time
+./scripts/roombaht_ctl <user> <env> -d roombaht-010169_1620
+```
+
+## Django Management Commands
+
+There are a variety of django management commands, both stock and custom, which are accessible on the deployed hosts. These commands may be accessed via `roombaht_ctl`. All of these commands take a `--help` option for available options/arguments. And you can issue the `help` command for a list of commands Note that several of these commands are meant to be accessed directly via `roombaht_ctl` commands in order to handle things like copying files and user confirmation.
+
+```sh
+$ ./scripts/roombaht_ctl <user> <env> manage help
+```
+
+### Guest Management
+
+Some information may be viewed and some changes may be made for guests.
+
+* `./scripts/roombaht_ctl <user> <env> manage user_show --help` allows viewing guests based on email address, name, ticket, or transfer.
+* `./scripts/roombaht_ctl <user> <env> manage user_edit --help` allows limited editing of guests.
+
+### Room Management
+
+Some information may be viewed and some changes may be made for rooms.
+
+There are two scripts to be used for modifying deployed hosts. They each take two arguments; a SSH username and remote host. Ask an adult for your SSH username and the remote host name.
+
+* `./scripts/roombaht_ctl <user> <env> manage room_list --help` will display a listing of rooms with some metadata. Helpful for dev / debugging.
+* `./scripts/roombaht_ctl <user> <env> manage room_show --help` will display information on a room.
+* `./scripts/roombaht_ctl <user> <env> manage room_edit --help` allows editing of a variety of room information.
+* `./scripts/roombaht_ctl <user> <env> manage fix_room --help` will display, and optionally fix, detectable data corruption issues on a room.
+* `./scripts/roombaht_ctl <user> <env> manage room_swap --help` will manually swap rooms. It has the same restrictions that are placed on user-initiated room swaps.
+
+### Shell
+
+Sometimes you just want to muck around with a interactive Python interpreter that has access to the entire set of `roombaht` modules. This command will invoke the django shell.
+
+```sh
+$ ./scripts/roombaht_ctl <user> <env> manage shell
+```
+
+# Configuration Settings
+
+* `ROOMBAHT_DEV` Should be set to `true` on dev and never on prod. Controls DB usage and enables some local dev functionality. Defaults to `false`.
+* `ROOMBAHT_DEV_MAIL` if this is set to an email address then any address for the `@noop.com` domain will be converted to be a prefix email. Example `foo@gmail.com` and `bar@noop.com` would convert to `foo+bar@gmail.com`. Helpful for testing room swaps. Defaults to disabled.
+* `ROOMBAHT_SEND_MAIL` Needs to be set to `true` for email to be sent. Defaults to `false`.
+* `ROOMBAHT_SEND_ONBOARDING` Needs to be set to `true` for the onboarding emails to be sent during Secret Party export ingestion. Defaults to `false`.
+* `ROOMBAHT_LOGLEVEL` Controls the Python log level. Should be set to one of `ERROR`, `WARNING`, `INFO`, `DEBUG`. Defaults to `INFO` on prod and `DEBUG` on dev.
+* `ROOMBAHT_HOST` is the hostname part of the url to be used when generating our url in emails and wherever else. Defaults to `localhost`.
+* `ROOMBAHT_PORT` is the port part of the url to be used when generating our url in emails and wherever else. Defaults to `80`.
+* `ROOMBAHT_SCHEMA` is the schema part of the url. Defaults to `http`.
+* `ROOMBAHT_TMP` is where we yeet temporary files. Defaults to `/tmp`.
+* `ROOMBAHT_IGNORE_TRANSACTIONS` This is a CSV list of transactionts to not care about.
+* `ROOMBAHT_JWT_KEY` is basically the salt for o ur auth tokens. This must be set, there is no default.
+* `ROOMBAHT_DJANGO_SECRET_KEY` Might not even be used since we don't use Django sessions?
+* `ROOMBAHT_DB_PASSWORD` This is the postgres password for production. This must be set, there is no default.
+* `ROOMBAHT_DB_HOST` This is the postgres hostname for production. This must be set, there is no default.
+* `ROOMBAHT_EMAIL_HOST_USER` This is the SMTP user and it must be set, there is no default.
+* `ROOMBAHT_EMAIL_HOST_PASSWORD` This is the SMTP password and it must be set, there is no default.
+* `ROOMBAHT_SWAPS_ENABLED` Is a boolean which controls whether swaps are enabled or not. Defaults to `True`.
+* `ROOMBAHT_GUEST_HOTELS` Is a CSV list of hotel names that will be processed during guest ingestion. Defaults to `Ballys`.
 
 # DB Schema
 

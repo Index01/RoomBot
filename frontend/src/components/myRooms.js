@@ -56,7 +56,7 @@ export default class MyRoomsTable extends React.Component {
       this.setState({error: 'auth'});
       return;
     }
-    axios.post(process.env.REACT_APP_API_ENDPOINT+'/api/my_rooms/', {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {

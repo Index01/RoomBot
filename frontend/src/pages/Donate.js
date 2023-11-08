@@ -13,7 +13,7 @@ const RoomSelekta = () => {
             <div className="AppHeader">
 	         <img src="roombaht_header.png" alt="RoomBaht9000" />
             </div>
-             
+
             <div className="DTApp">
               <Row className="justify-content-md-center">
                 <Col xs lg="6">
@@ -30,7 +30,7 @@ const RoomSelekta = () => {
 
                     <div className="card-subtitle mb-2 text-muted">
                         <p>
-                        This application is primarily powered by magical woodland creatures. Plus a few very fashionable engineers. Consider contributing some coins so these mythical creatures can continue to exist. 
+                        This application is primarily powered by magical woodland creatures. Plus a few very fashionable engineers. Consider contributing some coins so these mythical creatures can continue to exist.
                         </p>
                     </div>
                 </Col>

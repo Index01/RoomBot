@@ -2,22 +2,10 @@
 	backend_dev backend_archive backend_clean backend_migrations backend_env \
 	archive sample_data
 
-ifdef API_ENV
-ifeq ($(API_ENV), dev)
-	API_ENDPOINT := "http://localhost:8000/"
-else
-	API_ENDPOINT := $(shell ./scripts/secrets show $(API_ENV) REACT_APP_API_ENDPOINT)
-endif
-else
-	API_ENDPOINT := $(shell ./scripts/secrets show prod REACT_APP_API_ENDPOINT)
-endif
-
-
 frontend_build:
 	test -d frontend/public/layouts || ./scripts/fetch-images
 	docker build -t roombaht:latest frontend/
 	docker run -u node \
-		-e REACT_APP_API_ENDPOINT=$(API_ENDPOINT) \
 		-v $(shell pwd)/frontend:/src \
 		-v $(shell pwd)/build:/build \
 		roombaht:latest build
