@@ -3,89 +3,134 @@ import "../styles/modals.css";
 import { Col, Row, Table } from "react-bootstrap";
 import {
   DatatableWrapper,
-  Filter,
-  Pagination,
-  PaginationOptions,
   TableBody,
   TableColumnType,
   TableHeader
 } from "react-bs-datatable";
+import { WaittimeEdit, WaittimeDelete } from "./waittimes_edit.js";
 import axios from 'axios';
-import "../styles/RoombotAdmin.css";
 import Button from 'react-bootstrap/Button';
 import React from "react";
 import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 import toast, { Toaster } from 'react-hot-toast';
+import { useParams } from "react-router-dom";
+import { Display } from "react-7-segment-display";
 
-function ModalEdit(props) {
-  state = {
-    show: false
-  };
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-  const loadWait = (short_name) => {
-    const wait_url = window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/" + short_name;
-    axios.get(wait_url)
-      .then(res => {
-	console.log("Loaded, lol");
-      })
-  };
-  return(
-      <>
-      <Button variant={"outline-primary"} size="sm" onclick={startEdit}>
-        Edit Waittime
-      </Button>
-      <Modal show={show} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Edit Waittime: {props.name}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
-              <Form.Label>The Wait Time Is</Form.Label>
-              <Form.Control type="text" name="inputWaitTime" />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
-              <Form.Label>Password</Form.Label>
-              <Form.Control type="text" name="inputPassword" />
-            </Form.Group>
-            <Button variant="primary" type="submit">
-              Submit
-            </Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
-      </>
-  )
+function withParams(Component) {
+  return props => <Component {...props} params={useParams()} />;
 }
 
+class aaaHowLongTho extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      short_name: this.props.params.slug,
+      name: '',
+      seconds: '',
+      minutes: '',
+      hours: '',
+      lenght: 0
+    }
+    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/" + this.state.short_name + "/";
+  }
+  componentDidMount() {
+    axios.get(this.wait_url)
+      .then((result) => {
+	var hours = Math.floor(result.data.time / 3600);
+	var minutes = Math.floor((result.data.time - (hours * 3600)) / 60);
+	var seconds = result.data.time - (hours * 3600) - (minutes * 60);
+	console.log("AAAA " + result.data.time + "," + hours + "," + minutes + "," + seconds);
+	this.setState({name: result.data.name,
+		       hours: hours,
+		       minutes: minutes,
+		       seconds: seconds,
+		       skew: true});
+      });
+  }
+  render() {
+    return(
+      <>
+	<Row>
+	  <Col>
+	    Wait Time for {this.state.name}
+	  </Col>
+	</Row>
+	<Row>
+	  <Col lg={3}>Hours</Col>
+	  <Col lg={3}>Minutes</Col>
+	  <Col lg={3}>Seconds</Col>
+	</Row>
+	<Row>
+	  <Col lg={3}>
+	    <Display value={this.state.hours ? this.state.hours : '00'} skew="true" />
+	  </Col>
+	  <Col lg={3}>
+	    <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" />
+	  </Col>
+	  <Col lg={3}>
+	    <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true" />
+	  </Col>
+	</Row>
+      </>
+    )
+  }
+};
+export const HowLongTho = withParams(aaaHowLongTho);
 
-export default class HowLongTho extends React.Component {
-  state = {
-    waittimes: []
-  };
+export class TheTimers extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      waittimes: []
+    };
+    this.loadWaits = this.loadWaits.bind(this);
+  }
+
+  loadWaits() {
+    console.log("Whuuuut");
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":8080/api/wait/")
+      .then((result) => {
+	console.log("Lolooll " + JSON.stringify(result.data));
+	this.setState({waittimes: result.data});
+      })
+  }
+
+  componentDidMount() {
+    this.loadWaits()
+  }
 
   waitHeaderFactory() {
     let WAIT_HEADERS: TableColumnType<ArrayElementType>[] = [
       {
 	prop: "name",
+	cell: (row) => ( <a href={"/waittime/" + row.short_name}>{row.name}</a> ),
 	title: "Name"
       },
       {
 	prop: "button",
-	cell: (row) => ( <ModalEdit short_name={row.short_name} /> )
+	cell: (row) => ( <WaittimeEdit short_name={row.short_name} reload={this.loadWaits}/> )
+      },
+      {
+	prop: "button",
+	cell: (row) => ( <WaittimeDelete short_name={row.short_name} reload={this.loadWaits}/> )
       }
+
     ];
     return WAIT_HEADERS;
   }
   render(){
     return(
+      <>
+      <div>
+	<WaittimeEdit key={Math.random()} reload={this.loadWaits}/>
+      </div>
       <div>
 	<DatatableWrapper body={this.state.waittimes} headers={this.waitHeaderFactory()}>
-	  <Row classname="mb-4 p-2">
+	  <Row className="mb-4 p-2">
 	    <Col xs={12} lg={4} className="d-flex flex-col justify-content-end align-items-end" />
+	    <Col xs={2} mb={1} lg={1} className="d-flex flex-col justify-content-lg-center align-items-center justify-content-sm-start mb-2 mb-sm-0"/>
+	    <Col xs={2} mb={1} lg={1} className="d-flex flex-col justify-content-lg-center align-items-center justify-content-sm-start mb-2 mb-sm-0"/>
 	  </Row>
 	  <Table>
 	    <TableHeader />
@@ -93,6 +138,7 @@ export default class HowLongTho extends React.Component {
 	  </Table>
 	</DatatableWrapper>
       </div>
+      </>
     );
   }
 }

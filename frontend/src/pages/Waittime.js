@@ -1,17 +1,33 @@
 import "../styles/RoombotAdmin.css";
-import HowLongTho from "../components/waittimes.js";
+import { TheTimers, HowLongTho } from "../components/waittimes.js";
 import React from "react";
+import { Toaster } from 'react-hot-toast';
 
-const Waittime = () => {
+export function Waittime() {
   return(
     <div className="componentContainer">
       <div className="AppHeader">
-	<img src="roombaht_header.png" alt="RoomBaht9000" />
+	<img src="/roombaht_header.png" alt="RoomBaht9000" />
       </div>
-      <div className="DTApp">Wait Times
+      <div className="DTApp">
         <HowLongTho />
       </div>
     </div>
   );
 };
-export default Waittime
+
+export function WaittimeList() {
+  return(
+    <>
+    <div className="componentContainer">
+      <div className="AppHeader">
+	<img src="/roombaht_header.png" alt="RoomBaht9000" />
+      </div>
+      <div className="DTApp">Wait Times
+        <TheTimers />
+      </div>
+    </div>
+    <Toaster/>
+    </>
+  );
+};
