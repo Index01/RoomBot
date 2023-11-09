@@ -44,7 +44,7 @@ cleanup() {
 
 # wipe the database if present
 db_wipe() {
-    if psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
+    if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
 	dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
     fi
 }
@@ -75,7 +75,7 @@ backend_venv() {
     LAST_DEPLOY="$(find /opt -name 'roombaht-backend-*' -type d | sort | tail -n 1)"
     if [ -d "${LAST_DEPLOY}/venv" ] ; then
 	find "${LAST_DEPLOY}/venv" -name \*.pyc | xargs rm
-	sudo -u roombaht -- cp -r "${LAST_DEPLOY}/venv" "${BACKEND_DIR}/venv"
+	sudo -u roombaht -- cp -r "${LAST_DEPLOY}/venv" "${BACKEND_DIR}/"
 	chown -R roombaht: "${BACKEND_DIR}/venv"
     fi
     sudo -u roombaht -- bash -c "test -d ${BACKEND_DIR}/venv || ( mkdir ${BACKEND_DIR}/venv && virtualenv -p python3 ${BACKEND_DIR}/venv ) && ${BACKEND_DIR}/venv/bin/python3 -m pip install --upgrade pip"

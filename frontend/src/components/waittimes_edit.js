@@ -1,5 +1,7 @@
 import "bootstrap/dist/css/bootstrap.css";
 import "../styles/modals.css";
+import Container from 'react-bootstrap/Container';
+import { Col, Row } from "react-bootstrap";
 import axios from 'axios';
 import Button from 'react-bootstrap/Button';
 import React from "react";
@@ -126,7 +128,8 @@ export class WaittimeEdit extends React.Component {
       password: true,
       hours: 0,
       minutes: 0,
-      seconds: 0
+      seconds: 0,
+      countdown: false
     };
     this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/";
     this.startEdit = this.startEdit.bind(this);
@@ -140,7 +143,7 @@ export class WaittimeEdit extends React.Component {
     this.setHours = this.setHours.bind(this);
     this.setMinutes = this.setMinutes.bind(this);
     this.setSeconds = this.setSeconds.bind(this);
-
+    this.setCountdown = this.setCountdown.bind(this);
   }
 
   startEdit(event) {
@@ -159,7 +162,8 @@ export class WaittimeEdit extends React.Component {
 	    time: res.data.time,
 	    hours: hours,
 	    minutes: minutes,
-	    seconds: seconds
+	    seconds: seconds,
+	    countdown: res.data.countdown
 	  });
 	  if (res.data.has_password) {
 	    this.setState({has_password: true});
@@ -189,6 +193,11 @@ export class WaittimeEdit extends React.Component {
     this.setState({short_name: short_name});
   }
 
+  setCountdown(event) {
+    var countdown = this.state.countdown;
+    this.setState({countdown: event.target.checked});
+  }
+
   setNewPassword(event) {
     this.setState({new_password: event.target.value});
   }
@@ -198,20 +207,36 @@ export class WaittimeEdit extends React.Component {
   }
 
   setHours(event) {
+    var hours = parseInt(event.target.value);
+    if ( isNaN(hours)) {
+      hours = 0;
+    }
     this.setState({
-      hours: parseInt(event.target.value),
+      hours: hours
     });
   }
 
   setMinutes(event) {
+    var minutes = parseInt(event.target.value);
+    if (isNaN(minutes)) {
+      minutes = 0;
+    } else if ( minutes > 59 ) {
+      minutes = 59;
+    }
     this.setState({
-      minutes: parseInt(event.target.value)
+      minutes: minutes
     });
   }
 
   setSeconds(event) {
+    var seconds = parseInt(event.target.value);
+    if ( isNaN(seconds)) {
+      seconds = 0;
+    } else if ( seconds > 59 ) {
+      seconds = 59;
+    }
     this.setState({
-      seconds: parseInt(event.target.value)
+      seconds: seconds,
     });
   }
 
@@ -224,19 +249,25 @@ export class WaittimeEdit extends React.Component {
     if (! this.state.is_new) {
       data = {
 	time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600),
+	countdown: this.state.countdown,
+	name: this.state.name
+      }
+      if ( this.state.has_password ) {
+	data.password = this.state.password;
+      }
+      if ( this.state.new_password != '' ) {
+	data.new_password = this.state.new_password;
       }
     } else {
       data = {
 	time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600),
 	name: this.state.name,
-	short_name: this.state.short_name
+	short_name: this.state.short_name,
+	countdown: this.state.countdown
       }
-    }
-    if ( this.state.new_password != '' ) {
-      data.new_password = this.state.new_password;
-    }
-    if ( this.state.has_password ) {
-      data.password = this.state.password;
+      if (this.state.new_password != '') {
+	data.password = this.state.new_password;
+      }
     }
     if ( ! this.state.is_new ) {
       axios.put(this.wait_url + this.state.short_name + "/", data)
@@ -311,21 +342,41 @@ export class WaittimeEdit extends React.Component {
           <Form onSubmit={this.handleSubmit}>
 	    {maybeShortName}
 	    {maybePassword}
-	    <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea4">
+	    <Form.Group className="mb-3" controlId="exampleForm.name">
               <Form.Label>The Name Is</Form.Label>
               <Form.Control type="text" name="inputName" value={this.state.name} onChange={this.setName}/>
 	    </Form.Group>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
-              <Form.Label>Hours</Form.Label>
-              <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours}/>
-	      <Form.Label>Minutes</Form.Label>
-              <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes}/>
-	      <Form.Label>Seconds</Form.Label>
-              <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds}/>
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea2">
+	    <Container fluid>
+	      <Row>
+		<Col className="col-3">
+		  <Form.Group className="mb-3" controlId="exampleForm.countdown">
+		    <Form.Label>Countdown?</Form.Label>
+		    <Form.Check type="checkbox" name="inputCountdown" checked={this.state.countdown} onChange={this.setCountdown} />
+		  </Form.Group>
+		</Col>
+		<Col className="col-2">
+		  <Form.Group className="mb-3" controlId="exampleForm.hours">
+		    <Form.Label>Hours</Form.Label>
+		    <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours}/>
+		  </Form.Group>
+		</Col>
+		<Col className="col-3">
+		  <Form.Group className="mb-3" controlId="exampleForm.minutes">
+		    <Form.Label>Minutes</Form.Label>
+		    <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes}/>
+		  </Form.Group>
+		</Col>
+		<Col className="col-4">
+		  <Form.Group className="mb-3" controlId="exampleForm.seconds">
+		    <Form.Label>Seconds</Form.Label>
+		    <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds}/>
+		  </Form.Group>
+		</Col>
+	      </Row>
+	    </Container>
+            <Form.Group className="mb-3" controlId="exampleForm.new_password">
               <Form.Label>New Password</Form.Label>
-              <Form.Control type="password" name="inputPassword" onChange={this.setNewPassword} />
+              <Form.Control type="password" name="password" onChange={this.setNewPassword} />
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit

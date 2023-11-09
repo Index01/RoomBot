@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=200, verbose_name='WaitName')),
                 ('short_name', models.CharField(max_length=20, unique=True, verbose_name='ShortName')),
                 ('password', models.CharField(blank=True, max_length=30, null=True, verbose_name='Password')),
-                ('time', models.IntegerField(verbose_name='WaitTime')),
+                ('time', models.IntegerField(verbose_name='WaitTime'))
             ],
         ),
     ]

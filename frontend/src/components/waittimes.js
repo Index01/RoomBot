@@ -31,21 +31,44 @@ class aaaHowLongTho extends React.Component {
       seconds: '',
       minutes: '',
       hours: '',
-      lenght: 0
+      lenght: 0,
+      time: 0,
+      countdown: false,
+      updated: 0,
+      timer: null
     }
     this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/" + this.state.short_name + "/";
+    this.updateTime = this.updateTime.bind(this);
+  }
+  updateTime() {
+    var hours, minutes, seconds;
+    var actual_time  = this.state.time;
+    if ( this.state.countdown ) {
+      var actual_time = this.state.time - (Math.floor(Date.now() / 1000) - this.state.updated);
+      if (actual_time > 0) {
+	setTimeout(() => this.updateTime(), 1000);
+      } else {
+	actual_time = 0;
+      }
+    }
+    hours = Math.floor(actual_time / 3600);
+    minutes = Math.floor((actual_time - (hours * 3600)) / 60);
+    seconds = actual_time - (hours * 3600) - (minutes * 60);
+    console.log("Updating time (" + this.state.time + ") " + hours + ":" + minutes + ":" + seconds);
+    this.setState({
+      hours: hours,
+      minutes: minutes,
+      seconds: seconds
+    });
   }
   componentDidMount() {
     axios.get(this.wait_url)
       .then((result) => {
-	var hours = Math.floor(result.data.time / 3600);
-	var minutes = Math.floor((result.data.time - (hours * 3600)) / 60);
-	var seconds = result.data.time - (hours * 3600) - (minutes * 60);
 	this.setState({name: result.data.name,
-		       hours: hours,
-		       minutes: minutes,
-		       seconds: seconds,
-		       skew: true});
+		       time: result.data.time,
+		       countdown: result.data.countdown,
+		       updated: Math.floor(new Date(result.data.updated_at).getTime() / 1000)
+		      }, () => this.updateTime());
       });
   }
   render() {

@@ -4,12 +4,12 @@ from waittime.models import Wait
 class WaitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wait
-        fields = ['created_at', 'updated_at', 'name', 'short_name', 'time', 'password']
+        fields = ['created_at', 'updated_at', 'name', 'short_name', 'time', 'password', 'countdown']
 
 class WaitViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wait
-        fields = ['created_at', 'updated_at', 'name', 'short_name', 'time']
+        fields = ['created_at', 'updated_at', 'name', 'short_name', 'time', 'countdown']
 
 class WaitListSerializer(serializers.ModelSerializer):
     class Meta:

@@ -7,3 +7,4 @@ class Wait(models.Model):
     short_name = models.CharField("ShortName", max_length=20, unique=True)
     password = models.CharField("Password", max_length=30, blank=True, null=True)
     time = models.IntegerField("WaitTime")
+    countdown = models.BooleanField("CountDown", default=False)
