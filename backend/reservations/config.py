@@ -24,3 +24,5 @@ SWAPS_ENABLED = os.environ.get('ROOMBAHT_SWAPS_ENABLED', 'true').lower() == 'tru
 GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys').split(',')
 
 VERSION = impresources.read_text(reservations, "version")
+
+FEATURES = os.environ.get('ROOMBAHT_FEATURES', '').split(',')

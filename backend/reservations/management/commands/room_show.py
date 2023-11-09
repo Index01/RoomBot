@@ -73,7 +73,7 @@ class Command(BaseCommand):
             details = f"{details} Check-out: {room.check_out}"
         else:
             details = f"{details} Check-out: Unknown"
-            
+
         details += f" SP ticket: '{room.sp_ticket_id}'"
 
         self.stdout.write(desc)

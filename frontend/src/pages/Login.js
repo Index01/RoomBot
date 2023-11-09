@@ -5,11 +5,13 @@ import { useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 const notifyReset = () => toast.success("New password sent, assuming a valid account is found.");
 const notifyLoginError = (msg) => toast.error("Login error: " + msg);
+const someError = (msg) => toast.error("Oh No: " + msg);
 
 class SubmitForm extends React.Component {
     state = {
         email: '',
         pass: '',
+        party: false
     };
 
     handleSubmit = event => {
@@ -73,7 +75,33 @@ class SubmitForm extends React.Component {
     handlePass = event =>{
         this.setState({ pass: event.target.value});
     }
+    componentDidMount() {
+      axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/")
+	.then((res) => {
+	  if (res.data.features.includes("party")) {
+	    this.setState({party: true});
+	  }
+	})
+        .catch((error) => {
+	  if (error.response) {
+	    someError("Mysterious error is mysterious.");
+	  } else if (error.request) {
+	    someError("Network error :(");
+	  } else {
+	    someError("Mysterious error is mysterious.");
+	  }
+	})
+    }
+
     render() {
+        var maybeLogin;
+        if ( this.state.party ) {
+	    maybeLogin = (
+	      <div>
+		<a href="/party_time">Find The Party</a>
+	      </div>
+	    )
+        }
         return (
         <span className="auth-wrapper">
             <div className="auth-inner">
@@ -104,12 +132,11 @@ class SubmitForm extends React.Component {
                     <button type="submit" className="btn btn-primary" onClick={this.handleReset}> RequestReset </button>
                 </div>
                 </form>
-	        <Toaster />
+	      <Toaster />
+	      	  {maybeLogin}
             </div>
         </span>
         );
     }
 }
 export default SubmitForm;
-
-

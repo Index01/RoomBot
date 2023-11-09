@@ -26,9 +26,14 @@ def update_last_login(guest):
         a_guest.last_login = make_aware(datetime.datetime.utcnow())
         a_guest.save()
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 def login(request):
-    if request.method == 'POST':
+    if request.method == 'GET':
+        data = {
+            'features': roombaht_config.FEATURES
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    elif request.method == 'POST':
         data = request.data
 
         logger.info(f"[+] User login attempt: {data['email']}")

@@ -195,6 +195,15 @@ export class TheParties extends React.Component {
       .then((result) => {
 	this.setState({parties: result.data});
       })
+      .catch((error) => {
+	if (error.response) {
+	  someError("Unable to load parties. You will have to adventure on your own.");
+	} else if (error.request) {
+	  someError("Network error :(");
+	} else {
+	  someError("Mysterious error is mysterious.");
+	}
+      })
   }
 
   componentDidMount() {
