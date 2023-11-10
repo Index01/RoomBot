@@ -7,7 +7,7 @@ export function PartyFinder() {
   return(
     <>
     <div className="componentContainer">
-      <div className="DTApp">
+      <div className="DTApp partyApp">
 	<span className="display-3">Where da party at tho</span>
         <TheParties />
       </div>

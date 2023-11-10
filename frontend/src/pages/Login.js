@@ -2,6 +2,8 @@ import "../styles/Login.css";
 import React from 'react';
 import axios from 'axios';
 import { useState } from 'react';
+import { Col, Row } from "react-bootstrap";
+import Button from 'react-bootstrap/Button';
 import toast, { Toaster } from 'react-hot-toast';
 const notifyReset = () => toast.success("New password sent, assuming a valid account is found.");
 const notifyLoginError = (msg) => toast.error("Login error: " + msg);
@@ -11,7 +13,8 @@ class SubmitForm extends React.Component {
     state = {
         email: '',
         pass: '',
-        party: false
+        party: false,
+        waittime: false
     };
 
     handleSubmit = event => {
@@ -81,6 +84,9 @@ class SubmitForm extends React.Component {
 	  if (res.data.features.includes("party")) {
 	    this.setState({party: true});
 	  }
+	  if (res.data.features.includes("waittime")) {
+	    this.setState({waittime: true});
+	  }
 	})
         .catch((error) => {
 	  if (error.response) {
@@ -94,13 +100,25 @@ class SubmitForm extends React.Component {
     }
 
     render() {
-        var maybeLogin;
+        var maybeParty;
+        var maybeWait;
         if ( this.state.party ) {
-	    maybeLogin = (
-	      <div>
-		<a href="/party_time">Find The Party</a>
-	      </div>
-	    )
+            maybeParty = (
+	      <Col>
+	        <Button variant="dark" onClick={() => window.open("/party_time/", "_self")}>
+	  	Where is the Party?
+	        </Button>
+	      </Col>
+            )
+        }
+        if ( this.state.waittime ) {
+            maybeWait = (
+	      <Col>
+	        <Button variant="dark" onClick={() => window.open("/waittime/", "_self")}>
+	  	How long is the Wait?
+	        </Button>
+	      </Col>
+            )
         }
         return (
         <span className="auth-wrapper">
@@ -133,7 +151,10 @@ class SubmitForm extends React.Component {
                 </div>
                 </form>
 	      <Toaster />
-	      	  {maybeLogin}
+	      <Row>
+		{maybeParty}
+		{maybeWait}
+	      </Row>
             </div>
         </span>
         );
