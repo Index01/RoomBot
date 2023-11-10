@@ -1,4 +1,10 @@
 
+@media only screen and (max-width: 600px) {
+  .modal-content {
+      width: 90vw !important;
+  }
+}
+
 .modal-content {
     position: relative;
     display: flex;

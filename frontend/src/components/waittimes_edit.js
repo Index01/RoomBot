@@ -352,25 +352,25 @@ export class WaittimeEdit extends React.Component {
 	    </Form.Group>
 	    <Container fluid>
 	      <Row>
-		<Col className="col-6">
+		<Col className="col-6 md-col-6">
 		  <Form.Group className="mb-3" controlId="exampleForm.countdown">
 		    <Form.Label>If this box is checked the wait time will count down for the specified period, starting from when it was last updated</Form.Label>
 		    <Form.Check type="checkbox" name="inputCountdown" checked={this.state.countdown} onChange={this.setCountdown} />
 		  </Form.Group>
 		</Col>
-		<Col className="col-2">
+		<Col className="col-6 md-col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.hours">
 		    <Form.Label>Hours</Form.Label>
 		    <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours}/>
 		  </Form.Group>
 		</Col>
-		<Col className="col-2">
+		<Col className="col-6 md-col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.minutes">
 		    <Form.Label>Minutes</Form.Label>
 		    <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes}/>
 		  </Form.Group>
 		</Col>
-		<Col className="col-2">
+		<Col className="col-6 md-col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.seconds">
 		    <Form.Label>Seconds</Form.Label>
 		    <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds}/>

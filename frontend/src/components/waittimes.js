@@ -1,5 +1,6 @@
 import "bootstrap/dist/css/bootstrap.css";
 import "../styles/modals.css";
+import "../styles/wait.css";
 import Container from 'react-bootstrap/Container';
 import { Col, Row, Table } from "react-bootstrap";
 import {
@@ -223,30 +224,30 @@ class aaaHowLongTho extends React.Component {
       <>
 	<Container fluid>
 	  <Row>
-	    <Col className="display-4">
+	    <Col className="display-6 md-display-2">
 	      {this.state.name}
 	    </Col>
 	  </Row>
 	  <Row>
-	    <Col className="col-4 display-4">Hours</Col>
-	    <Col className="col-4 display-4">Minutes</Col>
-	    <Col className="col-4 display-4">Seconds</Col>
+	    <Col className="col-4 display-6 md-display-2">Hours</Col>
+	    <Col className="col-4 display-6 md-display-2">Minutes</Col>
+	    <Col className="col-4 display-6 md-display-2">Seconds</Col>
 	  </Row>
 	  <Row>
-	    <Col className="col-4 d-block d-md-none">
-	      <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="100"/>
+	    <Col className="col-4 d-block d-md-none ">
+	      <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="80" />
 	    </Col>
 	    <Col className="col-4 d-none d-md-block">
 	      <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="200"/>
 	    </Col>
 	    <Col className="col-4 d-block d-md-none">
-	      <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="100" />
+	      <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="80" />
 	    </Col>
 	    <Col className="col-4 d-none d-md-block">
 	      <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="200"/>
 	    </Col>
 	    <Col className="col-4 d-block d-md-none">
-	      <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true"  height="100"/>
+	      <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true"  height="80"/>
 	    </Col>
 	    <Col className="col-4 d-none d-md-block">
 	      <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true" height="200"/>
