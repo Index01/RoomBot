@@ -1,4 +1,4 @@
-import "../styles/RoombotAdmin.css";
+import "../styles/party.css";
 import { TheParties } from "../components/party.js";
 import React from "react";
 import { Toaster } from 'react-hot-toast';
@@ -7,10 +7,8 @@ export function PartyFinder() {
   return(
     <>
     <div className="componentContainer">
-      <div className="AppHeader">
-	<img src="/roombaht_header.png" alt="RoomBaht9000" />
-      </div>
-      <div className="DTApp">Where da party at tho
+      <div className="DTApp">
+	<span className="display-3">Where da party at tho</span>
         <TheParties />
       </div>
     </div>

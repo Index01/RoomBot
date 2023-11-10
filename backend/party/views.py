@@ -13,13 +13,16 @@ class PartyViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         room_number = request.data['room_number']
-        email = request.data['email']
-        del request.data['email']
+        secret = request.data['secret']
+        del request.data['secret']
 
+        # we allow looking up the room by
+        # * email
+        # * primary name
         room = None
         try:
             room = Room.objects.get(name_hotel='Ballys', number=room_number)
-            if room.guest.email != email:
+            if secret.lower() not in [room.guest.email.lower(), room.primary.lower()]:
                 return Response('is this really your room tho', status=status.HTTP_400_BAD_REQUEST)
 
         except Room.DoesNotExist:
@@ -29,8 +32,9 @@ class PartyViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         existing = self.get_object()
+        secret = request.data['secret']
         room = Room.objects.get(name_hotel = 'Ballys', number=existing.room_number)
-        if request.data['email'] != room.guest.email:
+        if secret not in [room.guest.email.lower(), room.primary.lower()]:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         existing.delete()

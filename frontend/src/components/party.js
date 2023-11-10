@@ -23,11 +23,11 @@ export class PartyTime extends React.Component {
     super(props);
     this.state = {
       room_number: '',
-      email: '',
+      secret: '',
       description: '',
       show: false
     }
-    this.setEmail = this.setEmail.bind(this);
+    this.setSecret = this.setSecret.bind(this);
     this.setRoomNumber = this.setRoomNumber.bind(this);
     this.setDescription = this.setDescription.bind(this);
     this.newParty = this.newParty.bind(this);
@@ -40,8 +40,8 @@ export class PartyTime extends React.Component {
   handleOpen() {
     this.setState({show: true});
   }
-  setEmail(event) {
-    this.setState({email: event.target.value});
+  setSecret(event) {
+    this.setState({secret: event.target.value});
   }
   setRoomNumber(event) {
     this.setState({room_number: event.target.value});
@@ -53,7 +53,7 @@ export class PartyTime extends React.Component {
     event.preventDefault();
     var data = {
       room_number: this.state.room_number,
-      email: this.state.email,
+      secret: this.state.secret,
       description: this.state.description
     }
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/", data)
@@ -78,7 +78,7 @@ export class PartyTime extends React.Component {
   render() {
     return(
       <>
-	<Button variant={"outline-primary"} size="sm" onClick={this.handleOpen}>
+	<Button variant={"dark"} size="sm" onClick={this.handleOpen}>
 	  It Is Time To Party
 	</Button>
 	<Modal show={this.state.show} onHide={this.handleClose}>
@@ -92,12 +92,12 @@ export class PartyTime extends React.Component {
 		<Form.Control type="text" name="inputRoomNumber" value={this.state.room_number} onChange={this.setRoomNumber}/>
 	      </Form.Group>
 	      <Form.Group className="mb-3" controlId="exampleForm.name">
-		<Form.Label>Associated Room Email</Form.Label>
-		<Form.Control type="text" name="inputEmail" value={this.state.email} onChange={this.setEmail}/>
+		<Form.Label>Room owners email or full name</Form.Label>
+		<Form.Control type="text" name="inputSecret" value={this.state.secret} onChange={this.setSecret}/>
 	      </Form.Group>
 	      <Form.Group className="mb-3" controlId="exampleForm.name">
-		<Form.Label>Room Description</Form.Label>
-		<Form.Control type="text" name="inputDescription" value={this.state.description} onChange={this.setDescription}/>
+		<Form.Label>Room Description (max 100 characters)</Form.Label>
+		<Form.Control maxLength="100" type="text" name="inputDescription" value={this.state.description} onChange={this.setDescription}/>
 	      </Form.Group>
 	      <Button variant="primary" type="submit">
 		Come on Barbie let's go Party
@@ -116,25 +116,25 @@ export class PartyDelete extends React.Component {
     this.state = {
       show: false,
       room_number: props.room_number,
-      email: null
+      secret: null
     }
     this.startDelete = this.startDelete.bind(this);
     this.plzDelete = this.plzDelete.bind(this);
-    this.setEmail = this.setEmail.bind(this);
+    this.setSecret = this.setSecret.bind(this);
     this.handleClose = this.handleClose.bind(this);
   }
   handleClose() {
     this.setState({show: false});
   }
-  setEmail(event) {
-    this.setState({email: event.target.value});
+  setSecret(event) {
+    this.setState({secret: event.target.value});
   }
   startDelete() {
     this.setState({show: true});
   }
   plzDelete() {
     var data = {
-      email: this.state.email
+      secret: this.state.secret
     }
     axios.delete(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/" + this.state.room_number + "/", {data: data})
       .then(res => {
@@ -145,7 +145,7 @@ export class PartyDelete extends React.Component {
       .catch((error) => {
 	if (error.response) {
 	  if (error.response.status == 401) {
-	    someError("Must specify actual room owners email. Do you know them?")
+	    someError("Must specify actual room owners email or full name. Do you know them?")
 	  } else {
 	    someError("Mysterious error is mysterious.");
 	  }
@@ -159,16 +159,16 @@ export class PartyDelete extends React.Component {
   render() {
     return(
       <>
-	<Button variant={"outline-primary"} size="sm" onClick={this.startDelete}>
+	<Button variant={"dark"} size="sm" onClick={this.startDelete}>
 	  Delete
 	</Button>
 	<Modal show={this.state.show} onHide={this.handleClose}>
 	  <Modal.Header closeButton>
 	    <Modal.Title>Delete {this.state.name}???</Modal.Title>
 	  </Modal.Header>
-	  <Form.Group className="mb-3" controlId="exampleForm.email">
-            <Form.Label>Room Email</Form.Label>
-            <Form.Control type="text" name="inputName" onChange={this.setEmail}/>
+	  <Form.Group className="mb-3" controlId="exampleForm.secret">
+            <Form.Label>Room owners email or full name</Form.Label>
+            <Form.Control type="text" name="inputName" onChange={this.setSecret}/>
 	  </Form.Group>
 	  <Modal.Body>
 	    <Button variant={"danger"} size="sm" onClick={this.plzDelete}>
@@ -213,14 +213,18 @@ export class TheParties extends React.Component {
     let PARTY_HEADERS: TableColumnType<ArrayElementType>[] = [
       {
 	prop: "room_number",
-	title: "Room Number"
+	title: "Room Number",
+	className: "col-2"
       },
       {
-         "prop": "description",
-         "title": "Description"					},
+        prop: "description",
+        title: "Description",
+	className: "col-8"
+      },
       {
 	prop: "button",
-	cell: (row) => ( <PartyDelete key={Math.random()} room_number={row.room_number} reload={this.loadParties}/> )
+	cell: (row) => ( <PartyDelete key={Math.random()} room_number={row.room_number} reload={this.loadParties}/> ),
+	className: "col-2"
       }
 
     ];
@@ -233,17 +237,19 @@ export class TheParties extends React.Component {
 	<div>
 	  <PartyTime key={Math.random()} reload={this.loadParties} />
 	</div>
-	<DatatableWrapper body={this.state.parties} headers={this.partyHeaderFactory()}>
-	  <Row className="mb-4 p-2">
-	    <Col lg={2} className="d-flex flex-col justify-content-end align-items-end" />
-	    <Col lg={9} className="d-flex flex-col justify-content-end align-items-end" />
-	    <Col lg={1} className="d-flex flex-col justify-content-lg-center align-items-center justify-content-sm-start mb-2 mb-sm-0"/>
-	  </Row>
-	  <Table>
-	    <TableHeader />
-	    <TableBody />
-	  </Table>
-	</DatatableWrapper>
+	<div className="partyList">
+	  <DatatableWrapper body={this.state.parties} headers={this.partyHeaderFactory()}>
+	    <Row>
+	      <Col className="justify-content-end align-items-end col-2" />
+	      <Col className="justify-content-end align-items-end col-8" />
+	      <Col className="justify-content-lg-center align-items-center justify-content-sm-start col-2"/>
+	    </Row>
+	    <Table>
+	      <TableHeader />
+	      <TableBody />
+	    </Table>
+	  </DatatableWrapper>
+	</div>
       </>
     )
   }
