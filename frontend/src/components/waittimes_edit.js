@@ -84,9 +84,9 @@ export class WaittimeDelete extends React.Component {
     if ( this.state.has_password ) {
       maybePassword = (
 	<>
-	  <span>This waittime has a password. You must specify it.</span>
+	  <span>This wait time has a password that must be provided.</span>
 	  <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea4">
-            <Form.Label>Waittime Password</Form.Label>
+            <Form.Label>Password</Form.Label>
             <Form.Control type="password" name="inputName" onChange={this.setPassword}/>
 	  </Form.Group>
 	</>
@@ -317,7 +317,7 @@ export class WaittimeEdit extends React.Component {
     if ( this.state.is_new ) {
       maybeShortName = (
 	<Form.Group className="mb-3" controlId="exampleForm.ControlTextarea3">
-          <Form.Label>The (short name) Is</Form.Label>
+          <Form.Label>The wait time <i>short name</i> is used as part of the URL and must be unique</Form.Label>
           <Form.Control type="text" name="inputShortName" value={this.state.short_name} onChange={this.setShortName}/>
 	</Form.Group>
       );
@@ -325,7 +325,7 @@ export class WaittimeEdit extends React.Component {
     if ( this.state.has_password ) {
       maybePassword = (
 	<>
-	<span>This waittime has a password. You must specify it.</span>
+	<span>This waittime has a password. You <i>must</i> include it to make edits.</span>
 	<Form.Group className="mb-3" controlId="exampleForm.ControlTextarea4">
           <Form.Label>Waittime Password</Form.Label>
           <Form.Control type="password" name="inputName" onChange={this.setPassword}/>
@@ -347,14 +347,14 @@ export class WaittimeEdit extends React.Component {
 	    {maybeShortName}
 	    {maybePassword}
 	    <Form.Group className="mb-3" controlId="exampleForm.name">
-              <Form.Label>The Name Is</Form.Label>
+              <Form.Label>A <i>descriptive</i> name for the wait time</Form.Label>
               <Form.Control type="text" name="inputName" value={this.state.name} onChange={this.setName} />
 	    </Form.Group>
 	    <Container fluid>
 	      <Row>
-		<Col className="col-3">
+		<Col className="col-6">
 		  <Form.Group className="mb-3" controlId="exampleForm.countdown">
-		    <Form.Label>Countdown?</Form.Label>
+		    <Form.Label>If this box is checked the wait time will count down for the specified period, starting from when it was last updated</Form.Label>
 		    <Form.Check type="checkbox" name="inputCountdown" checked={this.state.countdown} onChange={this.setCountdown} />
 		  </Form.Group>
 		</Col>
@@ -364,13 +364,13 @@ export class WaittimeEdit extends React.Component {
 		    <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours}/>
 		  </Form.Group>
 		</Col>
-		<Col className="col-3">
+		<Col className="col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.minutes">
 		    <Form.Label>Minutes</Form.Label>
 		    <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes}/>
 		  </Form.Group>
 		</Col>
-		<Col className="col-4">
+		<Col className="col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.seconds">
 		    <Form.Label>Seconds</Form.Label>
 		    <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds}/>
@@ -382,13 +382,13 @@ export class WaittimeEdit extends React.Component {
 	      <Row>
 		<Col className="col-3">
 		  <Form.Group className="mb-3" controlId="exampleForm.countdown">
-		    <Form.Label>Anyone can update time</Form.Label>
+		    <Form.Label>Anyone can always update the wait time</Form.Label>
 		    <Form.Check type="checkbox" name="inputFreeUpdate" checked={this.state.free_update} onChange={this.setFreeUpdate} />
 		  </Form.Group>
 		</Col>
 		<Col className="col-9">
 		  <Form.Group className="mb-3" controlId="exampleForm.new_password">
-		    <Form.Label>New Password</Form.Label>
+		    <Form.Label>You may (optionally) specifiy a password so that only certain folk can update this wait time </Form.Label>
 		    <Form.Control type="password" name="password" onChange={this.setNewPassword} />
 		  </Form.Group>
 		</Col>
