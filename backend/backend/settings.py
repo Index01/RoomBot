@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'reservations',
     'party'
+    'waittime'
 ]
 
 MIDDLEWARE = [

@@ -3,6 +3,7 @@ import Login from "./pages/Login"
 import Admin from "./pages/Admin"
 import Donate from "./pages/Donate"
 import { PartyFinder } from "./pages/Party"
+import { Waittime, WaittimeList } from "./pages/Waittime"
 import { Route, Routes , Navigate} from "react-router-dom"
 
 export default function App() {
@@ -15,7 +16,9 @@ export default function App() {
       <Route path="/rooms" element={<RoomSelekta />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/donate" element={<Donate />} />
-      <Route path="/party_time/" element={<PartyFinder />} />b
+      <Route path="/party_time" element={<PartyFinder />} />b
+      <Route path="/waittime" element={<WaittimeList />} />
+      <Route path="/waittime/:slug" element={<Waittime />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
