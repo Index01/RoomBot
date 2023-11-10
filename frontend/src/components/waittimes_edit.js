@@ -129,12 +129,12 @@ export class WaittimeEdit extends React.Component {
       hours: 0,
       minutes: 0,
       seconds: 0,
-      countdown: false
+      countdown: false,
+      free_update: false
     };
     this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/";
     this.startEdit = this.startEdit.bind(this);
     this.handleClose = this.handleClose.bind(this);
-    this.setTime = this.setTime.bind(this);
     this.setNewPassword = this.setNewPassword.bind(this);
     this.setName = this.setName.bind(this);
     this.setShortName = this.setShortName.bind(this);
@@ -144,13 +144,17 @@ export class WaittimeEdit extends React.Component {
     this.setMinutes = this.setMinutes.bind(this);
     this.setSeconds = this.setSeconds.bind(this);
     this.setCountdown = this.setCountdown.bind(this);
+    this.setFreeUpdate = this.setFreeUpdate.bind(this);
   }
 
   startEdit(event) {
     if (this.state.short_name) {
       this.state.is_new = false;
     }
-    this.setState({show: true});
+    this.setState({
+      show: true,
+      new_password: ''
+    });
     if (! this.state.is_new) {
       axios.get(this.wait_url + this.state.short_name + "/")
 	.then(res => {
@@ -163,7 +167,8 @@ export class WaittimeEdit extends React.Component {
 	    hours: hours,
 	    minutes: minutes,
 	    seconds: seconds,
-	    countdown: res.data.countdown
+	    countdown: res.data.countdown,
+	    free_update: res.data.free_update
 	  });
 	  if (res.data.has_password) {
 	    this.setState({has_password: true});
@@ -179,10 +184,6 @@ export class WaittimeEdit extends React.Component {
     }
   }
 
-  setTime(event) {
-    this.setState({time: event.target.value});
-  }
-
   setName(event) {
     this.setState({name: event.target.value});
   }
@@ -194,8 +195,11 @@ export class WaittimeEdit extends React.Component {
   }
 
   setCountdown(event) {
-    var countdown = this.state.countdown;
     this.setState({countdown: event.target.checked});
+  }
+
+  setFreeUpdate(event) {
+    this.setState({free_update: event.target.checked});
   }
 
   setNewPassword(event) {
@@ -245,13 +249,13 @@ export class WaittimeEdit extends React.Component {
   }
   handleSubmit(event) {
     event.preventDefault();
-    let data;
-    if (! this.state.is_new) {
-      data = {
+    var data = {
 	time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600),
 	countdown: this.state.countdown,
+	free_update: this.state.free_update,
 	name: this.state.name
-      }
+    }
+    if (! this.state.is_new) {
       if ( this.state.has_password ) {
 	data.password = this.state.password;
       }
@@ -259,12 +263,7 @@ export class WaittimeEdit extends React.Component {
 	data.new_password = this.state.new_password;
       }
     } else {
-      data = {
-	time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600),
-	name: this.state.name,
-	short_name: this.state.short_name,
-	countdown: this.state.countdown
-      }
+      data.short_name = this.state.short_name;
       if (this.state.new_password != '') {
 	data.password = this.state.new_password;
       }
@@ -280,7 +279,11 @@ export class WaittimeEdit extends React.Component {
 	    if (error.response.status == 400) {
 	      someError("Unable to edit waittime!");
 	    } else if (error.response.status == 401) {
-	      someError("This wait time has a password. Do you know it?")
+	      if (error.response.data != '') {
+		someError(error.response.data);
+	      } else {
+		someError("This wait time has a password. Do you know it?");
+	      }
 	    } else {
 	      someError("Mysterious error is mysterious.");
 	    }
@@ -310,6 +313,7 @@ export class WaittimeEdit extends React.Component {
   render(){
     let maybeShortName;
     let maybePassword;
+    let maybeDisabled;
     if ( this.state.is_new ) {
       maybeShortName = (
 	<Form.Group className="mb-3" controlId="exampleForm.ControlTextarea3">
@@ -344,7 +348,7 @@ export class WaittimeEdit extends React.Component {
 	    {maybePassword}
 	    <Form.Group className="mb-3" controlId="exampleForm.name">
               <Form.Label>The Name Is</Form.Label>
-              <Form.Control type="text" name="inputName" value={this.state.name} onChange={this.setName}/>
+              <Form.Control type="text" name="inputName" value={this.state.name} onChange={this.setName} />
 	    </Form.Group>
 	    <Container fluid>
 	      <Row>
@@ -374,10 +378,22 @@ export class WaittimeEdit extends React.Component {
 		</Col>
 	      </Row>
 	    </Container>
-            <Form.Group className="mb-3" controlId="exampleForm.new_password">
-              <Form.Label>New Password</Form.Label>
-              <Form.Control type="password" name="password" onChange={this.setNewPassword} />
-            </Form.Group>
+	    <Container fluid>
+	      <Row>
+		<Col className="col-3">
+		  <Form.Group className="mb-3" controlId="exampleForm.countdown">
+		    <Form.Label>Anyone can update time</Form.Label>
+		    <Form.Check type="checkbox" name="inputFreeUpdate" checked={this.state.free_update} onChange={this.setFreeUpdate} />
+		  </Form.Group>
+		</Col>
+		<Col className="col-9">
+		  <Form.Group className="mb-3" controlId="exampleForm.new_password">
+		    <Form.Label>New Password</Form.Label>
+		    <Form.Control type="password" name="password" onChange={this.setNewPassword} />
+		  </Form.Group>
+		</Col>
+	      </Row>
+	    </Container>
             <Button variant="primary" type="submit">
               Submit
             </Button>

@@ -42,17 +42,27 @@ class WaitViewSet(viewsets.ModelViewSet):
         actual_data = request.data
 
         if existing.password:
-            if 'password' not in actual_data:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
-            if existing.password != actual_data['password']:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
+            if 'password' in actual_data and \
+               existing.password == actual_data['password']:
+                del actual_data['password']
+            elif existing.free_update:
+                if ('name' in request.data and request.data['name'] != existing.name) or \
+                   ('countdown' in request.data and request.data['countdown'] != existing.countdown) or \
+                       ('new_password' in request.data and request.data['new_password'] != existing.password) or \
+                           ('free_update' in request.data and request.data['free_update'] != existing.free_update):
+                    return Response('You can only modify time without knowing the password',
+                                    status=status.HTTP_401_UNAUTHORIZED)
 
-            del actual_data['password']
+                actual_data = {
+                    'time': request.data['time']
+                }
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         if 'new_password' in actual_data:
             actual_data['password'] = actual_data['new_password']
 
-        serializer = WaitSerializer(existing, data=request.data, partial=True)
+        serializer = WaitSerializer(existing, data=actual_data, partial=True)
         if serializer.is_valid():
             self.perform_update(serializer)
 

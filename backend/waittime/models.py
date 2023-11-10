@@ -8,3 +8,4 @@ class Wait(models.Model):
     password = models.CharField("Password", max_length=30, blank=True, null=True)
     time = models.IntegerField("WaitTime")
     countdown = models.BooleanField("CountDown", default=False)
+    free_update = models.BooleanField("FreeUpdate", default=False)

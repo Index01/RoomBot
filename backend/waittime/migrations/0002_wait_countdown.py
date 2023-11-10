@@ -15,4 +15,10 @@ class Migration(migrations.Migration):
             name='countdown',
             field=models.BooleanField(default=False, verbose_name='CountDown'),
         ),
+        migrations.AddField(
+            model_name='wait',
+            name='free_update',
+            field=models.BooleanField(default=False, verbose_name='FreeUpdate'),
+        ),
+
     ]

@@ -23,7 +23,7 @@ export function WaittimeList() {
       <div className="AppHeader">
 	<img src="/roombaht_header.png" alt="RoomBaht9000" />
       </div>
-      <div className="DTApp">Wait Times
+      <div className="DTApp">Wait Times for the people because the people need to Wait
         <TheTimers />
       </div>
     </div>
