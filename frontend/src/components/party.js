@@ -64,7 +64,12 @@ export class PartyTime extends React.Component {
       .catch((error) => {
 	if (error.response) {
 	  if (error.response.status == 400) {
-	    someError("Unable to create party: " + error.response.data);
+	    if (error.response.data.room_number &&
+		error.response.data.room_number[0].includes('already exists')) {
+	      someError('Already a party in this room');
+	    } else {
+	      someError("Unable to create party: " + error.response.data);
+	    }
 	  } else {
 	    someError("Mysterious error is mysterious.");
 	  }
@@ -88,15 +93,15 @@ export class PartyTime extends React.Component {
 	  <Modal.Body>
 	    <Form onSubmit={this.newParty}>
 	      <Form.Group className="mb-3" controlId="exampleForm.name">
-		<Form.Label>Room Number</Form.Label>
+		<Form.Label>Room Number (must be in Bally's)</Form.Label>
 		<Form.Control type="text" name="inputRoomNumber" value={this.state.room_number} onChange={this.setRoomNumber}/>
 	      </Form.Group>
 	      <Form.Group className="mb-3" controlId="exampleForm.name">
-		<Form.Label>Room owners email or full name</Form.Label>
+		<Form.Label>The email or name of the room owner</Form.Label>
 		<Form.Control type="text" name="inputSecret" value={this.state.secret} onChange={this.setSecret}/>
 	      </Form.Group>
 	      <Form.Group className="mb-3" controlId="exampleForm.name">
-		<Form.Label>Room Description (max 100 characters)</Form.Label>
+		<Form.Label>Party Description (max 100 characters)</Form.Label>
 		<Form.Control maxLength="100" type="text" name="inputDescription" value={this.state.description} onChange={this.setDescription}/>
 	      </Form.Group>
 	      <Button variant="primary" type="submit">
@@ -145,7 +150,7 @@ export class PartyDelete extends React.Component {
       .catch((error) => {
 	if (error.response) {
 	  if (error.response.status == 401) {
-	    someError("Must specify actual room owners email or full name. Do you know them?")
+	    someError("Must specify actual room owners email or name. Do you know them?")
 	  } else {
 	    someError("Mysterious error is mysterious.");
 	  }
