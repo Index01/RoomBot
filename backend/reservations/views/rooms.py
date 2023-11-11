@@ -10,9 +10,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from django.utils.timezone import make_aware
-from ..models import Guest
-from ..models import Room
-from ..models import SwapError
+from reservations.models import Guest, Room, SwapError
+from party.models import Party
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
@@ -107,6 +106,14 @@ def room_list(request):
                 room['available']=True
             else:
                 room['available']=False
+
+        if 'party' in roombaht_config.FEATURES:
+            party_rooms = [x.room_number for x in Party.objects.all()]
+            for room in data['rooms']:
+                if room['number'] in party_rooms:
+                    room['is_party'] = True
+                else:
+                    room['is_party'] = False
 
         return Response(data)
 

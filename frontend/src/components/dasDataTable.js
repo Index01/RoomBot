@@ -13,7 +13,7 @@ import {
 import axios from 'axios';
 import React from "react";
 import ModalImage from "react-modal-image";
-import {ModalRequestSwap} from "./modals.js";
+import {ModalRequestSwap, ModalParty} from "./modals.js";
 
 function SwapStatus({enabled}) {
   if (!enabled) {
@@ -78,7 +78,10 @@ export default class RoomDataTable extends React.Component {
       {
         prop: "button",
         cell: (row) => (
-          <ModalRequestSwap row={row} swaps_enabled={swaps_enabled} />
+	  <>
+            <ModalRequestSwap row={row} swaps_enabled={swaps_enabled} />
+	    {row.is_party ? <ModalParty room_number={row.number} /> : ""}
+	  </>
         )
       }
     ];
@@ -130,7 +133,7 @@ export default class RoomDataTable extends React.Component {
           } else {
             console.log("unhandled error " + error.response.status + ", " + error.response.data);
           }
-	      }
+	}
       });
     this.sortData();
   }					

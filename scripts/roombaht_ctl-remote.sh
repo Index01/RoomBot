@@ -117,6 +117,7 @@ backend_config() {
 	-e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
 	-e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
+	-e "s/@FEATURES@/${ROOMBAHT_FEATURES}/" \
 	"${BACKEND_DIR}/config/roombaht-systemd.conf" \
 	> "/etc/systemd/system/roombaht.service"
     chmod o-rwx "/etc/systemd/system/roombaht.service"

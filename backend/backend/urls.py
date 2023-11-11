@@ -13,7 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path, re_path, include
 from rest_framework import routers
 
@@ -22,9 +21,11 @@ from reservations.views import rooms
 from reservations.views import login
 from reservations.views import admin
 import waittime.views
+import party.views
 
 router = routers.DefaultRouter()
 router.register(r'api/wait', waittime.views.WaitViewSet)
+router.register(r'api/party', party.views.PartyViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -41,5 +42,5 @@ urlpatterns = [
     re_path(r'^api/create_guests/$', admin.create_guests),
     re_path(r'^api/run_reports/$', admin.run_reports),
     re_path(r'^api/request_metrics/$', admin.request_metrics),
-    re_path(r'^api/guest_upload/$', admin.guest_file_upload),
+    re_path(r'^api/guest_upload/$', admin.guest_file_upload)
 ]

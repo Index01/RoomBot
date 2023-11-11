@@ -7,6 +7,37 @@ import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import "../styles/modals.css";
 const swapError = (msg) => toast.error("Swap error: " + msg);
+const someError = (msg) => toast.error("Oh No: " + msg);
+
+export function ModalParty(props) {
+  const [show, setShow] = useState(false);
+  const [description, setDescription] = useState('');
+  const handleClose = () => setShow(false);
+  const handleShow = () => {
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/" + props.room_number + "/")
+      .then(res => {
+	setDescription(res.data.description);
+	setShow(true);
+      })
+      .catch((error) => {
+	someError("Unable to retrieve party info :(")
+      });
+  }
+
+  return (
+    <>
+      <Button variant={"info"} size="sm" onClick={handleShow}>I Am A Party</Button>
+      <Modal show={show} onHide={handleClose}>
+	<Modal.Header closeButton>
+	  <Modal.Title>Party in {props.room_number}</Modal.Title>
+	</Modal.Header>
+	<Modal.Body>
+	  {description}
+	</Modal.Body>
+      </Modal>
+    </>
+  )
+}
 
 export function ModalRequestSwap(props) {
   const [show, setShow] = useState(false);
