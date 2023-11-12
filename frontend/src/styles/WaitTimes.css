@@ -1,0 +1,23 @@
+.AppNav {
+  background-color: #44454c;
+  border-radius: 20px;
+  color: white;
+  text-align: center;
+  font-size: 18pt;
+  margin: 10px;
+  height: 60px;
+
+}
+
+.timerClass {
+  color: white;
+  text-align: center;
+  font-size: 30pt;
+}
+
+.sevenSegClass {
+  color: red;
+  text-align: center;
+  align: center;
+}
+
