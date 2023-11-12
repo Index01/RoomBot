@@ -215,7 +215,7 @@ class aaaHowLongTho extends React.Component {
     let maybeUpdateTime
     if (this.state.time > 0 && (this.state.free_update || !this.state.has_password)) {
       maybeUpdateTime = (
-	<Col className="col-3">
+	<Col className="buttonCol">
 	  <UpdateTime short_name={this.state.short_name} time={this.state.time} reload={this.loadWait} />
 	</Col>
       )
@@ -230,19 +230,19 @@ class aaaHowLongTho extends React.Component {
 	      </Col>
 	    </Row>
 	    <Row>
-	      <Col className="timerClass">Hours</Col>
-	      <Col className="timerClass">Minutes</Col>
-	      <Col className="timerClass">Seconds</Col>
 	    </Row>
 	    <Row>
 	      <Col className="d-flex justify-content-center">
 	        <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="100"/>
+	        <Col className="timerClass">Hr</Col>
 	      </Col>
 	      <Col className="d-flex justify-content-center">
 	        <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="100"/>
+	        <Col className="timerClass">Min</Col>
 	      </Col>
 	      <Col className="d-flex justify-content-center">
 	        <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true" height="100"/>
+	        <Col className="timerClass">Sec</Col>
 	      </Col>
 	    </Row>
         <Row>

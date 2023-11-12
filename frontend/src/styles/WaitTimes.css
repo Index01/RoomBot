@@ -9,10 +9,15 @@
 
 }
 
+.buttonCol {
+  width: 100%;
+  margin-right: auto;
+}
+
 .timerClass {
   color: white;
-  text-align: center;
-  font-size: 30pt;
+  font-size: 20pt;
+  margin-top: auto;
 }
 
 .sevenSegClass {
