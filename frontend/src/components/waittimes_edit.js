@@ -361,19 +361,19 @@ export class WaittimeEdit extends React.Component {
 		<Col className="col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.hours">
 		    <Form.Label>Hours</Form.Label>
-		    <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours}/>
+		    <Form.Control type="text" name="inputHours" value={this.state.hours} onChange={this.setHours} onFocus={(event) => event.target.select()}/>
 		  </Form.Group>
 		</Col>
 		<Col className="col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.minutes">
 		    <Form.Label>Minutes</Form.Label>
-		    <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes}/>
+		    <Form.Control type="text" name="inputMinutes" value={this.state.minutes} onChange={this.setMinutes} onFocus={(event) => event.target.select()}/>
 		  </Form.Group>
 		</Col>
 		<Col className="col-2">
 		  <Form.Group className="mb-3" controlId="exampleForm.seconds">
 		    <Form.Label>Seconds</Form.Label>
-		    <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds}/>
+		    <Form.Control type="text" name="inputSeconds" value={this.state.seconds} onChange={this.setSeconds} onFocus={(event) => event.target.select()}/>
 		  </Form.Group>
 		</Col>
 	      </Row>

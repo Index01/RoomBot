@@ -84,7 +84,7 @@ export class PartyTime extends React.Component {
     return(
       <>
 	<Button variant={"dark"} size="sm" onClick={this.handleOpen}>
-	  It Is Time To Party
+	  Register A Party
 	</Button>
 	<Modal show={this.state.show} onHide={this.handleClose}>
 	  <Modal.Header closeButton>
