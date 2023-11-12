@@ -18,6 +18,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useParams } from "react-router-dom";
 import { Display } from "react-7-segment-display";
 const someError = (msg) => toast.error("Oh No: " + msg);
+
 function withParams(Component) {
   return props => <Component {...props} params={useParams()} />;
 }
@@ -221,45 +222,32 @@ class aaaHowLongTho extends React.Component {
     }
     return(
       <>
-	<Container fluid>
-	  <Row>
-	    <Col className="display-4">
-	      {this.state.name}
-	    </Col>
-	  </Row>
-	  <Row>
-	    <Col className="col-4 display-4">Hours</Col>
-	    <Col className="col-4 display-4">Minutes</Col>
-	    <Col className="col-4 display-4">Seconds</Col>
-	  </Row>
-	  <Row>
-	    <Col className="col-4 d-block d-md-none">
-	      <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="100"/>
-	    </Col>
-	    <Col className="col-4 d-none d-md-block">
-	      <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="200"/>
-	    </Col>
-	    <Col className="col-4 d-block d-md-none">
-	      <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="100" />
-	    </Col>
-	    <Col className="col-4 d-none d-md-block">
-	      <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="200"/>
-	    </Col>
-	    <Col className="col-4 d-block d-md-none">
-	      <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true"  height="100"/>
-	    </Col>
-	    <Col className="col-4 d-none d-md-block">
-	      <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true" height="200"/>
-	    </Col>
-	  </Row>
-	  <Row>
-	    <Col className="col-3">
-	      <Button variant="secondary" onClick={() => window.open("/waittime/", "_self")}>
-		See all wait times
-	      </Button>
-	    </Col>
-	    {maybeUpdateTime}
-	  </Row>
+	  <Container fluid className="border border-light rounded mb-0">
+	    <Row>
+	      <Col>
+            <p></p>
+            <h3 className="card-subtitle mb-2 text-muted">Wait time: {this.state.name}</h3>
+	      </Col>
+	    </Row>
+	    <Row>
+	      <Col className="timerClass">Hours</Col>
+	      <Col className="timerClass">Minutes</Col>
+	      <Col className="timerClass">Seconds</Col>
+	    </Row>
+	    <Row>
+	      <Col className="d-flex justify-content-center">
+	        <Display value={this.state.hours ? this.state.hours : '00'} skew="true" height="100"/>
+	      </Col>
+	      <Col className="d-flex justify-content-center">
+	        <Display value={this.state.minutes ? this.state.minutes : '00'} skew="true" height="100"/>
+	      </Col>
+	      <Col className="d-flex justify-content-center">
+	        <Display value={this.state.seconds ? this.state.seconds : '00'} skew="true" height="100"/>
+	      </Col>
+	    </Row>
+        <Row>
+	      {maybeUpdateTime}
+	    </Row>
 	</Container>
       </>
     )
@@ -279,7 +267,7 @@ export class TheTimers extends React.Component {
   loadWaits() {
     axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/")
       .then((result) => {
-	this.setState({waittimes: result.data});
+	    this.setState({waittimes: result.data});
       })
   }
 
@@ -329,4 +317,3 @@ export class TheTimers extends React.Component {
     );
   }
 }
-
