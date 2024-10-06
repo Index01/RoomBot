@@ -1,93 +1,84 @@
 ROOM_LIST = {
     'Queen': [
-        "Bally's - Standard 2 Queens",
-        "Bally's - Standard 2 Queens (50% fee)",
-        "Bally's - Standard 2 Queens (Direct Sale)",
-        "Bally's - Standard 2 Queens (Post Sale)",
-        "Bally's - Standard 2 Queens (RFP Sale)",
-        "Art Room Bally's - Standard 2 Queens",
-        "Art Room Bally's - Standard 2 Queens (RFP Sale)",
-        "Art Room Bally's - Standard 2 Queens (Direct Sale)",
-        "Art Room Bally's - Standard 2 Queens (Post Sale)"
-    ],
-
-    "Double Queen Beds": [
-        'Hard Rock - Standard 2 Queens (50% fee)'
+        "Bally's - Standard 2 Queen",
+        "Bally's - Standard 2 Queen (DTS)",
+        "Bally's - Art Room 2 Queen",
+        "Bally's - Art Room 2 Queen (DTS)",
+        "Bally's - \"\"Quiet\"\" Art Room 2 Queen",
+        "Bally's - \"\"Quiet\"\" Art Room 2 Queen (DTS)"
     ],
 
     "Double Queen Beds Lake View Balcony": [
-        'Hard Rock - Lakeview Balcony 2 Queens',
-        'Hard Rock - Lakeview Balcony 2 Queens (Post Sale)'
+        'Nugget - Lakeview Balcony 2 Queens',
+        'Nugget - Lakeview Balcony 2 Queens (DTS)'
     ],
 
     "Double Queen Beds Lake View": [
-        'Hard Rock - Lakeview 2 Queens',
-        'Hard Rock - Lakeview 2 Queens (Post Sale)'
+        'Nugget - Lakeview 2 Queens',
+        'Nugget - Lakeview 2 Queens (Post Sale)'
     ],
 
     'Queen Sierra Suite': [
-        "Bally's - Sierra 2 Queens Suite",
-        "Bally's - Sierra 2 Queens Suite (Post Sale)",
-        "Bally's - Suite Upgrade from King to Queen (Post)"
+        "Bally's - Queen Sierra Suite",
+        "Bally's - Queen Sierra Suite (DTS)"
     ],
 
     "King Bed": [
-        'Hard Rock - Standard King',
-        'Hard Rock - Standard King (Post Sale)',
-        'Hard Rock - Standard King (RFP Sale)'
+        'Nugget - Standard King',
+        'Nugget - Standard King (DTS)'
     ],
 
     "King": [
         "Bally's - Standard King",
-        "Bally's - Standard King (Direct Sale)",
-        "Bally's - Standard King (Post Sale)",
-        "Bally's - Standard King (RFP Sale)",
-        "Art Room Bally's - Standard King",
-        "Art Room Bally's - Standard King (Post Sale)"
+        "Bally's - Standard King (DTS)",
+        "Bally's - Art Room King",
+        "Bally's - Art Room King (DTS)",
+        "Bally's - \"\"Quiet\"\" Art Room King",
+        "Bally's - \"\"Quiet\"\" Art Room King (DTS)"
     ],
 
     "King Bed Lake View": [
-        'Hard Rock - Lakeview King',
-        'Hard Rock - Lakeview King (Post Sale)'
+        'Nugget - Lakeview King',
+        'Nugget - Lakeview King (DTS)'
     ],
 
     "King Bed Lake View Balcony": [
-        'Hard Rock - Lakeview Balcony King',
-        'Hard Rock - Lakeview Balcony King (Post Sale)'
+        'Nugget - Lakeview Balcony King',
+        'Nugget - Lakeview Balcony King (DTS)'
     ],
 
     "King Bed Balcony": [
-        'Hard Rock - Balcony King',
-        'Hard Rock - Balcony King (RFP Sale)',
-        "Hard Rock - Balcony King (Post Sale)"
+        'Nugget - Balcony King',
+        'Nugget - Balcony King (DTS)'
     ],
 
     'King Sierra Suite': [
-        "Bally's - Sierra King Suite",
-        "Bally's - Sierra King Suite (Post Sale)"
+        "Bally's - King Sierra Suite",
+        "Bally's - King Sierra Suite (DTS)",
     ],
 
     'Tahoe Suite': [
-        "Bally's - Tahoe King Suite",
-        "Bally's - Tahoe King Suite (Post Sale)"
+        "Bally's - Tahoe Suite",
+        "Bally's - Tahoe Suite (DTS)"
     ],
 
     "Executive Suite": [
-        "Bally's - Executive King Suite"
+        "Bally's - Executive King Suite",
+        "Bally's - Executive King Suite (DTS)"
     ],
 
     "King Bed Suite Lake View Balcony": [
-        "Hard Rock - Lakeview Balcony Suite",
-        "Hard Rock - Lakeview Balcony Suite (RFP Sale)"
+        "Nugget - Lakeview Balcony Suite",
+        "Nugget - Lakeview Balcony Suite (DTS)"
     ],
 
     "King Bed Suite Mountain View": [
-        "Hard Rock - Mountain View Suite"
+        "Nugget - Mountain View Suite"
     ],
 
     "King Bed Suite Balcony": [
-        "Hard Rock - Pool View Balcony Suite",
-        "Hard Rock - Pool View Balcony Suite (Post Sale)"
+        "Nugget - Pool View Balcony Suite",
+        "Nugget - Pool View Balcony Suite (DTS)"
     ]
 }
 

@@ -15,6 +15,11 @@ class SwapError(Exception):
         self.msg = msg
         super().__init__(f"Unable to complete swap: {msg}")
 
+class UnknownProductError(Exception):
+    def __init__(self, product):
+        self.product = product
+        super().__init__(f"Unknown product: {product}")
+
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -176,8 +181,8 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @staticmethod
     def derive_hotel(product):
-        if product.lower().startswith('hard rock'):
-            return 'Hard Rock'
+        if product.lower().startswith('nugget'):
+            return 'Nugget'
 
         if product.lower().startswith('bally'):
             return 'Ballys'
@@ -185,7 +190,7 @@ class Room(DirtyFieldsMixin, models.Model):
         if product.lower().startswith('art room bally'):
             return 'Ballys'
 
-        raise Exception(f"Unable to resolve hotel for {product}")
+        raise UnknownProductError(product)
 
     @staticmethod
     def swap(room_one, room_two):

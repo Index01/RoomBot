@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPTDIR=$( cd "${0%/*}" && pwd)
+ROOTDIR="${SCRIPTDIR%/*}"
+source "${ROOTDIR}/dev.env"
+
+"${ROOTDIR}/backend/venv/bin/python" \
+    "${ROOTDIR}/backend/manage.py" "$@"
