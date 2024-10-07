@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+	"secretsmanager:DescribeSecret",
+	"secretsmanager:GetSecretValue"
+      ],
+      "Resource": "${secret_id}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "${key_id}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "rds:DescribeDBInstances",
+      "Resource": "*"
+    }
+  ]
+}

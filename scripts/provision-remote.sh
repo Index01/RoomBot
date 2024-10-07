@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES=(aptitude nginx screen python3 virtualenv certbot postgresql-client htop iftop build-essential python3-dev libpq-dev)
+PACKAGES=(aptitude nginx screen python3 virtualenv certbot postgresql-client htop iftop build-essential python3-dev libpq-dev jq)
 
 set -e
 
@@ -49,6 +49,7 @@ os_freshen() {
     apt-get update
     apt-get upgrade -y
     apt-get install -y "${PACKAGES[@]}"
+    pip install --upgrade awscli
 }
 
 os_freshen
