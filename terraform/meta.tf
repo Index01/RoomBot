@@ -10,10 +10,6 @@ provider "aws" {
   region = "us-west-2"
 }
 
-output "dev_ip" {
-  value = module.dev.public_ip
-}
-
 variable "availability_zone" {
   type = string
   description = "Availability Zone"
@@ -24,4 +20,18 @@ variable "alt_availability_zone" {
   type = string
   description = "Alternate Availability Zone"
   default = "c"
+}
+
+variable "domain" {
+  type = string
+  description = "Roombaht World Wide"
+  default = "rooms.take3presents.com"
+}
+
+output "dev_ip" {
+  value = module.dev.public_ip
+}
+
+output "nameservers" {
+  value = aws_route53_zone.roombaht.name_servers
 }
