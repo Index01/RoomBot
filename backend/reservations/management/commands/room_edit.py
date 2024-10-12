@@ -84,6 +84,10 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true')
 
+        parser.add_argument('--reset-swap',
+                            help='Resets last swap time and any pending swap code',
+                            default=False,
+                            action='store_true')
 
     def handle(self, *args, **kwargs):
         if 'number' not in kwargs:
@@ -178,6 +182,10 @@ class Command(BaseCommand):
             room.placed_by_roombot = True
         elif kwargs['not_roombaht'] and room.placed_by_roombot:
             room.placed_by_roombot = False
+
+        if kwargs['reset_swap']:
+            room.swap_time = None
+            room.swap_code = None
 
         if room.is_dirty():
             self.stdout.write(f"Updated room: {kwargs['number']}")

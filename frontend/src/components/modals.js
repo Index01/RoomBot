@@ -61,7 +61,11 @@ export function ModalRequestSwap(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -157,7 +161,11 @@ export function ModalEnterCode(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -231,7 +239,7 @@ export function ModalCreateCode(props) {
   const row = props.row.number;
   const handleAPICall = () => {
 
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000//api/swap_gen/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_gen/", {
             jwt: jwt['jwt'],
             number: {row},
       })
@@ -243,7 +251,11 @@ export function ModalCreateCode(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);

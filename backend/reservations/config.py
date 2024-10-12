@@ -26,3 +26,5 @@ GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys').split(',')
 VERSION = impresources.read_text(reservations, "version")
 
 FEATURES = os.environ.get('ROOMBAHT_FEATURES', '').split(',')
+
+ROOM_COOLDOWN = int(os.environ.get('ROOMBAHT_ROOM_COOLDOWN', 900))
