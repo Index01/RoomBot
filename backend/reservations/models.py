@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib import admin
 from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
@@ -54,6 +55,10 @@ class Guest(models.Model):
     def chain(self):
         return Guest.traverse_transfer([self])
 
+@admin.register(Guest)
+class GuestAdmin(admin.ModelAdmin):
+    date_heiarchy = 'created_at'
+    exclude = ['invitation', 'jwt', 'updated_at']
 
 class Staff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -69,20 +74,20 @@ class Staff(models.Model):
 class Room(DirtyFieldsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    number = models.CharField("Number", max_length=20)
-    name_take3 = models.CharField("Take3Name", max_length=50)
-    name_hotel = models.CharField("HotelName", max_length=50)
+    number = models.CharField("Room Number", max_length=20)
+    name_take3 = models.CharField("Room Type", max_length=50)
+    name_hotel = models.CharField("Hotel", max_length=50)
     is_available = models.BooleanField("Available", default=False)
-    is_swappable = models.BooleanField("IsSwappable", default=False)
-    is_smoking = models.BooleanField("SmokingRoom", default=False)
-    is_lakeview = models.BooleanField("LakeviewRoom", default=False)
-    is_mountainview = models.BooleanField("MountainviewRoom", default=False)
+    is_swappable = models.BooleanField("Swappable", default=False)
+    is_smoking = models.BooleanField("Smoking", default=False)
+    is_lakeview = models.BooleanField("Lakeview", default=False)
+    is_mountainview = models.BooleanField("Mountainview", default=False)
     is_ada = models.BooleanField("ADA", default=False)
-    is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
-    is_art = models.BooleanField("ArtRoom", default=False)
-    is_special = models.BooleanField("SpecialRoom", default=False)
-    is_comp = models.BooleanField("CompRoom", default=False)
-    is_placed = models.BooleanField("PlacedRoom", default=False)
+    is_hearing_accessible = models.BooleanField("Hearing Accessible", default=False)
+    is_art = models.BooleanField("ART", default=False)
+    is_special = models.BooleanField("Special", default=False)
+    is_comp = models.BooleanField("Comped", default=False)
+    is_placed = models.BooleanField("Placed", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
@@ -249,3 +254,43 @@ class Room(DirtyFieldsMixin, models.Model):
 
         room_two.guest.save()
         room_one.guest.save()
+
+
+@admin.register(Room)
+class RoomsAdmin(admin.ModelAdmin):
+    exclude = ['created_at',
+               'updated_at',
+               'sp_ticket_id',
+               'swap_code']
+    fields = [
+        ('number', 'name_take3', 'name_hotel'),
+        ('is_placed', 'primary', 'secondary', 'check_in', 'check_out'),
+        ('is_smoking', 'is_lakeview', 'is_special',
+         'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_comp')
+    ]
+    readonly_fields = [
+        'check_in', 'check_out', 'is_smoking', 'is_lakeview', 'is_special',
+         'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_placed',
+        'is_comp'
+    ]
+    description = 'A Room'
+    list_display = [
+        'number',
+        'name_hotel',
+        'name_take3'
+    ]
+    search_fields = [
+        'number',
+        'name_hotel',
+        'name_take3',
+        'primary',
+        'secondary'
+    ]
+    search_help_text = 'Search by room number, hotel name' \
+        'room type, and primary or secondary name'
+
+    sortable_by = [
+        'number',
+        'name_hotel',
+        'name_take3'
+    ]

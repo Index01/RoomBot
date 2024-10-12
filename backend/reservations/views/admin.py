@@ -26,6 +26,7 @@ from ..reporting import (dump_guest_rooms, diff_latest,
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
 import reservations.config as roombaht_config
+from constance import config
 from reservations.auth import authenticate_admin, unauthenticated
 from reservations.ingest_models import SecretPartyGuestIngest
 
@@ -680,7 +681,7 @@ def guest_file_upload(request):
                 logger.warning("[-] Ticket %s from upload already in db", guest['ticket_code'])
                 continue
 
-            if guest['ticket_code'] in roombaht_config.IGNORE_TRANSACTIONS:
+            if guest['ticket_code'] in config.IGNORE_TRANSACTIONS:
                 logger.debug("Skipping ticket %s as it is on our ignore list", guest['ticket_code'])
                 continue
 

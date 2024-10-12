@@ -2,6 +2,7 @@ import logging
 from random import randint
 import sys
 import time
+from  django import settings
 from django.core.management.base import BaseCommand, CommandError
 import reservations.config as roombaht_config
 from reservations.models import Guest
@@ -48,8 +49,8 @@ class Command(BaseCommand):
     help = "Send batches of onboarding emails for guests"
     def add_arguments(self, parser):
         parser.add_argument('-b', '--batch-size',
-                            help=f"Batch size to use, defaults to {roombaht_config.ONBOARDING_BATCH}",
-                            default=roombaht_config.ONBOARDING_BATCH)
+                            help=f"Batch size to use, defaults to {settings.ONBOARDING_BATCH}",
+                            default=settings.ONBOARDING_BATCH)
 
     def handle(self, *args, **kwargs):
         emails = Guest.objects \
@@ -71,7 +72,7 @@ class Command(BaseCommand):
             onboarded = [x for x in guests if x.onboarding_sent]
             if len(onboarded) == 0:
                 logger.debug("Activation email for %s has never been sent", email)
-                if not roombaht_config.SEND_ONBOARDING:
+                if not settings.SEND_ONBOARDING:
                     logger.debug("Not actually sending onboarding email to %s", email)
                 else:
                     onboarding_email(email, guests[0].jwt)

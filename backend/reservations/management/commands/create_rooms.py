@@ -34,7 +34,7 @@ def create_rooms_main(cmd, args):
     elif args['hotel_name'].lower() == 'nugget':
         hotel = 'Nugget'
     else:
-        raise Exception(f"Unknown hotel name {args['hotel_name']}specified")
+        raise Exception(f"Unknown hotel name {args['hotel_name']} specified")
 
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)

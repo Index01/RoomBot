@@ -8,6 +8,7 @@ import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from constance import config
 from django.core.mail import send_mail
 from django.utils.timezone import make_aware
 from ..models import Guest
@@ -29,8 +30,14 @@ def update_last_login(guest):
 @api_view(['POST', 'GET'])
 def login(request):
     if request.method == 'GET':
+        features = []
+        if config.PARTY_APP:
+            features.append('party')
+
+        if config.WAITTIME_APP:
+            features.append('waittime')
         data = {
-            'features': roombaht_config.FEATURES
+            'features': features
         }
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
