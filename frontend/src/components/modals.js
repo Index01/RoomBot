@@ -191,7 +191,7 @@ export function ModalEnterCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.cooldown ? "outline-info" : props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
           EnterSwapCode
       </Button>
        :
@@ -274,7 +274,7 @@ export function ModalCreateCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.cooldown ? "outline-info" : props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
           CreateSwapCode
       </Button>
        :

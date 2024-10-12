@@ -44,7 +44,8 @@ def my_rooms(request):
         data = {
             'rooms': [{"number": int(room.number),
                        "type": room.name_take3,
-                       "swappable": room.swappable()} for room in rooms_mine],
+                       "swappable": room.swappable() and not room.cooldown(),
+                       "cooldown": room.cooldown()} for room in rooms_mine],
             'swaps_enabled': roombaht_config.SWAPS_ENABLED
         }
 
