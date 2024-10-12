@@ -2,7 +2,7 @@
 # we don't need a StaffImport model because that table is directly translated to the db table
 
 from typing import Optional
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 class SecretPartyGuestIngest(BaseModel):
     """Required fields imported from SecretParty CSV
@@ -20,7 +20,7 @@ class RoomPlacementListIngest(BaseModel):
     """Expected fields in the room spreadsheet
     NOTE: not all of these columns may be used!
     """
-    placement_verified: Optional[str] = Field(alias='Placement Verified')
+    placement_verified: Optional[str] = Field(None, alias='Placement Verified')
     floor: int = Field(alias='Floor')
     room: int = Field(alias='Room')
     room_type: str = Field(alias='Room Type')
