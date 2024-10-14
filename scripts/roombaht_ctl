@@ -21,12 +21,18 @@ cleanup() {
 }
 
 usage() {
-    echo "roombaht_ctl <user> <env> init <rooms dot csv> <staff dot csv>"
-    echo "                             -f         force wipe, otherwise asks"
-    echo
+    echo "roombaht_ctl <user> <env> init <ballys dot csv> <nugget dot csv> <staff dot csv>"
     echo "roombaht_ctl <user> <env> frontend-log"
     echo "roombaht_ctl <user> <env> backend-log"
+    echo "roombaht_ctl <user> <env> backend-restart"
+    echo "roombaht_ctl <user> <env> snapshot"
     echo "roombaht_ctl <user> <env> wipe"
+    echo "roombaht_ctl <user> <env> clone_db"
+    echo "roombaht_ctl <user> <env> deploy"
+    echo "roombaht_ctl <user> <env> quick_deploy"
+    echo "roombaht_ctl <user> <env> quick_deploy"
+    echo "roombaht_ctl <user> <env> rooms"
+    echo "roombaht_ctl <user> <env> manage"
 }
 
 yeet_command() {
@@ -73,10 +79,17 @@ ENC_FILE="${ROOTDIR}/config/${R_ENV}.enc"
 # shellcheck disable=1090
 source "$ENV_FILE"
 [ -n "$ROOMBAHT_HOST" ] || problems "unable to determine deployment host"
-SSH_HOST="${R_USER}@${ROOMBAHT_HOST}"
+# allow override for early in dev cycle before dns setup
+if [ -z "$SSH_HOST" ] ; then
+    SSH_HOST="${R_USER}@${ROOMBAHT_HOST}"
+else
+    SSH_HOST="${R_USER}@${SSH_HOST}"
+fi
+
 # keep it random, allows for multiple invocations
 R_SCRIPT="roombaht_ctl-remote-${RANDOM}.sh"
 R_SECRET="secrets-${RANDOM}.env"
+
 
 if [ "$ACTION" == "init" ] ; then
     BALLYS_SRC="$1"
@@ -134,6 +147,10 @@ elif [ "$ACTION" == "deploy" ] || [ "$ACTION" == "quick_deploy" ] ; then
     yeet_file "$FRONTEND_SRC" "$FRONTEND_ARTIFACT"
     yeet_ctl "$ACTION"
 elif [ "$ACTION" == "rooms" ] ; then
+    if [ "$#" -lt 2 ] ; then
+	usage
+	exit 1
+    fi
     HOTEL="$1"
     ROOM_LIST="$2"
     shift 2

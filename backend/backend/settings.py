@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 
 import os
-
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,11 +91,8 @@ if DEV_MODE:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
+            'ENGINE': 'backend.db.backends.magic_postgres',
             'NAME': os.environ['ROOMBAHT_DB'],
-            'USER': 'postgres',
-            'PASSWORD': os.environ['ROOMBAHT_DB_PASSWORD'],
-            'HOST': os.environ['ROOMBAHT_DB_HOST'],
             'PORT': 5432
         }
     }
