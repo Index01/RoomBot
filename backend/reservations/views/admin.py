@@ -532,16 +532,16 @@ def run_reports(request):
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
         guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
-        hardrock_export_file = hotel_export('Hard Rock')
+        nugget_export_file = hotel_export('Nugget')
         ballys_roomslist_file = rooming_list_export("Ballys")
-        hardrock_roomslist_file = rooming_list_export("Hard Rock")
+        nugget_roomslist_file = rooming_list_export("Nugget")
         attachments = [
             guest_dump_file,
             room_dump_file,
             ballys_export_file,
-            hardrock_export_file,
+            nugget_export_file,
             ballys_roomslist_file,
-            hardrock_roomslist_file
+            nugget_roomslist_file
         ]
         if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
             attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
@@ -653,6 +653,9 @@ def guest_file_upload(request):
             # we only care about these hotels
             try:
                 if Room.derive_hotel(guest['product']) not in roombaht_config.GUEST_HOTELS:
+                    logger.debug("Unable to derive hotel for tx %s: %s",
+                                 guest['ticket_code'],
+                                 guest['product'])
                     continue
             except UnknownProductError as erp:
                 logger.debug("Non-room product for tx %s: %s",
@@ -662,7 +665,6 @@ def guest_file_upload(request):
 
             # if we don't know the product, drop it
             if guest['product'] not in room_products:
-                import ipdb ; ipdb.set_trace()
                 logger.debug("Ticket %s has product we don't care about: %s",
                              guest['ticket_code'],
                              guest['product'])

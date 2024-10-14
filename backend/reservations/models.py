@@ -187,9 +187,6 @@ class Room(DirtyFieldsMixin, models.Model):
         if product.lower().startswith('bally'):
             return 'Ballys'
 
-        if product.lower().startswith('art room bally'):
-            return 'Ballys'
-
         raise UnknownProductError(product)
 
     @staticmethod
