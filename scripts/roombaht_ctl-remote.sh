@@ -42,28 +42,55 @@ cleanup() {
     fi
 }
 
+# determine db connection details
+db_connection() {
+    ACCOUNT_ID="$(aws sts get-caller-identity --query 'Account' --output text 2> /dev/null)"
+    if [ -z "$ACCOUNT_ID" ] ; then
+	problems "Unable to look up AWS Account ID"
+    fi
+    REGION="$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone 2> /dev/null)"
+    REGION="$(sed 's/[a-z]$//' <<< "$REGION")"
+    if [ -z "$REGION" ] ; then
+	problems "Unable to look up AWS Region"
+    fi
+    RDS_ARN="arn:aws:rds:${REGION}:${ACCOUNT_ID}:db:roombaht"
+    ROOMBAHT_DB_HOST="$(aws rds describe-db-instances --region "${REGION}" --db-instance-identifier "${RDS_ARN}" --query 'DBInstances[0].Endpoint.Address' --output text 2> /dev/null)"
+    if [ -z "$ROOMBAHT_DB_HOST" ] ; then
+	problems "Unable to look up RDS Address"
+    fi
+    SECRET_ARN="$(aws rds describe-db-instances --region "${REGION}" --db-instance-identifier "${RDS_ARN}" --query 'DBInstances[0].MasterUserSecret.SecretArn' --output text 2> /dev/null)"
+    if [ -z "$SECRET_ARN" ] ; then
+	problems "Unable to look up RDS Auth ARN"
+    fi
+    PGPASSWORD="$(aws secretsmanager get-secret-value --secret-id "${SECRET_ARN}" --region "${REGION}" --query SecretString --output text | jq -Mr '.password')"
+    if [ -z "$PGPASSWORD" ] ; then
+	problems "Unable to look up RDS Password"
+    fi
+    export PGPASSWORD
+}
+
 # wipe the database if present
 db_wipe() {
-    if psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
-	dropdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    if psql -h "$ROOMBAHT_DB_HOST" -U root -l | grep -q "$ROOMBAHT_DB" ; then
+	dropdb -h "$ROOMBAHT_DB_HOST" -U root "$ROOMBAHT_DB"
     fi
 }
 
 # clone production into a new db
 db_clone() {
-    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$SOURCE_DB" "$ROOMBAHT_DB"
+    createdb -h "$ROOMBAHT_DB_HOST" -U root -T "$SOURCE_DB" "$ROOMBAHT_DB"
 }
 
 # clone db into snapshot
 db_snapshot() {
     local DEST_DB="${ROOMBAHT_DB}-${NOW}"
-    createdb -h "$ROOMBAHT_DB_HOST" -U postgres -T "$ROOMBAHT_DB" "$DEST_DB"
+    createdb -h "$ROOMBAHT_DB_HOST" -U root -T "$ROOMBAHT_DB" "$DEST_DB"
 }
 
 # create database if needed and then issue migrations
 db_migrate() {
-    if ! psql -h "$ROOMBAHT_DB_HOST" -U postgres -l | grep -q "$ROOMBAHT_DB" ; then
-	createdb -h "$ROOMBAHT_DB_HOST" -U postgres "$ROOMBAHT_DB"
+    if ! psql -h "$ROOMBAHT_DB_HOST" -U root -l | grep -q "$ROOMBAHT_DB" ; then
+	createdb -h "$ROOMBAHT_DB_HOST" -U root "$ROOMBAHT_DB"
     fi
     systemctl stop roombaht
     "/opt/roombaht-backend/venv/bin/python3" \
@@ -74,7 +101,7 @@ db_migrate() {
 backend_venv() {
     LAST_DEPLOY="$(find /opt -name 'roombaht-backend-*' -type d | sort | tail -n 1)"
     if [ -d "${LAST_DEPLOY}/venv" ] ; then
-	find "${LAST_DEPLOY}/venv" -name \*.pyc | xargs rm
+	find "${LAST_DEPLOY}/venv" -name \*.pyc | xargs --no-run-if-empty rm
 	sudo -u roombaht -- cp -r "${LAST_DEPLOY}/venv" "${BACKEND_DIR}/"
 	chown -R roombaht: "${BACKEND_DIR}/venv"
     fi
@@ -104,9 +131,7 @@ backend_config() {
     sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
 	-e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
 	-e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
-	-e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
 	-e "s/@DB_NAME@/${ROOMBAHT_DB}/" \
-	-e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
 	-e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
 	-e "s%@TEMP@%${ROOMBAHT_TMP}%" \
 	-e "s/@JWT_KEY@/${ROOMBAHT_JWT_KEY}/" \
@@ -125,9 +150,7 @@ backend_config() {
     sed -e "s/@SECRET_KEY@/${ROOMBAHT_DJANGO_SECRET_KEY}/" \
 	-e "s/@EMAIL_HOST_USER@/${ROOMBAHT_EMAIL_HOST_USER}/" \
 	-e "s/@EMAIL_HOST_PASSWORD@/${ROOMBAHT_EMAIL_HOST_PASSWORD}/" \
-	-e "s/@DB_PASSWORD@/${ROOMBAHT_DB_PASSWORD}/" \
 	-e "s/@DB_NAME@/${ROOMBAHT_DB}/" \
-	-e "s/@DB_HOST@/${ROOMBAHT_DB_HOST}/" \
 	-e "s/@SEND_MAIL@/${ROOMBAHT_SEND_MAIL}/" \
 	-e "s%@TEMP@%${ROOMBAHT_TMP}%" \
 	-e "s/@JWT_KEY@/${ROOMBAHT_JWT_KEY}/" \
@@ -182,7 +205,6 @@ ACTION="$1"
 shift
 # shellcheck disable=SC1090
 source "$ENV_FILE"
-export PGPASSWORD="$ROOMBAHT_DB_PASSWORD"
 
 # FOR NOW
 if [ "$ROOMBAHT_DB" == "production" ] ; then
@@ -212,33 +234,39 @@ elif [ "$ACTION" == "clone_db" ] ; then
 		;;
 	esac
     done
+    db_connection
     db_wipe
     db_clone
 elif [ "$ACTION" == "wipe" ] ; then
+    db_connection
     db_wipe
     db_migrate
 elif [ "$ACTION" == "snapshot" ] ; then
+    db_connection
     db_snapshot
 elif [ "$ACTION" == "manage" ] ; then
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" $*
 elif [ "$ACTION" == "deploy" ] ; then
+    nginx_config
+    frontend_deploy
     backend_deploy
     backend_venv
     backend_config
+    db_connection
     db_migrate
-    frontend_deploy
-    nginx_config
 elif [ "$ACTION" == "quick_deploy" ] ; then
     backend_deploy
     backend_config
     frontend_deploy
 elif [ "$ACTION" == "rooms" ] ; then
+    set -x
     ROOM_FILE="$1"
     shift
     if [ ! -e "$ROOM_FILE" ] ; then
 	problems "Unable to find ${ROOM_FILE}"
     fi
+    db_connection
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" \
 	create_rooms "$ROOM_FILE" $*
