@@ -23,6 +23,40 @@ export default class MyRoomsTable extends React.Component {
     jwt: ""
   }
 
+  loadMyRooms() {
+    const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if (jwt === null) {
+      this.setState({error: 'auth'});
+      return;
+    }
+    console.log("DERP");
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
+      jwt: jwt["jwt"]
+    })
+      .then(res => {
+        const data = JSON.parse(res.data)
+        console.log(JSON.parse(JSON.stringify(data)));
+        this.state.rooms = data.rooms;
+	this.state.swaps_enabled = data.swaps_enabled;
+        this.setState({ data  });
+      })
+      .catch((error) => {
+        this.setState({errorMessage: error.message});
+        if (error.response) {
+	  if (error.response.status === 401) {
+	    this.setState({error: 'auth'});
+	  } else {
+	    console.log(error.response);
+	    console.log("server responded");
+	  }
+        } else if (error.request) {
+          console.log("network error");
+        } else {
+          console.log(error);
+        }
+      });
+  }
+
   storyHeaderFactory(swaps_enabled) {
     let STORY_HEADERS: TableColumnType<ArrayElementType>[] = [
         {
@@ -37,13 +71,13 @@ export default class MyRoomsTable extends React.Component {
         {
           prop: "button",
           cell: (row) => (
-            <ModalCreateCode row={row} swaps_enabled={swaps_enabled}/>
+            <ModalCreateCode row={row} swaps_enabled={swaps_enabled} onExited={() => this.loadMyRooms() }/>
           )
         },
         {
           prop: "button",
           cell: (row) => (
-            <ModalEnterCode row={row} swaps_enabled={swaps_enabled}/>
+            <ModalEnterCode row={row} swaps_enabled={swaps_enabled} onExited={() => this.loadMyRooms() }/>
           )
         },
       ];
@@ -51,37 +85,7 @@ export default class MyRoomsTable extends React.Component {
   };
 
   componentDidMount() {
-    const jwt = JSON.parse(localStorage.getItem('jwt'));
-    if (jwt === null) {
-      this.setState({error: 'auth'});
-      return;
-    }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
-            jwt: jwt["jwt"]
-      })
-      .then(res => {
-        const data = JSON.parse(res.data)
-        console.log(JSON.parse(JSON.stringify(data)));
-        this.state.rooms = data.rooms;
-	this.state.swaps_enabled = data.swaps_enabled;
-        this.setState({ data  });
-
-      })
-      .catch((error) => {
-        this.setState({errorMessage: error.message});
-        if (error.response) {
-	  if (error.response.status === 401) {
-	    this.setState({error: 'auth'});
-	  } else {
-            console.log(error.response);
-            console.log("server responded");
-	  }
-        } else if (error.request) {
-          console.log("network error");
-        } else {
-          console.log(error);
-        }
-      });
+    this.loadMyRooms();
   }
 
 

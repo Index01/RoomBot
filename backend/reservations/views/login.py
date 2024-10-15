@@ -64,7 +64,8 @@ def login(request):
                                   algorithm="HS256")
                 logger.info("[+] Admin login success for %s", admin.email)
                 update_last_login(admin.guest)
-                return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
+                body = str(json.dumps({"jwt": resp, "admin": True}))
+                return Response(body, status=status.HTTP_201_CREATED)
 
         # Check if login attempt is guest
         for guest in guest_email:

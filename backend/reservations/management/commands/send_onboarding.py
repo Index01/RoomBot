@@ -4,43 +4,26 @@ import sys
 import time
 from  django import settings
 from django.core.management.base import BaseCommand, CommandError
+from jinja2 import Environment, PackageLoader
 import reservations.config as roombaht_config
-from reservations.models import Guest
+from reservations.models import Guest, Room
 from reservations.helpers import my_url, send_email
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 logger = logging.getLogger(__name__)
 
-def onboarding_email(email, otp):
-    hostname = my_url()
-    body_text = f"""
-        BleepBloopBleep!
-
-        This is the Room Service RoomBaht. I'm an automated tool for swapping rooms in Bally's. The floors have been cleaned and you have been assigned a room! No bucket or mop needed.
-
-        After you login below, you can view where your room is placed, look at each floor's layout, and send swap requests to other rooms.  You can only swap rooms until Sunday, November 5, at 5pm PST, so please make sure you are happy with the room you have or swap swiftly.
-
-        Here's how to swap rooms with someone:
-        1. Find a room you want to swap with (it must be the same room type).
-        2. Click "SendSwapRequest" and enter in how you'd like the other room's owner to contact you—probably your email address or phone number. You can send swap requests to many rooms, but you can only swap with one of them.
-        3. The owner of the room you want will contact you. Or not. If you already know who they are, you can reach out directly.
-        4. If you both agree to swap rooms, login (link below) and find the room you want to swap under "My Rooms."
-        5. Click CreateSwapCode. Give this swap code to the other person.
-        6. The other person has 10 minutes to log into Roombaht, click "EnterSwapCode" for the room that they are swapping with you, and enter the swap code.
-        7. After swapping, refresh your browser and you should see your new room.
-        8. Magic intradimensional elves will hop around and inform you of your success. And you will have the new room of your dreams!
-
-        This is your password. There are many like it, but this one is yours.
-        It should go without saying, but don't forward this email.
-
-        Copy and paste this password. Because let's face it, no one should trust humans to make passwords:
-        username: {email}
-        password: {otp}
-        login page: {hostname}/login
-
-        Good Luck, Starfighter.
-
-    """
+def onboarding_email(email, otp, rooms):
+    jenv = Environment(loader=PackageLoader('reservations'))
+    template = jenv.get_template('onboarding.j2')
+    objz = {
+        'hostname': my_url(),
+        'email': email,
+        'otp': otp,
+        'rooms': rooms,
+        'deadline': 'Wednesday, November 6th, 2024 at 5pm PST',
+        'can_swap': len([x for x in rooms if x.is_swappable]) > 0
+    }
+    body_text = template.render(objz)
     send_email([email],
                'RoomService RoomBaht - Account Activation',
                body_text)
@@ -75,7 +58,12 @@ class Command(BaseCommand):
                 if not settings.SEND_ONBOARDING:
                     logger.debug("Not actually sending onboarding email to %s", email)
                 else:
-                    onboarding_email(email, guests[0].jwt)
+                    all_guest_rooms = []
+                    for guest in guests:
+                        for guest_rooms in Room.objects.filter(guest=guest.id):
+                            all_guest_rooms.append(guest_rooms)
+
+                    onboarding_email(email, guests[0].jwt, all_guest_rooms)
 
             not_onboarded = [x for x in guests if not x.onboarding_sent]
             if len(not_onboarded) > 0:

@@ -61,7 +61,11 @@ export function ModalRequestSwap(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -152,12 +156,15 @@ export function ModalEnterCode(props) {
       .then(res => {
         setPhrase(res.data);
         handleClose();
-        window.location = "/rooms"
       })
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -183,7 +190,7 @@ export function ModalEnterCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.cooldown ? "outline-info" : props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
           EnterSwapCode
       </Button>
        :
@@ -192,7 +199,7 @@ export function ModalEnterCode(props) {
       </Button>
       }
 
-      <Modal show={show} onHide={handleClose}>
+      <Modal show={show} onHide={handleClose} onExited={props.onExited}>
         <Modal.Header closeButton>
           <Modal.Title>RoomService Room Trader</Modal.Title>
         </Modal.Header>
@@ -222,16 +229,43 @@ export function ModalEnterCode(props) {
 }
 
 export function ModalCreateCode(props) {
+  var refreshTimer = null;
   const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
   const [phrase, setPhrase] = useState("");
 
   const jwt = JSON.parse(localStorage.getItem('jwt'));
   const row = props.row.number;
+  const handleClose = () => {
+    if ( refreshTimer !== null ) {
+      clearInterval(refreshTimer);
+    }
+    setShow(false);
+  }
+  const handleShow = () => {
+    refreshTimer = setInterval(() =>
+      {
+	axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
+	  jwt: jwt["jwt"]
+	})
+	  .then(res => {
+	    const data = JSON.parse(res.data);
+	    var hasSwapped = true;
+	    data.rooms.forEach((room) => {
+	      if (room.number == row) {
+		hasSwapped = false;
+	      }
+	    });
+	    if (hasSwapped) {
+	      handleClose();
+	    }
+	  })
+
+      }, 5000);
+    setShow(true);
+  }
   const handleAPICall = () => {
 
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000//api/swap_gen/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_gen/", {
             jwt: jwt['jwt'],
             number: {row},
       })
@@ -243,7 +277,11 @@ export function ModalCreateCode(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -262,7 +300,7 @@ export function ModalCreateCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.cooldown ? "outline-info" : props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
           CreateSwapCode
       </Button>
        :
@@ -271,7 +309,7 @@ export function ModalCreateCode(props) {
       </Button>
       }
 
-      <Modal show={show} onHide={handleClose}>
+      <Modal show={show} onHide={handleClose} onExited={props.onExited}>
 
         <Modal.Header closeButton>
           <Modal.Title>RoomService Swapcode Generator</Modal.Title>
