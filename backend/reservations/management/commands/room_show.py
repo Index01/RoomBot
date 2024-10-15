@@ -84,3 +84,9 @@ class Command(BaseCommand):
 
         if room.guest_notes:
             self.stdout.write(f"Guest notes: {room.guest_notes}")
+
+        if room.swap_code:
+            self.stdout.write("Room swap is pending. ")
+
+        if room.swap_time:
+            self.stdout.write(f"Room last swapped {room.swap_time.strftime('%H:%M%p %Z on %b %d, %Y')}")

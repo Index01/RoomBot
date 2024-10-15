@@ -44,7 +44,8 @@ def my_rooms(request):
         data = {
             'rooms': [{"number": int(room.number),
                        "type": room.name_take3,
-                       "swappable": room.swappable()} for room in rooms_mine],
+                       "swappable": room.swappable() and not room.cooldown(),
+                       "cooldown": room.cooldown()} for room in rooms_mine],
             'swaps_enabled': roombaht_config.SWAPS_ENABLED
         }
 
@@ -81,7 +82,8 @@ def room_list(request):
             try:
                 guest_room = Room.objects.get(number=guest_room_number, name_hotel='Ballys')
                 if guest_room.name_take3 not in room_types \
-                   and guest_room.swappable():
+                   and guest_room.swappable() \
+                   and not guest_room.cooldown():
                     room_types.append(guest_room.name_take3)
             except Room.ObjectNotFound:
                 logger.warning("Guest room %s not found for %s", guest_room_number, email)
@@ -197,6 +199,10 @@ def swap_request(request):
             return Response(f"Room {swap_room.number} is not swappable",
                             status=status.HTTP_400_BAD_REQUEST)
 
+        if swap_room.cooldown():
+            return Response(f"Room {swap_room.number} was swapped too recently",
+                            status=status.HTTP_400_BAD_REQUEST)
+
         requester_swappable = []
         for room_number in requester_room_numbers:
             try:
@@ -267,7 +273,13 @@ def swap_gen(request):
             guest_id = guest_instances[0].id
         except IndexError as e:
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
+
         room = Room.objects.get(number=room_num, name_hotel='Ballys')
+
+        if room.cooldown():
+            return Response(f"Room {room.number} was swapped too recently",
+                            status=status.HTTP_400_BAD_REQUEST)
+
         phrase=phrasing()
         room.swap_code=phrase
         room.swap_time=make_aware(datetime.datetime.utcnow())
@@ -317,9 +329,13 @@ def swap_it_up(request):
 
         expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=3600)
 
-        if(expiration.timestamp() < make_aware(datetime.datetime.utcnow()).timestamp()):
+        if (expiration.timestamp() < make_aware(datetime.datetime.utcnow()).timestamp()):
             logger.warning("[-] Expired swap code")
             return Response("Expired code", status=status.HTTP_400_BAD_REQUEST)
+
+        if swap_room_mine.cooldown():
+            return Response(f"Room {swap_room_mine.number} was swapped too recently",
+                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             Room.swap(swap_room_theirs, swap_room_mine)
@@ -327,7 +343,6 @@ def swap_it_up(request):
             return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
 
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_theirs} {swap_room_mine}")
-
         diff_swaps(swap_room_theirs, swap_room_mine)
 
         return Response(status=status.HTTP_201_CREATED)

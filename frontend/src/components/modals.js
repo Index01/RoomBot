@@ -61,7 +61,11 @@ export function ModalRequestSwap(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -156,7 +160,11 @@ export function ModalEnterCode(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -182,7 +190,7 @@ export function ModalEnterCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.cooldown ? "outline-info" : props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleShow}>
           EnterSwapCode
       </Button>
        :
@@ -269,7 +277,11 @@ export function ModalCreateCode(props) {
       .catch((error) => {
         if (error.response) {
 	  if ( error.response.status == 400 ) {
-	    swapError("Unacceptable swap requested")
+	    var msg = "Unacceptable swap requested";
+	    if (error.response.data) {
+	      msg = msg + ": " + error.response.data;
+	    }
+	    swapError(msg);
 	  } else {
             console.log("server responded");
             console.log(error.response.data);
@@ -288,7 +300,7 @@ export function ModalCreateCode(props) {
   return (
     <>
       {props.swaps_enabled ?
-       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
+       <Button disabled={props.row.swappable ? false : true} size="sm" variant={props.row.cooldown ? "outline-info" : props.row.swappable ? "outline-primary" : "outline-secondary"} onClick={handleAPICall}>
           CreateSwapCode
       </Button>
        :
