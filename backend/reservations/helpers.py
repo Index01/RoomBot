@@ -132,7 +132,8 @@ def send_email(addresses, subject, body, attachments=[]):
                 real_addresses.append(f"{dev_address}+{email_address}@{dev_host}")
             else:
                 # otherwise just pretend to send the email
-                logger.debug("Not really sending noop dot com email to %s, subject: %s", address, subject)
+                logger.debug("Not really sending noop dot com email to %s, subject: %s",
+                             address, subject)
                 return
 
     msg = EmailMessage(subject=subject,
