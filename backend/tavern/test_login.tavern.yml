@@ -1,0 +1,41 @@
+---
+test_name: "backend api login flow"
+stages:
+  - name: "can pull down login information"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "GET"
+    response:
+      status_code: 200
+
+  - name: "can login as admin and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "abunchoflettersandnumbershere082840220aojdsof"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                admin:
+                  type: "bool"
+                  required: true
+                jwt:
+                  type: "str"
+                  required: true

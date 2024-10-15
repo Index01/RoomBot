@@ -13,5 +13,3 @@ class GuestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
         fields = ('name', 'email', 'ticket', 'invitation', 'room_number')
-
-
