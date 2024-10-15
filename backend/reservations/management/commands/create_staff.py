@@ -21,7 +21,9 @@ class Command(BaseCommand):
             otp = phrasing()
             staff = User(username=staff_new['name'],
                          email=staff_new['email'],
-                         password=otp)
+                         password=otp,
+                         is_staff=True,
+                         is_superuser=staff_new['is_admin'])
             staff.save()
 
             self.stdout.write(f"Created staff: {staff_new['name']}, admin: {staff_new['is_admin']}")

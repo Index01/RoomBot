@@ -3,10 +3,11 @@ import logging
 import jwt
 import sys
 from django.utils.timezone import make_aware
+from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.response import Response
 import reservations.config as roombaht_config
-from reservations.models import Guest, Staff
+from reservations.models import Guest
 from reservations.helpers import send_email, phrasing
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
@@ -46,14 +47,14 @@ def authenticate_admin(request):
     if not auth_obj or 'email' not in auth_obj:
         return None
 
-    staff = None
+    admin_user = None
     try:
-        staff = Staff.objects.get(email=auth_obj['email'])
-    except Staff.DoesNotExist:
+        admin_user = User.objects.get(email=auth_obj['email'])
+    except User.DoesNotExist:
         logger.warning("[-] No staff found. email:%s ip:%s", auth_obj['email'], request.META['REMOTE_ADDR'])
         return None
 
-    if staff.is_admin:
+    if admin_user.is_staff:
         auth_obj['admin'] = True
 
     return auth_obj

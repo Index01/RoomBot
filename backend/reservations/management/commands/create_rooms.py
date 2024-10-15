@@ -5,7 +5,7 @@ from fuzzywuzzy import fuzz
 from django.core.management.base import BaseCommand, CommandError
 from pydantic import ValidationError
 from reservations.helpers import ingest_csv, real_date
-from reservations.models import Room, Guest, Staff
+from reservations.models import Room, Guest
 from reservations.helpers import send_email, phrasing, my_url, ingest_csv
 import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
@@ -306,7 +306,6 @@ class Command(BaseCommand):
 
         if not kwargs['preserve']:
             if len(Room.objects.all()) > 0 or \
-               len(Staff.objects.all()) > 0 or \
                len(Guest.objects.all()) > 0:
                 if not kwargs['force']:
                     print('Wipe data? [y/n]')
@@ -316,7 +315,6 @@ class Command(BaseCommand):
                     self.stderr.write('Wiping all data at user request!')
 
             Room.objects.all().delete()
-            Staff.objects.all().delete()
             Guest.objects.all().delete()
         else:
             if kwargs['dry_run']:
