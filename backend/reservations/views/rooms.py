@@ -3,7 +3,7 @@ import logging
 import json
 import datetime
 import sys
-from django.conf import settings
+from constance import config
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -44,7 +44,7 @@ def my_rooms(request):
                        "type": room.name_take3,
                        "swappable": room.swappable() and not room.cooldown(),
                        "cooldown": room.cooldown()} for room in rooms_mine],
-            'swaps_enabled': settings.config.SWAPS_ENABLED
+            'swaps_enabled': config.SWAPS_ENABLED
         }
 
         response = json.dumps(data, indent=2)
@@ -93,7 +93,7 @@ def room_list(request):
         serializer = RoomSerializer(not_my_rooms, context={'request': request}, many=True)
         data = {
             'rooms': serializer.data,
-            'swaps_enabled': settings.SWAPS_ENABLED
+            'swaps_enabled': config.SWAPS_ENABLED
         }
 
         for room in data['rooms']:
@@ -102,7 +102,7 @@ def room_list(request):
             elif(len(room['number'])==4):
                 room["floorplans"]=FLOORPLANS[int(room["number"][:2])]
 
-            if settings.SWAPS_ENABLED and room['name_take3'] in room_types:
+            if config.SWAPS_ENABLED and room['name_take3'] in room_types:
                 room['available']=True
             else:
                 room['available']=False
@@ -173,7 +173,7 @@ def swap_request(request):
 
         data = request.data
 
-        if not settings.SWAPS_ENABLED:
+        if not config.SWAPS_ENABLED:
             return Response("Room swaps are not currently enabled",
                             status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -255,7 +255,7 @@ def swap_gen(request):
             return unauthenticated()
         email = auth_obj['email']
 
-        if not settings.SWAPS_ENABLED:
+        if not config.SWAPS_ENABLED:
             return Response("Room swaps are not currently enabled",
                             status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -296,7 +296,7 @@ def swap_it_up(request):
             return unauthenticated()
         email = auth_obj['email']
 
-        if not settings.SWAPS_ENABLED:
+        if not config.SWAPS_ENABLED:
             return Response("Room swaps are not currently enabled",
                             status=status.HTTP_501_NOT_IMPLEMENTED)
 

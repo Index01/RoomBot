@@ -168,9 +168,6 @@ EMAIL_HOST_PASSWORD = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
 # real time config
 CONSTANCE_BACKEND='constance.backends.database.DatabaseBackend'
 
-PARTY_APP = True
-WAITTIME_APP = True
-
 CONSTANCE_CONFIG = {
     'SWAPS_ENABLED': (False,
                       'Enable Room Swaps'),
@@ -180,5 +177,9 @@ CONSTANCE_CONFIG = {
     'PARTY_APP': (True,
                   'Enable "where the party at" App'),
     'WAITTIME_APP': (True,
-                     'Enable "wait time" App')
+                     'Enable "wait time" App'),
+    'ROOM_COOLDOWN': (900,
+                      'Cooldown time between room swaps'),
+    'IGNORE_TRANSACTIONS': ('',
+                            'CSV list of transactions to ignore')
 }
