@@ -3,12 +3,13 @@ import logging
 import sys
 from fuzzywuzzy import fuzz
 from django.core.management.base import BaseCommand, CommandError
+from pydantic import ValidationError
 from reservations.helpers import ingest_csv, real_date
 from reservations.models import Room, Guest, Staff
 from reservations.helpers import send_email, phrasing, my_url, ingest_csv
 import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
-from reservations.ingest_models import RoomPlacementListIngest, ValidationError
+from reservations.ingest_models import RoomPlacementListIngest
 from reservations.management import getch
 
 def changes(room):
@@ -28,10 +29,10 @@ def debug(cmd, args, msg):
 def create_rooms_main(cmd, args):
     rooms_file = args['rooms_file']
     hotel = None
-    if args['hotel_name'] == 'ballys':
+    if args['hotel_name'].lower() == 'ballys':
         hotel = "Ballys"
-    elif args['hotel_name'] == 'hardrock':
-        hotel = 'Hard Rock'
+    elif args['hotel_name'].lower() == 'nugget':
+        hotel = 'Nugget'
     else:
         raise Exception(f"Unknown hotel name {args['hotel_name']}specified")
 
@@ -151,7 +152,7 @@ def create_rooms_main(cmd, args):
                     room.primary = primary_name.title()
 
             if elem.placed_by == '':
-                cmd.stderr.write("Room {room.number} Reserved w/o placer")
+                cmd.stderr.write(f"Room {room.number} Reserved w/o placer")
 
             if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:
                 room.is_placed = True
@@ -272,7 +273,7 @@ class Command(BaseCommand):
                             default=False)
         parser.add_argument('--hotel-name',
                             default="ballys",
-                            help='Specify hotel name (ballys, hardrock)')
+                            help='Specify hotel name (ballys, nugget)')
         parser.add_argument('--preserve',
                             dest='preserve',
                             action='store_true',

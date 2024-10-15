@@ -5,6 +5,7 @@ import logging
 import jwt
 import datetime
 import json
+import re
 import string
 import sys
 
@@ -18,6 +19,7 @@ from fuzzywuzzy import process, fuzz
 from ..models import Staff
 from ..models import Guest
 from ..models import Room
+from ..models import UnknownProductError
 from .rooms import phrasing
 from ..reporting import (dump_guest_rooms, diff_latest,
                          hotel_export, diff_swaps_count, rooming_list_export)
@@ -503,6 +505,7 @@ def create_guests(request):
             return unauthenticated()
 
         _guest_fields, original_guests = ingest_csv(guests_csv)
+
         guest_rows = [SecretPartyGuestIngest(**guest) for guest in original_guests]
         # actually keep some metrics here
         room_counts = RoomCounts()
@@ -529,16 +532,16 @@ def run_reports(request):
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
         guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
-        hardrock_export_file = hotel_export('Hard Rock')
+        nugget_export_file = hotel_export('Nugget')
         ballys_roomslist_file = rooming_list_export("Ballys")
-        hardrock_roomslist_file = rooming_list_export("Hard Rock")
+        nugget_roomslist_file = rooming_list_export("Nugget")
         attachments = [
             guest_dump_file,
             room_dump_file,
             ballys_export_file,
-            hardrock_export_file,
+            nugget_export_file,
             ballys_roomslist_file,
-            hardrock_roomslist_file
+            nugget_roomslist_file
         ]
         if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
             attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
@@ -626,7 +629,14 @@ def guest_file_upload(request):
 
         rows = data['guest_list'].split('\n')
         new_guests = []
-        guest_fields, guests = ingest_csv(rows)
+        guest_fields, original_guests = ingest_csv(rows)
+        guests = []
+
+        # figure out how to handle sku/product consistently between years
+        for o_guest in original_guests:
+            raw_product = o_guest['product']
+            o_guest['product'] = re.sub(r'[\d\.]+ RS24 ', '', raw_product)
+            guests.append(o_guest)
 
         # basic input validation, make sure it's the right csv
         if 'ticket_code' not in guest_fields or \
@@ -641,7 +651,16 @@ def guest_file_upload(request):
 
         for guest in guests:
             # we only care about these hotels
-            if Room.derive_hotel(guest['product']) not in roombaht_config.GUEST_HOTELS:
+            try:
+                if Room.derive_hotel(guest['product']) not in roombaht_config.GUEST_HOTELS:
+                    logger.debug("Unable to derive hotel for tx %s: %s",
+                                 guest['ticket_code'],
+                                 guest['product'])
+                    continue
+            except UnknownProductError as erp:
+                logger.debug("Non-room product for tx %s: %s",
+                               guest['ticket_code'],
+                               erp.product)
                 continue
 
             # if we don't know the product, drop it

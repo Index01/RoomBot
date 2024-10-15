@@ -29,10 +29,13 @@ class SubmitForm extends React.Component {
         else{
             axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/", guest )
             .then(res=>{
-                window.localStorage.setItem('jwt', res.data);
-                console.log(res);
-                console.log(res.data);
-                window.location = "/rooms"
+	      var json_res = JSON.parse(res.data);
+              window.localStorage.setItem('jwt', JSON.stringify({'jwt': json_res.jwt}));
+                if (json_res.admin) {
+		  window.location = "/admin";
+	        } else {
+                  window.location = "/rooms";
+	        }
             })
 	    .catch((error) => {
 	      if (error.response) {
