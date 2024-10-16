@@ -1,3 +1,7 @@
+import datetime
+import logging
+import sys
+from django.utils.timezone import make_aware
 from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -5,9 +9,6 @@ from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
 import reservations.config as roombaht_config
-import datetime
-import logging
-import sys
 
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 logger = logging.getLogger('__name__')
@@ -130,6 +131,15 @@ class Room(DirtyFieldsMixin, models.Model):
             and self.is_swappable \
             and (not self.is_special)
 
+    def cooldown(self):
+        if not self.swap_time:
+            return False
+
+        chill_time = self.swap_time \
+            + datetime.timedelta(seconds=roombaht_config.ROOM_COOLDOWN)
+        right_now = make_aware(datetime.datetime.utcnow())
+        return chill_time.timestamp() > right_now.timestamp()
+
     def hotel_sku(self):
         sku = None
         if self.name_take3 == 'Queen':
@@ -186,9 +196,6 @@ class Room(DirtyFieldsMixin, models.Model):
         if product.lower().startswith('bally'):
             return 'Ballys'
 
-        if product.lower().startswith('art room bally'):
-            return 'Ballys'
-
         raise UnknownProductError(product)
 
     @staticmethod
@@ -242,6 +249,10 @@ class Room(DirtyFieldsMixin, models.Model):
         room_one_sp_ticket_id = room_one.sp_ticket_id
         room_one.sp_ticket_id = room_two.sp_ticket_id
         room_two.sp_ticket_id = room_one_sp_ticket_id
+
+        # we force this for both rooms to enable swap cooldown time
+        room_one.swap_time = make_aware(datetime.datetime.utcnow())
+        room_two.swap_time = make_aware(datetime.datetime.utcnow())
 
         room_two.save()
         room_one.save()

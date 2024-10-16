@@ -16,6 +16,12 @@ JWT_KEY = os.environ['ROOMBAHT_JWT_KEY']
 
 TEMP_DIR = os.environ.get('ROOMBAHT_TMP', '/tmp')
 
-GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys').split(',')
+IGNORE_TRANSACTIONS = os.environ.get('ROOMBAHT_IGNORE_TRANSACTIONS', '').split(',')
+SWAPS_ENABLED = os.environ.get('ROOMBAHT_SWAPS_ENABLED', 'true').lower() == 'true'
+GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys,Nugget').split(',')
 
 VERSION = impresources.read_text(reservations, "version")
+
+FEATURES = os.environ.get('ROOMBAHT_FEATURES', '').split(',')
+
+ROOM_COOLDOWN = int(os.environ.get('ROOMBAHT_ROOM_COOLDOWN', 900))

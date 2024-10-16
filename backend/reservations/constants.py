@@ -14,8 +14,7 @@ ROOM_LIST = {
     ],
 
     "Double Queen Beds Lake View": [
-        'Nugget - Lakeview 2 Queens',
-        'Nugget - Lakeview 2 Queens (Post Sale)'
+        'Nugget - Lakeview 2 Queens'
     ],
 
     'Queen Sierra Suite': [
