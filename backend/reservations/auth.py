@@ -6,6 +6,7 @@ from django.utils.timezone import make_aware
 from rest_framework import status
 from rest_framework.response import Response
 import reservations.config as roombaht_config
+from jinja2 import Environment, PackageLoader
 from reservations.models import Guest, Staff
 from reservations.helpers import send_email, phrasing
 
@@ -62,8 +63,13 @@ def unauthenticated():
     return Response("[-] Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
 
 def reset_otp(email):
+    jenv = Environment(loader=PackageLoader('reservations'))
+    template = jenv.get_template('reset.j2')
     new_pass = phrasing()
-    body_text = f"Hi I understand you requested a RoomService Roombaht password reset?\nHere is your shiny new password: {new_pass}\n\nIf you did not request this reset there must be something strange happening in the neghborhood. Please report any suspicious activity.\nGood luck."
+    objz = {
+        'new_pass': new_pass
+    }
+    body_text = template.render(objz)
     guests = Guest.objects.filter(email=email, can_login=True)
     if guests.count() > 0:
         logger.info("Resetting password for %s", email)
@@ -77,4 +83,4 @@ def reset_otp(email):
                        )
 
     else:
-        logger.warning("Password reset for unknwon user %s", email)
+        logger.warning("Password reset for unknown user %s", email)

@@ -11,16 +11,14 @@ from reservations.helpers import my_url, send_email
 logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 logger = logging.getLogger(__name__)
 
-def onboarding_email(email, otp, rooms):
+def onboarding_email(email, otp):
     jenv = Environment(loader=PackageLoader('reservations'))
     template = jenv.get_template('onboarding.j2')
     objz = {
         'hostname': my_url(),
         'email': email,
         'otp': otp,
-        'rooms': rooms,
-        'deadline': 'Wednesday, November 6th, 2024 at 5pm PST',
-        'can_swap': len([x for x in rooms if x.is_swappable]) > 0
+        'deadline': 'Wednesday, November 6th, 2024 at 5pm PST'
     }
     body_text = template.render(objz)
     send_email([email],
@@ -35,7 +33,7 @@ class Command(BaseCommand):
                             default=roombaht_config.ONBOARDING_BATCH)
 
     def handle(self, *args, **kwargs):
-        emails = Guest.objects \
+        guest_emails = Guest.objects \
             .filter(onboarding_sent=False,
                     room_number__isnull=False,
                     can_login=True) \
@@ -43,7 +41,15 @@ class Command(BaseCommand):
             .values('email') \
             .distinct()[:int(kwargs['batch_size'])]
 
-        emails_length = emails.count()
+        emails = []
+        for guest in guest_emails:
+            rooms = Room.objects \
+                        .filter(is_placed=False,
+                                name_hotel='Ballys')
+            if len(rooms) > 0:
+                emails.append(guest)
+
+        emails_length = len(emails)
         logger.debug("Found %s guests who have not had a onboarding email sent", emails_length)
 
         if emails_length == 0:
@@ -57,12 +63,7 @@ class Command(BaseCommand):
                 if not roombaht_config.SEND_ONBOARDING:
                     logger.debug("Not actually sending onboarding email to %s", email)
                 else:
-                    all_guest_rooms = []
-                    for guest in guests:
-                        for guest_rooms in Room.objects.filter(guest=guest.id):
-                            all_guest_rooms.append(guest_rooms)
-
-                    onboarding_email(email, guests[0].jwt, all_guest_rooms)
+                    onboarding_email(email, guests[0].jwt)
 
             not_onboarded = [x for x in guests if not x.onboarding_sent]
             if len(not_onboarded) > 0:
