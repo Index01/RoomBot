@@ -48,3 +48,28 @@
     primary: "test user2"
     placed_by_roombot: true
     guest: 3
+
+- model: "reservations.room"
+  pk: 3
+  fields:
+    created_at: "1999-12-31T23:59:59+00:00"
+    updated_at: "1999-12-31T23:59:59+00:00"
+    number: "500"
+    name_take3: "Nugget - Standard King"
+    name_hotel: "Nugget"
+    is_available: false
+    is_swappable: true
+    is_smoking: false
+    is_lakeview: false
+    is_mountainview: false
+    is_ada: false
+    is_hearing_accessible: false
+    is_art: false
+    is_special: false
+    is_comp: false
+    is_placed: false
+    notes: "a boring test room"
+    sp_ticket_id: "SP00003"
+    primary: "test user3"
+    placed_by_roombot: true
+    guest: 4

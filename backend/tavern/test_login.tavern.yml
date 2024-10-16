@@ -23,7 +23,7 @@ stages:
         - function: tavern.helpers:validate_jwt
           extra_kwargs:
             jwt_key: "jwt"
-            key: "abunchoflettersandnumbershere082840220aojdsof"
+            key: "test"
             algorithms: "HS256"
             options:
               verify_signature: true
@@ -39,3 +39,56 @@ stages:
                 jwt:
                   type: "str"
                   required: true
+
+  - name: "can login as non-admin and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testuser2@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                jwt:
+                  type: "str"
+                  required: true
+
+  - name: "nugget user cannot log in"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testuser3@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
+  - name: "can request pw reset for valid user"
+    request:
+      url: "http://localhost:8000/api/login_reset/"
+      method: "POST"
+      json:
+        guest:
+          email: "testuser2@example.com"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201

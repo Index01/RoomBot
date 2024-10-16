@@ -16,7 +16,7 @@ stages:
         - function: tavern.helpers:validate_jwt
           extra_kwargs:
             jwt_key: "jwt"
-            key: "abunchoflettersandnumbershere082840220aojdsof"
+            key: "test"
             algorithms: "HS256"
             options:
               verify_signature: true
@@ -132,7 +132,7 @@ stages:
         - function: tavern.helpers:validate_jwt
           extra_kwargs:
             jwt_key: "jwt"
-            key: "abunchoflettersandnumbershere082840220aojdsof"
+            key: "test"
             algorithms: "HS256"
             options:
               verify_signature: true
