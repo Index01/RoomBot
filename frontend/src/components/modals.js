@@ -270,7 +270,7 @@ export function ModalCreateCode(props) {
             number: {row},
       })
       .then(res => {
-        const phrase = JSON.parse(res.data)["swap_phrase"];
+        const phrase = res.data.swap_phrase;
         setPhrase(phrase);
         handleShow();
       })

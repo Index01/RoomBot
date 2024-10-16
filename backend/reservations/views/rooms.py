@@ -49,10 +49,8 @@ def my_rooms(request):
             'swaps_enabled': roombaht_config.SWAPS_ENABLED
         }
 
-        response = json.dumps(data, indent=2)
-
         logger.debug("rooms for user %s: %s", email, rooms_mine)
-        return Response(response)
+        return Response(data)
 
 
 @api_view(['POST'])
@@ -85,7 +83,7 @@ def room_list(request):
                    and guest_room.swappable() \
                    and not guest_room.cooldown():
                     room_types.append(guest_room.name_take3)
-            except Room.ObjectNotFound:
+            except Room.DoesNotExist:
                 logger.warning("Guest room %s not found for %s", guest_room_number, email)
 
         if len(room_types) == 0:
@@ -192,7 +190,7 @@ def swap_request(request):
         swap_room = None
         try:
             swap_room = Room.objects.get(number=room_num, name_hotel='Ballys')
-        except Room.ObjectNotFound:
+        except Room.DoesNotExist:
             return Response("Room not found", status=status.HTTP_404_NOT_FOUND)
 
         if not swap_room.swappable():
@@ -209,7 +207,7 @@ def swap_request(request):
                 room = Room.objects.get(number=room_number, name_hotel='Ballys')
                 if room.name_take3 == swap_room.name_take3 and room.swappable():
                     requester_swappable.append(room_number)
-            except Room.ObjectNotFound:
+            except Room.DoesNotExist:
                 logger.warning("Guest %s has non existent room %s!",
                                requester_email, room_number)
                 continue
@@ -286,8 +284,7 @@ def swap_gen(request):
         room.save()
 
         logger.info(f"[+] Swap phrase generated {phrase}")
-        response = json.dumps({"swap_phrase": phrase}, indent=2)
-        return Response(response)
+        return Response({"swap_phrase": phrase})
 
 
 @api_view(['POST'])
