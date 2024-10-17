@@ -6,6 +6,7 @@ import json
 import datetime
 import sys
 from django.core.mail import send_mail
+from jinja2 import Environment, PackageLoader
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -221,30 +222,22 @@ def swap_request(request):
                     swap_room.guest.email,
                     msg)
 
-        hostname = my_url()
-        body_text = f"""
 
-Someone would like to trade rooms with you for Room Service. Since rooms are randomly placed, we built this tool to let people swap rooms and get the placement they want. If you are open to trading rooms, contact this person via the info below. Sort out the details with them, then one of you will generate a swap code in Roombaht and send it to the other. One person enters the other one’s swap code, switch-aroo magic happens, and you both check-in as normal to your new rooms.
-
-They may swap for rooms: {','.join(requester_swappable)}
-Contact info: {msg}
-
-After you have contacted the person asking to trade rooms with you and decided to swap, click this link to create the swap code and trade rooms: {hostname}/rooms
-
-If you have any trouble with that link, you can login from the initial email you received from RoomBaht.
-
-If you have any issues, contact placement@take3presents.com.
-
-Good Luck, Starfighter.
-
-        """
+        objz = {
+            'hostname': my_url(),
+            'contact_message': msg,
+            'room_list': requester_swappable
+        }
+        jenv = Environment(loader=PackageLoader('reservations'))
+        template = jenv.get_template('swap.j2')
+        body_text = template.render(objz)
 
         send_email([swap_room.guest.email],
                    'RoomService RoomBaht - Room Swap Request',
                    body_text)
 
-        return Response("Request sent! They will respond if interested.", status=status.HTTP_201_CREATED)
-
+        return Response("Request sent! They will respond if interested.",
+                        status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

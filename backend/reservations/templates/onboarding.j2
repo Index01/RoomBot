@@ -2,14 +2,8 @@ BleepBloopBleep!
 
 This is the Room Service RoomBaht. I'm an automated tool for swapping rooms in Bally's. The floors have been cleaned and you have been assigned a room! No bucket or mop needed.
 
-After you login below, you can view where your room is placed, {% if can_swap -%}and send swap requests to other rooms, {% endif -%}and look at each floor's layout. {% if can_swap -%}You can only swap rooms until {{deadline}}, so please make sure you are happy with the room you have or swap swiftly.{% endif -%}
+After you login below, you can view where your room is placed, and send swap requests to other rooms, and look at each floor's layout. You can only swap rooms until {{deadline}}, so please make sure you are happy with the room you have or swap swiftly.
 
-The following rooms are in your name
-{% for room in rooms %}
-* {{room.number}} {{room.name_take3}} at {{room.name_hotel}} {% if room.is_swappable -%} is swappable{% endif -%}
-{% endfor %}
-
-{% if can_swap %}
 Here's how to swap one of your rooms with someone:
 1. Find a room you want to swap with (it must be the same room type).
 2. Click "SendSwapRequest" and enter in how you'd like the other room's owner to contact you—probably your email address or phone number. You can send swap requests to many rooms, but you can only swap with one of them.
@@ -19,9 +13,6 @@ Here's how to swap one of your rooms with someone:
 6. The other person has 10 minutes to log into Roombaht, click "EnterSwapCode" for the room that they are swapping with you, and enter the swap code.
 7. After swapping, refresh your browser and you should see your new room.
 8. Magic intradimensional elves will hop around and inform you of your success. And you will have the new room of your dreams!
-{% else %}
-None of these rooms can be swapped.
-{% endif %}
 
 This is your password. There are many like it, but this one is yours.
 It should go without saying, but don't forward this email.
