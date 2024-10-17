@@ -43,6 +43,7 @@ urlpatterns = [
     re_path(r'^api/login_reset/$', login.login_reset),
     re_path(r'^api/create_guests/$', admin.create_guests),
     re_path(r'^api/run_reports/$', admin.run_reports),
+    re_path(r'^api/config/$', admin.system_config),
     re_path(r'^api/request_metrics/$', admin.request_metrics),
     re_path(r'^api/guest_upload/$', admin.guest_file_upload)
 ]

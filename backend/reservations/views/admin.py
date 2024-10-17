@@ -699,9 +699,9 @@ def guest_file_upload(request):
 
         return Response(resp, status=status.HTTP_201_CREATED)
 
-@api_view(['GET'])
-def config(request):
-    if request.method == 'GET':
+@api_view(['POST'])
+def system_config(request):
+    if request.method == 'POST':
         auth_obj = authenticate_admin(request)
         if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
             return unauthenticated()

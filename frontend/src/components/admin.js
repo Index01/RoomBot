@@ -198,20 +198,6 @@ function ReportCard() {
 }
 
 function InLineConfig() {
-  const jwt = JSON.parse(localStorage.getItem('jwt'));
-  const onClick = () => {
-    if (jwt == null) {
-      return;
-    }
-    const data = {
-      jwt: jwt["jwt"],
-    }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
-      .then((respText) => {
-      })
-      .catch((error) => {
-      });
-  };
   return (
     <Card>
       <Card.Header>Live Configuration</Card.Header>
@@ -241,8 +227,23 @@ function InLineConfig() {
 
 
 function RoombotAdmin() {
+  const jwt = JSON.parse(localStorage.getItem('jwt'));
+  const handleToggle = (key) => {
+    if (jwt == null) {
+      return;
+    }
+    const data = {
+      jwt: jwt["jwt"],
+    }
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
+      .then((respText) => {
+      })
+      .catch((error) => {
+      });
+  }
+
   return (
-    <Accordion defaultActiveKey="0">
+      <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
         <Accordion.Header>Load Rooms & Guests</Accordion.Header>
         <Accordion.Body>
@@ -260,7 +261,7 @@ function RoombotAdmin() {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header>Live Configuration</Accordion.Header>
+        <Accordion.Header onClick={handleToggle}>Live Configuration</Accordion.Header>
         <Accordion.Body>
           <div>
           <InLineConfig />
