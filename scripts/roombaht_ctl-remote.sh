@@ -211,14 +211,25 @@ if [ "$ROOMBAHT_DB" == "production" ] ; then
     problems "not yet for prod tee-hee"
 fi
 
-if [ "$ACTION" == "init" ] ; then
-    ROOM_FILE="$1"
-    STAFF_FILE="$2"
-    shift 2
-    "/opt/roombaht-backend/venv/bin/python3" \
-	"/opt/roombaht-backend/manage.py" "create_rooms" "${ROOM_FILE}" --hotel ballys
+if [ "$ACTION" == "load_staff" ] ; then
+    STAFF_FILE="/tmp/${1}"
+    shift
+    if [ ! -e "$STAFF_FILE" ] ; then
+	problems "Unable to load staff from ${STAFF_FILE}"
+    fi
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" "create_staff" "${STAFF_FILE}"
+elif [ "$ACTION" == "load_rooms" ] ; then
+    HOTEL="$1"
+    ROOM_FILE="/tmp/${2}"
+    shift
+    if [ ! -e "$ROOM_FILE" ] ; then
+	problems "Unable to load rooms from ${ROOM_FILE}"
+    fi
+    db_connection
+    "/opt/roombaht-backend/venv/bin/python3" \
+	"/opt/roombaht-backend/manage.py" \
+	create_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve --force
 elif [ "$ACTION" == "clone_db" ] ; then
     if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
 	problems "can't clone prod to prod"
@@ -259,17 +270,6 @@ elif [ "$ACTION" == "quick_deploy" ] ; then
     backend_deploy
     backend_config
     frontend_deploy
-elif [ "$ACTION" == "rooms" ] ; then
-    set -x
-    ROOM_FILE="$1"
-    shift
-    if [ ! -e "$ROOM_FILE" ] ; then
-	problems "Unable to find ${ROOM_FILE}"
-    fi
-    db_connection
-    "/opt/roombaht-backend/venv/bin/python3" \
-	"/opt/roombaht-backend/manage.py" \
-	create_rooms "$ROOM_FILE" $*
 else
     echo "invalid args"
 fi
