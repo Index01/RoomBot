@@ -8,15 +8,14 @@ import json
 import re
 import string
 import sys
-
 from random import randint
 from csv import DictReader, DictWriter
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.mail import send_mail, EmailMessage, get_connection
+from django.contrib.auth.models import User
 from fuzzywuzzy import process, fuzz
-from ..models import Staff
 from ..models import Guest
 from ..models import Room
 from ..models import UnknownProductError
@@ -530,20 +529,12 @@ def run_reports(request):
 
         logger.info("reports being run by %s", auth_obj['email'])
 
-        admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
+        admin_emails = [admin.email for admin in User.objects.filter(is_staff=True)]
         guest_dump_file, room_dump_file = dump_guest_rooms()
-        ballys_export_file = hotel_export('Ballys')
-        nugget_export_file = hotel_export('Nugget')
-        ballys_roomslist_file = rooming_list_export("Ballys")
-        nugget_roomslist_file = rooming_list_export("Nugget")
         attachments = [
             guest_dump_file,
-            room_dump_file,
-            ballys_export_file,
-            nugget_export_file,
-            ballys_roomslist_file,
-            nugget_roomslist_file
-        ]
+            room_dump_file
+        ] + [[hotel_export(x), rooming_list_export(x)] for x in roombaht_config.GUEST_HOTELS]
         if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
             attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
 
@@ -553,7 +544,7 @@ def run_reports(request):
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
                    'Your report(s) are here. *theme song for Brazil plays*',
-                   attachments)
+                   [x for x in attachments if x is not None])
 
         return Response(str(json.dumps({"admins": admin_emails})),
                         status=status.HTTP_201_CREATED)
@@ -707,3 +698,17 @@ def guest_file_upload(request):
                                }))
 
         return Response(resp, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def config(request):
+    if request.method == 'GET':
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
+        obj = {
+            'swaps_enabled': config.SWAPS_ENABLED,
+            'party_app': config.PARTY_APP,
+            'waittime_app': config.WAITTIME_APP
+        }
+
+        return Response(obj, status=status.HTTP_200_OK)

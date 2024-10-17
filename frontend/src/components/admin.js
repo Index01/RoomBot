@@ -197,6 +197,48 @@ function ReportCard() {
   );
 }
 
+function InLineConfig() {
+  const jwt = JSON.parse(localStorage.getItem('jwt'));
+  const onClick = () => {
+    if (jwt == null) {
+      return;
+    }
+    const data = {
+      jwt: jwt["jwt"],
+    }
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
+      .then((respText) => {
+      })
+      .catch((error) => {
+      });
+  };
+  return (
+    <Card>
+      <Card.Header>Live Configuration</Card.Header>
+      <Card.Body>
+        <Card.Title>Change RoomBaht Configuration</Card.Title>
+          <Form>
+            <Form.Check
+              type="switch"
+              id="config_swaps_enabled"
+              label="Swaps Enabled"
+            />
+            <Form.Check
+              type="switch"
+              id="config_party_app"
+              label="Part App Enabled"
+            />
+            <Form.Check
+              type="switch"
+              id="config_waittime_app"
+              label="Waittime App Enabled"
+            />
+          </Form>
+      </Card.Body>
+    </Card>
+  );
+}
+
 
 function RoombotAdmin() {
   return (
@@ -214,6 +256,14 @@ function RoombotAdmin() {
         <Accordion.Body>
           <div>
           <ReportCard />
+          </div>
+        </Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="2">
+        <Accordion.Header>Live Configuration</Accordion.Header>
+        <Accordion.Body>
+          <div>
+          <InLineConfig />
           </div>
         </Accordion.Body>
       </Accordion.Item>

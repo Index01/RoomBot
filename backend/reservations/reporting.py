@@ -104,7 +104,8 @@ def hotel_export(hotel):
     ]
     rooms = Room.objects.filter(name_hotel = hotel.title())
     if rooms.count() == 0:
-        raise Exception("No rooms found for hotel %s" % hotel)
+        logger.warning("No rooms found for hotel %s", hotel)
+        return None
 
     rows = []
     for room in rooms:
@@ -146,8 +147,8 @@ def hotel_export(hotel):
 def rooming_list_export(hotel):
     rooms = Room.objects.filter(name_hotel = hotel.title())
     if rooms.count() == 0:
-        msg = "No rooms found for hotel %s" % hotel
-        raise Exception("No rooms found for hotel %s" % hotel)
+        logger.warning("No rooms found for hotel %s", hotel)
+        return None
 
     cols = [
         "room_number",
@@ -194,7 +195,7 @@ def rooming_list_export(hotel):
             row['check_out_date'] = 'TBD'
         row["placed_by_roombaht"] = room.placed_by_roombot
         row["paying_guest"] = "Comp" if room.is_comp else "Yes"
-        
+
         if room.guest and room.guest.ticket:
             row['sp_ticket_id'] = room.guest.ticket
         elif room.guest and not room.guest.ticket and room.is_comp:
@@ -207,7 +208,7 @@ def rooming_list_export(hotel):
         row["is_art"] = room.is_art
 
         rows.append(row)
-        
+
     # sort by room number
     sorted_rooms = sorted(rows, key=lambda x: int(x['room_number']))
 

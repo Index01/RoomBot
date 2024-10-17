@@ -61,17 +61,6 @@ class GuestAdmin(admin.ModelAdmin):
     date_heiarchy = 'created_at'
     exclude = ['invitation', 'jwt', 'updated_at']
 
-class Staff(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    name = models.CharField("Name", max_length=240)
-    email = models.EmailField()
-    is_admin = models.BooleanField("Admin", default=False)
-    guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
-
-    def __str__(self):
-        return f'staff name: {self.name}'
-
 class Room(DirtyFieldsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -276,13 +265,15 @@ class RoomsAdmin(admin.ModelAdmin):
     fields = [
         ('number', 'name_take3', 'name_hotel'),
         ('is_placed', 'primary', 'secondary', 'check_in', 'check_out'),
+        ('guest_notes'),
         ('is_smoking', 'is_lakeview', 'is_special',
-         'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_comp')
+         'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_comp', 'placed_by_roombot'),
+        ('notes'),
     ]
     readonly_fields = [
         'check_in', 'check_out', 'is_smoking', 'is_lakeview', 'is_special',
          'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_placed',
-        'is_comp'
+        'is_comp', 'placed_by_roombot'
     ]
     description = 'A Room'
     list_display = [

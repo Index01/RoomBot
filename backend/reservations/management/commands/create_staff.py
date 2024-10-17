@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
-from reservations.models import Guest, Staff
+from django.contrib.auth.models import User
+from reservations.models import Guest
 from reservations.helpers import send_email, phrasing, my_url, ingest_csv
 
 
@@ -10,8 +11,8 @@ class Command(BaseCommand):
         for staff_new in staff:
             existing_staff = None
             try:
-                existing_staff = Staff.objects.get(email = staff_new['email'])
-            except Staff.DoesNotExist:
+                existing_staff = User.objects.get(email = staff_new['email'])
+            except User.DoesNotExist:
                 pass
 
             if existing_staff:
@@ -24,10 +25,11 @@ class Command(BaseCommand):
                         jwt=otp)
             guest.save()
 
-            staff=Staff(name=staff_new['name'],
-                        email=staff_new['email'],
-                        guest=guest,
-                        is_admin=staff_new['is_admin'])
+            staff = User(username=staff_new['name'],
+                         email=staff_new['email'],
+                         is_staff=True,
+                         is_superuser=staff_new['is_admin'])
+            staff.set_password(otp)
             staff.save()
 
             self.stdout.write(f"Created staff: {staff_new['name']}, admin: {staff_new['is_admin']}")
