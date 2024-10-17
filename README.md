@@ -122,29 +122,31 @@ $ ./scripts/roombaht_ctl <user> <env> frontend-logs
 
 Managing data on remote hosts is a whole _thing_. Please read this section carefully and make sure to leverage the DB Snapshot functionality (see below) for risky operations.
 
-### Initial DB Population
+### Data Population
 
-This command should be run only once. It will populate the database with both sets of hotel files and the initial staff. Ask an adult before running this outside of staging.
+These commands will populate the database with both sets of hotel files and the initial staff. Use caution when loading the same rooms over and over. Ask an adult before running this outside of staging.
 
 ```sh
-./scripts/roombaht_ctl <user>  <env> init /path/to/ballys-rooms.csv /path/to/hardrock-rooms.csv /path/to/staff.csv
+./scripts/roombaht_ctl <user> <env> load_staff /path/to/staff.csv
+./scripts/roombaht_ctl <user> <env> load_rooms ballys /path/to/ballys.csv
+./scripts/roombaht_ctl <user> <env> load_rooms nugget /path/to/nugget.csv
 ```
-
-*Note* This data population is meant to run only once after the initial DB migrations are applied. It has slightly different invocation for local dev and remote. This script will create the initial set of rooms and "staff" users. If the script detects that it has already been run on a database, it will ask for a confirmation. Because it does need to wipe the tables and start anew.
 
 ### Room Creation / Updating
 
-Create and optionally update hotel rooms. When updating you may also execute a dry run to verify changes. Note that when updating, every change requires a manual confirmation. You may bypass this with `--force` but you probably should not. Additional logging is available via `--debug`. View all options with `--help`
+You can directly invoke `create_rooms` using the `manage` shortcut.
+
+When updating you may also execute a dry run to verify changes. Note that when updating, every change requires a manual confirmation. You may bypass this with `--force` but you probably should not. Additional logging is available via `--debug`. View all options with `--help`
 
 ```sh
 # view help
-$ ./scripts/roombaht_ctl <user> <env> create_rooms --help
+$ ./scripts/roombaht_ctl <user> <env> manage create_rooms --help
 # create initial room set
-$ ./scripts/roombaht_ctl <user> <env> create_rooms /path/to/ballys-rooms.csv --hotel ballys
+$ ./scripts/roombaht_ctl <user> <env> manage create_rooms /path/to/ballys-rooms.csv --hotel ballys
 # check for changes
-$ ./scripts/roombaht_ctl <user> <env> create_rooms /path/to/ballys-rooms.csv --hotel ballys --preserve --dry-run
+$ ./scripts/roombaht_ctl <user> <env> manage create_rooms /path/to/ballys-rooms.csv --hotel ballys --preserve --dry-run
 # actually apply the changes. user input will be required for all changes.
-$ ./scripts/roombaht_ctl <user> <env> create_rooms /path/to/ballys-rooms.csv --hotel ballys --preserve
+$ ./scripts/roombaht_ctl <user> <env> manage create_rooms /path/to/ballys-rooms.csv --hotel ballys --preserve
 ```
 
 ## Images
