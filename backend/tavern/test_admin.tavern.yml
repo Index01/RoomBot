@@ -1,0 +1,97 @@
+---
+test_name: "admin api flow"
+stages:
+  - name: "can login as admin and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+      save:
+        json:
+          jwt_token: "jwt"
+
+  - name: "can retrieve metrics"
+    request:
+      url: "http://localhost:8000/api/request_metrics/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                guest_count:
+                  type: "int"
+                  required: true
+                guest_unique:
+                  type: "int"
+                  required: true
+                guest_unplaced:
+                  type: "int"
+                  required: true
+                rooms_count:
+                  type: "int"
+                  required: true
+                rooms_occupied:
+                  type: "int"
+                  required: true
+                rooms_swappable:
+                  type: "int"
+                  required: true
+                rooms_available:
+                  type: "int"
+                  required: true
+                rooms_placed_by_roombot:
+                  type: "int"
+                  required: true
+                rooms_placed_manually:
+                  type: "int"
+                  required: true
+                percent_placed:
+                  type: "int"
+                  required: true
+                rooms_swap_code_count:
+                  type: "int"
+                  required: true
+                rooms_swap_success_count:
+                  type: "int"
+                  required: true
+                rooms:
+                  type: "seq"
+                  required: true
+                  sequence:
+                    - type: "map"
+                      mapping:
+                        room_type:
+                          type: "str"
+                          required: true
+                        total:
+                          type: "int"
+                          required: true
+                        unoccupied:
+                          type: "int"
+                          required: true
+                version:
+                  type: "str"
+                  required: true

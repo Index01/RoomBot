@@ -31,7 +31,8 @@ export default class RoomDataTable extends React.Component {
     jwt: "",
     sortColumn: "number", // default column to sort by
     sortDirection: "asc", // default sort direction,
-    swaps_enabled: true
+    swaps_enabled: true,
+    refreshTimer: null
   }
 
   // utility function for sorting table room # strings as numbers
@@ -95,12 +96,10 @@ export default class RoomDataTable extends React.Component {
         this.sortData // callback to sort data after state is updated
       );
     };
-    return STORY_HEADERS;
-
-
-
+    return STORY_HEADERS;					
   };
-  componentDidMount() {
+
+  loadRooms() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     if ( jwt == null ) {
       this.setState({error: 'auth'});
@@ -122,6 +121,11 @@ export default class RoomDataTable extends React.Component {
           rooms: roomsWithIntegers,
           swaps_enabled: data.swaps_enabled
         }, this.sortData0);
+	if (this.state.swaps_enabled && this.state.refreshTimer === null) {
+	  this.state.refreshTimer = setInterval(() => {
+	    this.loadRooms();
+	  }, 5000);
+	}
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});
@@ -136,6 +140,10 @@ export default class RoomDataTable extends React.Component {
 	}
       });
     this.sortData();
+  }
+					
+  componentDidMount() {
+    this.loadRooms();
   }					
 
   render(){

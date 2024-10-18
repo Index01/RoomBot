@@ -12,7 +12,7 @@ const notifyError = (msg) => toast.error("Error: " + msg);
 export default class BasicVis extends React.Component {
   state = {
     metrics : {
-      rooms: {}
+      rooms: []
     }
   }
   componentDidMount() {
@@ -23,10 +23,7 @@ export default class BasicVis extends React.Component {
     }
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/request_metrics/", { jwt: jwt["jwt"] })
       .then((result) => {
-        var jresp = JSON.parse(result.data)
-        console.log("Data resp");
-        console.log(jresp);
-        this.setState({ metrics: jresp });
+        this.setState({ metrics: result.data });
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});
@@ -89,8 +86,8 @@ export default class BasicVis extends React.Component {
           </Col>
           <Col xs lg="4">
               <h5> Unoccupied</h5>
-	      {Object.keys(this.state.metrics.rooms).map((roomType, index) => {
-	        return (<div key={index} className="card-subtitle mb-2 text-muted">{roomType}: {this.state.metrics.rooms[roomType]['unoccupied']} of {this.state.metrics.rooms[roomType]['total']} total</div>)
+	      {this.state.metrics.rooms.map((metric) => {
+	        return (<div key={metric.room_type} className="card-subtitle mb-2 text-muted">{metric.room_type}: {metric['unoccupied']} of {metric['total']} total</div>)
 	      })}
           </Col>
         </Row>

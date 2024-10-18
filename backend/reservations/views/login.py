@@ -56,7 +56,6 @@ def login(request):
         logger.debug("found %s admin, %s guests that match %s" % (admin_email.count(),
                                                                   guest_email.count(),
                                                                   email))
-
         admin_user = authenticate(username=admin_email[0].username,
                                   password=data['jwt'])
         if admin_user is not None:
@@ -65,7 +64,7 @@ def login(request):
                               jwt_key,
                               algorithm="HS256")
             logger.info("[+] Admin login success for %s", admin_user.email)
-            body = str(json.dumps({"jwt": resp, "admin": True}))
+            body = {"jwt": resp, "admin": True}
             return Response(body, status=status.HTTP_201_CREATED)
 
         # Check if login attempt is guest
@@ -76,7 +75,7 @@ def login(request):
                                    jwt_key, algorithm="HS256")
                 logger.info("[+] User login success for %s", guest.email)
                 update_last_login(guest)
-                return Response(str(json.dumps({"jwt": resp})), status=status.HTTP_201_CREATED)
+                return Response({"jwt": resp}, status=status.HTTP_201_CREATED)
 
         logger.debug("No valid credentials found for %s", email)
         return Response("Invalid credentials", status=status.HTTP_401_UNAUTHORIZED)

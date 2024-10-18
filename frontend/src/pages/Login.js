@@ -26,28 +26,30 @@ class SubmitForm extends React.Component {
         if(this.state.pass==""){
             notifyLoginError("password cannot be empty");
         }
-        else{
+      else{
+	
             axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/", guest )
             .then(res=>{
-	      var json_res = JSON.parse(res.data);
-              window.localStorage.setItem('jwt', JSON.stringify({'jwt': json_res.jwt}));
-                if (json_res.admin) {
+              window.localStorage.setItem('jwt', JSON.stringify({'jwt': res.data.jwt}));
+                if (res.data.admin) {
 		  window.location = "/admin";
 	        } else {
                   window.location = "/rooms";
 	        }
             })
-	    .catch((error) => {
-	      if (error.response) {
-		if (error.response.status == 401) {
-		  notifyLoginError("invalid credentials");
-		} else if (error.request) {
-		  notifyLoginError("network error");
-		} else if (error.request) {
-		  notifyLoginError("unknown error");
-		}
+	  .catch((error) => {
+	    if (error.response) {
+	      if (error.response.status == 401) {
+		notifyLoginError("invalid credentials");
+	      } else if (error.request) {
+		notifyLoginError("network error");
+	      } else {
+		notifyLoginError("Mysterious error is mysterious.");
 	      }
-	    });
+	    } else {
+	      notifyLoginError("Mysterious error is mysterious.");
+	    }
+	  });
         }
     }
 
@@ -56,23 +58,29 @@ class SubmitForm extends React.Component {
         const guest = {
             email: this.state.email,
         }
-        console.log("Attempting reset request");
-        axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login_reset/", { guest })
-        .then(res=>{
-          console.log(res.data);
-          notifyReset();
-        })
-        .catch((error) => {
-	  if (error.response) {
-	    if (error.response.status) {
-	      notifyLoginError("Unable to reset password");
-	    } else if (error.request) {
-	      notifyLoginError("network error");
-	    } else if (error.request) {
-	      notifyLoginError("unknown error");
-	    }
-	  }
-	});
+        if(this.state.email == ""){
+          notifyLoginError("Cannot reset with empty email");
+        } else {
+          console.log("Attempting reset request");
+          axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login_reset/", { guest })
+            .then(res=>{
+              console.log(res.data);
+              notifyReset();
+            })
+            .catch((error) => {
+	      if (error.response) {
+		if (error.response.status) {
+		  notifyLoginError("Unable to reset password");
+		} else if (error.request) {
+		  notifyLoginError("network error");
+		} else {
+		  notifyLoginError("Mysterious error is mysterious.");
+		}
+	      } else {
+		notifyLoginError("Mysterious error is mysterious.");
+	      }
+	    });
+	}
     }
 
     handleChange = event =>{

@@ -579,15 +579,15 @@ def request_metrics(request):
         else:
             percent_placed = 0
 
-        room_metrics = {}
+        room_metrics = []
         for room_type in ROOM_LIST.keys():
             room_total = rooooms.filter(name_take3=room_type).count()
-            room_type_metrics = {
-                'total': room_total,
-                'unoccupied': rooooms.filter(name_take3=room_type, is_available=True).count()
-            }
             if room_total > 0:
-                room_metrics[room_type] = room_type_metrics
+                room_metrics.append({
+                    "room_type": room_type,
+                    "total": room_total,
+                    "unoccupied": rooooms.filter(name_take3=room_type, is_available=True).count()
+                })
 
         metrics = {"guest_count": guest_count,
                    "guest_unique": guest_unique,
@@ -598,15 +598,14 @@ def request_metrics(request):
                    "rooms_available": rooms_available,
                    "rooms_placed_by_roombot": rooms_placed_by_roombot,
                    "rooms_placed_manually": rooms_placed_manually,
-                   "percent_placed": percent_placed,
+                   "percent_placed": int(percent_placed),
                    "rooms_swap_code_count": rooms_swap_code_count,
                    "rooms_swap_success_count": diff_swaps_count(),
                    "rooms": room_metrics,
-                   "version": roombaht_config.VERSION
+                   "version": roombaht_config.VERSION.rstrip()
                    }
 
-        resp = str(json.dumps(metrics))
-        return Response(resp, status=status.HTTP_201_CREATED)
+        return Response(metrics, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

@@ -20,7 +20,8 @@ import { Navigate } from "react-router-dom";
 export default class MyRoomsTable extends React.Component {
   state = {
     rooms : [],
-    jwt: ""
+    jwt: "",
+    refreshTimer: null
   }
 
   loadMyRooms() {
@@ -29,7 +30,6 @@ export default class MyRoomsTable extends React.Component {
       this.setState({error: 'auth'});
       return;
     }
-    console.log("DERP");
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
       jwt: jwt["jwt"]
     })
@@ -38,7 +38,12 @@ export default class MyRoomsTable extends React.Component {
         console.log(JSON.parse(JSON.stringify(data)));
         this.state.rooms = data.rooms;
 	this.state.swaps_enabled = data.swaps_enabled;
-        this.setState({ data  });
+        this.setState({ data });
+	if ( this.state.swaps_enabled && this.state.refreshTimer === null ) {
+	  this.state.refreshTimer = setInterval(() => {
+	    this.loadMyRooms();
+	  }, 5000);
+	}
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});
@@ -87,7 +92,6 @@ export default class MyRoomsTable extends React.Component {
   componentDidMount() {
     this.loadMyRooms();
   }
-
 
   render(){
     let {error} = this.state;

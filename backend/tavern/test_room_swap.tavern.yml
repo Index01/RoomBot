@@ -1,0 +1,307 @@
+---
+test_name: "user can request a swap"
+stages:
+  - name: "login as user one and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testuser1@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                jwt:
+                  type: "str"
+                  required: true
+      save:
+        json:
+          jwt_token: "jwt"
+
+  - name: "retrieve list of rooms"
+    request:
+      url: "http://localhost:8000/api/rooms/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      save:
+        json:
+          room_id: "rooms[0].number"
+      verify_response_with:
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                swaps_enabled:
+                  type: "bool"
+                  required: true
+                rooms:
+                  type: "seq"
+                  sequence:
+                    - type: "map"
+                      mapping:
+                        number:
+                          type: "str"
+                          required: true
+                        name_take3:
+                          type: "str"
+                          required: true
+                        name_hotel:
+                          type: "str"
+                          required: true
+                        is_available:
+                          type: "bool"
+                          required: true
+                        guest:
+                          type: "int"
+                          required: true
+                        floorplans:
+                          type: "seq"
+                          sequence:
+                            - type: "str"
+                        available:
+                          type: "bool"
+                          required: true
+                        is_party:
+                          type: "bool"
+                          required: true
+
+  - name: "retrieve list of users rooms"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      json:
+        rooms:
+          - number: 500
+            type: "Queen"
+            swappable: true
+            cooldown: false
+        swaps_enabled: true
+
+  - name: "request a swap for a non-existent room"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "69"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 404
+
+  - name: "request a swap for a non compatible room"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "502"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "request a swap for an art room"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "503"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "request a swap"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "{room_id}"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "login as user two and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testuser2@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                jwt:
+                  type: "str"
+                  required: true
+      save:
+        json:
+          jwt_token2: "jwt"
+
+  - name: "retrieve list of second users rooms"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      json:
+        rooms:
+          - number: 501
+            type: "Queen"
+            swappable: true
+            cooldown: false
+        swaps_enabled: true
+
+  - name: "initiate a swap"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        number:
+          row: "{room_id}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      save:
+        json:
+          swap_code: "swap_phrase"
+      verify_response_with:
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                swap_phrase:
+                  type: "str"
+                  required: true
+
+  - name: "initiate a swap during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        number:
+          row: "{room_id}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "get ur swap on oops bad code"
+    request:
+      url: "http://localhost:8000/api/swap_it_up/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "500"
+        swap_code: "lol butts"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "get ur swap on"
+    request:
+      url: "http://localhost:8000/api/swap_it_up/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "500"
+        swap_code: "{swap_code}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "retrieve updated list of users rooms"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      json:
+        rooms:
+          - number: 501
+            type: "Queen"
+            swappable: false
+            cooldown: true
+        swaps_enabled: true
+
+  - name: "retrieve updated list of second users rooms"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      json:
+        rooms:
+          - number: 500
+            type: "Queen"
+            swappable: false
+            cooldown: true
+        swaps_enabled: true

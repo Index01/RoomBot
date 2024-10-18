@@ -21,7 +21,6 @@ cleanup() {
 }
 
 usage() {
-    echo "roombaht_ctl <user> <env> init <ballys dot csv> <nugget dot csv> <staff dot csv>"
     echo "roombaht_ctl <user> <env> frontend-log"
     echo "roombaht_ctl <user> <env> backend-log"
     echo "roombaht_ctl <user> <env> backend-restart"
@@ -31,7 +30,8 @@ usage() {
     echo "roombaht_ctl <user> <env> deploy"
     echo "roombaht_ctl <user> <env> quick_deploy"
     echo "roombaht_ctl <user> <env> quick_deploy"
-    echo "roombaht_ctl <user> <env> rooms"
+    echo "roombaht_ctl <user> <env> create_rooms <hotel> <rooms dot csv>"
+    echo "roombaht_ctl <user> <env> create_staff <staff dot csv>"
     echo "roombaht_ctl <user> <env> manage"
 }
 
@@ -91,27 +91,36 @@ R_SCRIPT="roombaht_ctl-remote-${RANDOM}.sh"
 R_SECRET="secrets-${RANDOM}.env"
 
 
-if [ "$ACTION" == "init" ] ; then
-    BALLYS_SRC="$1"
-    HARDROCK_SRC="$2"
-    STAFF_SRC="$3"
-    shift 3
-    if [ ! -e "$BALLYS_FILE" ] ; then
-	problems "room file ${BALLYS_FILE} not found"
+if [ "$ACTION" == "load_staff" ] ; then
+    STAFF_SRC="$1"
+    shift 1
+    if [ -z "$STAFF_SRC" ] ; then
+	usage
+	exit 1
     fi
-    if [ ! -e "$HARDROCK_FILE" ] ; then
-	problems "room file ${HARDROCK_FILE} not found"
+    if [ ! -e "$STAFF_SRC" ] ; then
+	problems "staff file ${STAFF_SRC} not found"
     fi
-    if [ ! -e "$STAFF_FILE" ] ; then
-	problems "staff file ${STAFF_FILE} not found"
-    fi
-    BALLYS_DEST="/tmp/$(basename "$BALLYS_SRC")"
-    STAFF_DEST="/tmp/$(basename "$STAFF_SRC")"
-    HARDROCK_DEST="/tmp/$(basename "$HARDROCK_SRC")"
-    yeet_file "$BALLYS_SRC" "$BALLYS_DEST"
-    yeet_file "$HARDROCK_SRC" "$HARDROCK_DEST"
+    STAFF_DEST="$(basename "$STAFF_SRC")"
     yeet_file "$STAFF_SRC" "$STAFF_DEST"
-    yeet_ctl "init  ${BALLYS_DEST} ${HARDROCK_DEST} ${STAFF_DEST}"
+    yeet_script
+    yeet_ctl "load_staff ${STAFF_DEST}"
+elif [ "$ACTION" == "load_rooms" ] ; then
+    HOTEL="$1"
+    ROOM_SRC="$2"
+    shift 2
+    if [ -z "$HOTEL" ] || [ -z "$ROOM_SRC" ] ; then
+	usage
+	exit 1
+    fi
+
+    if [ ! -e "$ROOM_SRC" ] ; then
+	problems "staff file ${ROOM_SRC} not found"
+    fi
+    STAFF_DEST="$(basename "$ROOM_SRC")"
+    yeet_file "$ROOM_SRC" "$STAFF_DEST"
+    yeet_script
+    yeet_ctl "load_rooms ${HOTEL} ${STAFF_DEST}"
 elif [ "$ACTION" == "backend-log" ] ; then
     yeet_command "sudo journalctl -f -u roombaht -u cron.service -t roombaht-oob -t uwsgi -n 100"
 elif [ "$ACTION" == "frontend-log" ] ; then
@@ -146,22 +155,6 @@ elif [ "$ACTION" == "deploy" ] || [ "$ACTION" == "quick_deploy" ] ; then
     yeet_file "$BACKEND_SRC" "$BACKEND_ARTIFACT"
     yeet_file "$FRONTEND_SRC" "$FRONTEND_ARTIFACT"
     yeet_ctl "$ACTION"
-elif [ "$ACTION" == "rooms" ] ; then
-    if [ "$#" -lt 2 ] ; then
-	usage
-	exit 1
-    fi
-    HOTEL="$1"
-    ROOM_LIST="$2"
-    shift 2
-    if [ "$HOTEL" != "ballys" ] && [ "$HOTEL" != "hardrock" ] ; then
-	problems "invalid hotel specified"
-    fi
-    ROOM_DEST="$(basename "$ROOM_LIST")"
-    ROOM_DEST="${ROOM_DEST// /_}"
-    yeet_file "$ROOM_LIST" "$ROOM_DEST"
-    yeet_script
-    yeet_ctl "manage create_rooms /tmp/${ROOM_DEST} --hotel ${HOTEL} $*"
 elif [ "$ACTION" == "manage" ] ; then
     yeet_script
     yeet_ctl "manage $*"

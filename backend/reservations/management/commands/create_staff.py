@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from reservations.models import Guest
+from jinja2 import Environment, PackageLoader
 from reservations.helpers import send_email, phrasing, my_url, ingest_csv
 
 
@@ -34,19 +35,14 @@ class Command(BaseCommand):
 
             self.stdout.write(f"Created staff: {staff_new['name']}, admin: {staff_new['is_admin']}")
 
-            hostname = my_url()
-
-            body_text = f"""
-                Congratulations, u have been deemed Staff worthy material.
-
-                Email {staff_new['email']}
-                Admin {otp}
-
-                login at {hostname}/login
-                then go to {hostname}/admin
-                Good Luck, Starfighter.
-
-            """
+            objz = {
+                'hostname': my_url(),
+                'password': otp,
+                'email': staff_new['email']
+            }
+            jenv = Environment(loader=PackageLoader('reservations'))
+            template = jenv.get_template('staff.j2')
+            body_text = template.render(objz)
             send_email([staff_new['email']],
                        'RoomService RoomBaht - Staff Activation',
                        body_text)

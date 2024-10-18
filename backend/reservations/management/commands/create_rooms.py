@@ -1,13 +1,9 @@
-from datetime import datetime
-import logging
 import sys
 from fuzzywuzzy import fuzz
 from django.core.management.base import BaseCommand, CommandError
 from pydantic import ValidationError
-from reservations.helpers import ingest_csv, real_date
+from reservations.helpers import ingest_csv
 from reservations.models import Room, Guest
-from reservations.helpers import send_email, phrasing, my_url, ingest_csv
-import reservations.config as roombaht_config
 from reservations.constants import ROOM_LIST
 from reservations.ingest_models import RoomPlacementListIngest
 from reservations.management import getch
