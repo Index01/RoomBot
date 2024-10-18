@@ -12,7 +12,7 @@ import toast, { Toaster } from 'react-hot-toast';
 const notifyOK = (msg) => toast.success(msg);
 const notifyError = (msg) => toast.error("Error: " + msg);
 
-function GuestsCard() {
+function GuestsCard(props) {
   const [phrase, setPhrase] = useState("");
   const [respText, setRespText] = useState([]);
   const [isLoading, setLoading] = useState(false);
@@ -90,6 +90,7 @@ function GuestsCard() {
 	setLoading(false);
         setRespText(JSON.parse(JSON.stringify(res.data)).results);
         setPhrase("");
+	props.onChange();
       })
       .catch((error) => {
 	notifyError("Unable to process guests");
@@ -198,14 +199,14 @@ function ReportCard() {
 }
 
 
-function RoombotAdmin() {
+function RoombotAdmin(props) {
   return (
     <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
         <Accordion.Header>Load Rooms & Guests</Accordion.Header>
         <Accordion.Body>
           <div>
-          <GuestsCard />
+      <GuestsCard onChange={props.onChange} />
           </div>
         </Accordion.Body>
       </Accordion.Item>

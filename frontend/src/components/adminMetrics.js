@@ -15,7 +15,7 @@ export default class BasicVis extends React.Component {
       rooms: []
     }
   }
-  componentDidMount() {
+  loadMetrics() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     if ( jwt === null ) {
       this.setState({error: 'auth'});
@@ -38,6 +38,13 @@ export default class BasicVis extends React.Component {
           }
 	}
       });
+  }
+  componentDidMount() {
+    this.loadMetrics();
+  }
+
+  componentDidUpdate() {
+    this.loadMetrics();
   }
 
   render(){

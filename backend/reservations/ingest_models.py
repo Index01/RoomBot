@@ -31,7 +31,6 @@ class RoomPlacementListIngest(BaseModel):
     check_in_date: Optional[str] = Field(alias='Check-in Date')
     check_out_date: Optional[str] = Field(alias='Check-out Date')
     placed_by: Optional[str] = Field(alias='Placed By')
-    guest_restriction_notes: Optional[str] = Field(alias='Guest Restriction Notes')
     ticket_id_in_secret_party: Optional[str] = Field(alias='Ticket ID in SecretParty')
 
     class Config:
