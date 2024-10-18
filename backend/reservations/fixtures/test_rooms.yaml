@@ -14,11 +14,8 @@
     is_mountainview: false
     is_ada: false
     is_hearing_accessible: false
-    is_art: false
     is_special: false
-    is_comp: false
     is_placed: false
-    notes: "another  boring test room"
     sp_ticket_id: "SP00001"
     primary: "test user1"
     placed_by_roombot: true
@@ -39,11 +36,8 @@
     is_mountainview: false
     is_ada: false
     is_hearing_accessible: false
-    is_art: false
     is_special: false
-    is_comp: false
     is_placed: false
-    notes: "a boring test room"
     sp_ticket_id: "SP00002"
     primary: "test user2"
     placed_by_roombot: true
@@ -64,11 +58,8 @@
     is_mountainview: false
     is_ada: false
     is_hearing_accessible: false
-    is_art: false
     is_special: false
-    is_comp: false
     is_placed: false
-    notes: "a boring test room"
     sp_ticket_id: "SP00003"
     primary: "test user3"
     placed_by_roombot: true
@@ -89,11 +80,8 @@
     is_mountainview: false
     is_ada: false
     is_hearing_accessible: false
-    is_art: false
     is_special: false
-    is_comp: false
     is_placed: false
-    notes: "a boring test room"
     sp_ticket_id: "SP00004"
     primary: "test user4"
     placed_by_roombot: true
@@ -114,11 +102,8 @@
     is_mountainview: false
     is_ada: false
     is_hearing_accessible: false
-    is_art: true
     is_special: false
-    is_comp: false
     is_placed: false
-    notes: "a boring test room"
     sp_ticket_id: "SP00005"
     primary: "test user4"
     placed_by_roombot: true

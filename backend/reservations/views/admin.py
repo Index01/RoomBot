@@ -90,7 +90,6 @@ def find_room(room_product):
     #  * must not be special room (i.e. unknown to roombaht)
     available_room = Room.objects \
                          .filter(is_available=True,
-                                 is_art=False,
                                  is_special=False,
                                  name_take3=room_type,
                                  name_hotel=hotel
@@ -150,10 +149,6 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
     logger.debug("Attempting to reconcile %s orphan rooms", orphan_rooms.count())
     for room in orphan_rooms:
         guest = None
-        # some validation
-        if room.sp_ticket_id and room.is_comp:
-            logger.warning("Room %s %s is comp'd and has ticket %s; skipping",
-                           room.name_hotel, room.number, room.sp_ticket_id)
         # first check for a guest entry by sp_ticket_id
         try:
             if room.sp_ticket_id:
@@ -226,21 +221,17 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
                 guest_update(guest_obj, otp, room)
             else:
-                if room.is_comp:
-                    logger.debug("Ignoring comp'd %s room %s %s, guest %s",
-                                 room.name_take3, room.name_hotel, room.number, room.primary)
-                else:
-                    logger.warning("Unable to find guest %s for (non-comp) orphan room %s %s",
-                                   room.primary, room.name_hotel, room.number)
+                logger.warning("Unable to find guest %s for (non-comp) orphan room %s %s",
+                               room.primary, room.name_hotel, room.number)
 
-                    possibilities = [x for x in process.extract(room.primary, [f"{g.first_name} {g.last_name}" for g in guest_rows]) if x[1] > 85]
-                    if len(possibilities) > 0:
-                        logger.warning("Found %s fuzzy name possibilities in CSV for %s in orphan room %s %s: %s",
-                                       len(possibilities),
-                                       room.primary,
-                                       room.name_hotel,
-                                       room.number,
-                                       ','.join([f"{x[0]}:{x[1]}" for x in possibilities]))
+                possibilities = [x for x in process.extract(room.primary, [f"{g.first_name} {g.last_name}" for g in guest_rows]) if x[1] > 85]
+                if len(possibilities) > 0:
+                    logger.warning("Found %s fuzzy name possibilities in CSV for %s in orphan room %s %s: %s",
+                                   len(possibilities),
+                                   room.primary,
+                                   room.name_hotel,
+                                   room.number,
+                                   ','.join([f"{x[0]}:{x[1]}" for x in possibilities]))
 
 
                 continue

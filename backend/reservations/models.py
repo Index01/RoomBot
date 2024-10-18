@@ -73,17 +73,13 @@ class Room(DirtyFieldsMixin, models.Model):
     is_lakeview = models.BooleanField("Lakeview", default=False)
     is_mountainview = models.BooleanField("Mountainview", default=False)
     is_ada = models.BooleanField("ADA", default=False)
-    is_hearing_accessible = models.BooleanField("Hearing Accessible", default=False)
-    is_art = models.BooleanField("ART", default=False)
-    is_special = models.BooleanField("Special", default=False)
-    is_comp = models.BooleanField("Comped", default=False)
-    is_placed = models.BooleanField("Placed", default=False)
+    is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
+    is_special = models.BooleanField("SpecialRoom", default=False)
+    is_placed = models.BooleanField("PlacedRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
     _check_out = models.DateField(blank=True, null=True, db_column='check_out')
-    notes = models.TextField(blank=True, verbose_name='RoomNotes')
-    guest_notes = models.TextField(blank=True, verbose_name='GuestNotes')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20, blank=True, null=True)
     primary = models.CharField("PrimaryContact", max_length=50)
     secondary = models.CharField("SecondaryContact", max_length=50)
@@ -237,10 +233,6 @@ class Room(DirtyFieldsMixin, models.Model):
         room_two.check_in = room_one_check_in
         room_two.check_out = room_one_check_out
 
-        room_one_guest_notes = room_one.guest_notes
-        room_one.guest_notes = room_two.guest_notes
-        room_two.guest_notes = room_one_guest_notes
-
         room_one_sp_ticket_id = room_one.sp_ticket_id
         room_one.sp_ticket_id = room_two.sp_ticket_id
         room_two.sp_ticket_id = room_one_sp_ticket_id
@@ -265,15 +257,13 @@ class RoomsAdmin(admin.ModelAdmin):
     fields = [
         ('number', 'name_take3', 'name_hotel'),
         ('is_placed', 'primary', 'secondary', 'check_in', 'check_out'),
-        ('guest_notes'),
         ('is_smoking', 'is_lakeview', 'is_special',
-         'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_comp', 'placed_by_roombot'),
-        ('notes'),
+         'is_hearing_accessible', 'is_mountainview', 'placed_by_roombot')
     ]
     readonly_fields = [
         'check_in', 'check_out', 'is_smoking', 'is_lakeview', 'is_special',
-         'is_art', 'is_hearing_accessible', 'is_mountainview', 'is_placed',
-        'is_comp', 'placed_by_roombot'
+        'is_hearing_accessible', 'is_mountainview', 'is_placed',
+        'placed_by_roombot'
     ]
     description = 'A Room'
     list_display = [

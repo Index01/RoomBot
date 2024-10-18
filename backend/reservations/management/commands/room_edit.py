@@ -39,16 +39,6 @@ class Command(BaseCommand):
                             default=False,
                             action='store_true')
 
-        parser.add_argument('--art',
-                            help='Marks a room as art',
-                            default=False,
-                            action='store_true')
-
-        parser.add_argument('--not-art',
-                            help='Marks a room as not art',
-                            default=False,
-                            action='store_true')
-
         parser.add_argument('--placed',
                             help='Marks a room as placed',
                             default=False,
@@ -162,20 +152,10 @@ class Command(BaseCommand):
         elif kwargs['not_swappable'] and room.is_swappable:
             room.is_swappable = False
 
-        if kwargs['art'] and not room.is_art:
-            room.is_art = True
-        elif kwargs['not_art'] and room.is_art:
-            room.is_art = False
-
         if kwargs['placed'] and not room.is_placed:
             room.is_placed = True
         elif kwargs['not_placed'] and room.is_placed:
             room.is_placed = False
-
-        if kwargs['comp'] and not room.is_comp:
-            room.is_comp = True
-        elif kwargs['not_comp'] and room.is_comp:
-            room.is_comp = False
 
         if kwargs['roombaht'] and not room.placed_by_roombot:
             room.placed_by_roombot = True
