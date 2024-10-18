@@ -26,13 +26,24 @@ def real_date(a_date: str, year=None):
         date: python `date` object
     """
     year = year or datetime.now().year
-    date_bits = a_date.split("-")
+    date_bits = a_date.split(" ")
     date = None
-    if len(date_bits) == 1:
-        date = date_bits[0]
-    elif len(date_bits) == 2:
-        date = date_bits[1]
-    else:
+    if len(date_bits) == 2 and \
+       date_bits[0] in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
+        sub_date = date_bits[1]
+        sub_date_bits = sub_date.split("/")
+        if len(sub_date_bits) == 2:
+            date = sub_date
+
+    elif len(date_bits) == 3 and \
+         date_bits[0] in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] and \
+         date_bits[2] in ['Early', 'Late']:
+        sub_date = date_bits[1]
+        sub_date_bits = sub_date.split("/")
+        if len(sub_date_bits) == 2:
+            date = sub_date
+
+    if not date:
         raise Exception(f"Unexpected date format {a_date}")
 
     month, day = date.lstrip().split('/')

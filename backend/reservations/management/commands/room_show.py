@@ -44,9 +44,6 @@ class Command(BaseCommand):
         if room.is_swappable:
             flags.append('swappable')
 
-        if room.is_comp:
-            flags.append('comped')
-
         if room.is_placed:
             flags.append('placed')
 
@@ -74,12 +71,6 @@ class Command(BaseCommand):
 
         self.stdout.write(desc)
         self.stdout.write(details)
-
-        if room.notes:
-            self.stdout.write(f"Room notes: {room.notes}")
-
-        if room.guest_notes:
-            self.stdout.write(f"Guest notes: {room.guest_notes}")
 
         if room.swap_code:
             self.stdout.write("Room swap is pending. ")

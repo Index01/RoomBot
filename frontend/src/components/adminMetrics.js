@@ -13,7 +13,8 @@ export default class BasicVis extends React.Component {
   state = {
     metrics : {
       rooms: []
-    }
+    },
+    updates: 0
   }
   loadMetrics() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
@@ -43,8 +44,11 @@ export default class BasicVis extends React.Component {
     this.loadMetrics();
   }
 
-  componentDidUpdate() {
-    this.loadMetrics();
+  componentDidUpdate(oldProps) {
+    console.log("AAA " + oldProps.count + " / " + this.props.count);
+    if (oldProps.count != this.props.count ) {
+      this.loadMetrics();
+    }
   }
 
   render(){

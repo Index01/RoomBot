@@ -86,9 +86,8 @@ function GuestsCard(props) {
     if (isLoading) {
       axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
 	notifyOK("Guests processed");
-        console.log(res.data.results);
 	setLoading(false);
-        setRespText(JSON.parse(JSON.stringify(res.data)).results);
+        setRespText(res.data.results);
         setPhrase("");
 	props.onChange();
       })
