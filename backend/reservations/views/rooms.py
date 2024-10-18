@@ -50,10 +50,8 @@ def my_rooms(request):
             'swaps_enabled': roombaht_config.SWAPS_ENABLED
         }
 
-        response = json.dumps(data, indent=2)
-
         logger.debug("rooms for user %s: %s", email, rooms_mine)
-        return Response(response)
+        return Response(data)
 
 
 @api_view(['POST'])
@@ -86,7 +84,7 @@ def room_list(request):
                    and guest_room.swappable() \
                    and not guest_room.cooldown():
                     room_types.append(guest_room.name_take3)
-            except Room.ObjectNotFound:
+            except Room.DoesNotExist:
                 logger.warning("Guest room %s not found for %s", guest_room_number, email)
 
         if len(room_types) == 0:
@@ -122,47 +120,21 @@ def room_list(request):
 
 
 @api_view(['POST'])
-def room_reserve(request):
-    if request.method == 'POST':
-        auth_obj = authenticate(request)
-        if not auth_obj or 'email' not in auth_obj:
-            return unauthenticated()
-
-        #TODO(tb): there is prolly a more standard way of doing this. serializer probs tho.
-        data = request.data['guest']
-        logger.debug(f'data: {data}')
-
-        try:
-            guest = Guest.objects.filter(email=email)
-            room = Room.objects.filter(number=room_number, name_hotel='Ballys')
-            room.update(is_available=False, guest=guest[0])
-            room[0].save()
-        except IndexError as e:
-            return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_201_CREATED)
-
-
-@api_view(['PUT', 'DELETE'])
-def room_detail(request, pk):
+def room_detail(request, room_number):
     auth_obj = authenticate(request)
     if not auth_obj or 'email' not in auth_obj:
         return unauthenticated()
+
+    hotel = request.query_params.get('hotel', 'ballys').capitalize()
+    if hotel not in roombaht_config.GUEST_HOTELS:
+        return Response("invalid hotel", status=status.HTTP_400_BAD_REQUEST)
     try:
-        room = Room.objects.get(pk=pk)
+        room = Room.objects.filter(number=room_number, name_hotel=hotel)
     except Room.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'PUT':
-        serializer = RoomSerializer(room, data=request.data,context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        room.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+    if request.method == 'POST':
+        return Response(RoomSerializer(room[0], context={'request': request}).data)
 
 
 @api_view(['POST'])
@@ -193,7 +165,7 @@ def swap_request(request):
         swap_room = None
         try:
             swap_room = Room.objects.get(number=room_num, name_hotel='Ballys')
-        except Room.ObjectNotFound:
+        except Room.DoesNotExist:
             return Response("Room not found", status=status.HTTP_404_NOT_FOUND)
 
         if not swap_room.swappable():
@@ -210,7 +182,7 @@ def swap_request(request):
                 room = Room.objects.get(number=room_number, name_hotel='Ballys')
                 if room.name_take3 == swap_room.name_take3 and room.swappable():
                     requester_swappable.append(room_number)
-            except Room.ObjectNotFound:
+            except Room.DoesNotExist:
                 logger.warning("Guest %s has non existent room %s!",
                                requester_email, room_number)
                 continue
@@ -279,8 +251,7 @@ def swap_gen(request):
         room.save()
 
         logger.info(f"[+] Swap phrase generated {phrase}")
-        response = json.dumps({"swap_phrase": phrase}, indent=2)
-        return Response(response)
+        return Response({"swap_phrase": phrase})
 
 
 @api_view(['POST'])
