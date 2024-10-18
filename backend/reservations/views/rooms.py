@@ -106,7 +106,7 @@ def room_list(request):
             else:
                 room['available']=False
 
-        if 'party' in roombaht_config.FEATURES:
+        if 'party' in roombaht_config.features():
             party_rooms = [x.room_number for x in Party.objects.all()]
             for room in data['rooms']:
                 if room['number'] in party_rooms:

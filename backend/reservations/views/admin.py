@@ -709,5 +709,11 @@ def system_config(request):
             'party_app': config.PARTY_APP,
             'waittime_app': config.WAITTIME_APP
         }
+        resp_status = status.HTTP_200_OK
+        if 'config' in request.data:
+            config.PARTY_APP = request.data['config']['party_app']
+            config.WAITTIME_APP = request.data['config']['waittime_app']
+            config.SWAPS_ENABLED = request.data['config']['swaps_enabled']
+            resp_status = status.HTTP_201_CREATED
 
-        return Response(obj, status=status.HTTP_200_OK)
+        return Response(obj, status=resp_status)

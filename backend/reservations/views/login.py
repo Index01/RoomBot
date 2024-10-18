@@ -31,14 +31,8 @@ def update_last_login(guest):
 @api_view(['POST', 'GET'])
 def login(request):
     if request.method == 'GET':
-        features = []
-        if config.PARTY_APP:
-            features.append('party')
-
-        if config.WAITTIME_APP:
-            features.append('waittime')
         data = {
-            'features': features
+            'features': roombaht_config.features()
         }
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == 'POST':

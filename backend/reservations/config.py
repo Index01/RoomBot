@@ -1,5 +1,6 @@
 import os
 from importlib import resources as impresources
+from constance import config
 import reservations
 
 
@@ -21,3 +22,13 @@ GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys,Nugget').split(',
 VERSION = impresources.read_text(reservations, "version")
 
 ROOM_COOLDOWN = int(os.environ.get('ROOMBAHT_ROOM_COOLDOWN', 900))
+
+def features():
+    actual_features = []
+    if config.PARTY_APP:
+        actual_features.append('party')
+
+    if config.WAITTIME_APP:
+        actual_features.append('waittime')
+
+    return actual_features

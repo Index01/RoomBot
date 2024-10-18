@@ -8,6 +8,7 @@ import Spinner from 'react-bootstrap/Spinner';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Form from 'react-bootstrap/Form';
+import React from "react";
 import toast, { Toaster } from 'react-hot-toast';
 const notifyOK = (msg) => toast.success(msg);
 const notifyError = (msg) => toast.error("Error: " + msg);
@@ -197,38 +198,49 @@ function ReportCard() {
   );
 }
 
-function InLineConfig() {
-  return (
-    <Card>
-      <Card.Header>Live Configuration</Card.Header>
-      <Card.Body>
-        <Card.Title>Change RoomBaht Configuration</Card.Title>
-          <Form>
-            <Form.Check
-              type="switch"
-              id="config_swaps_enabled"
-              label="Swaps Enabled"
-            />
-            <Form.Check
-              type="switch"
-              id="config_party_app"
-              label="Part App Enabled"
-            />
-            <Form.Check
-              type="switch"
-              id="config_waittime_app"
-              label="Waittime App Enabled"
-            />
-          </Form>
-      </Card.Body>
-    </Card>
-  );
-}
-
-
-function RoombotAdmin() {
-  const jwt = JSON.parse(localStorage.getItem('jwt'));
-  const handleToggle = (key) => {
+export default class RoombotAdmin extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      metrics: {
+	swaps_enabled: undefined,
+	party_app: undefined,
+	wait_app: undefined
+      }
+    }
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+  handleSubmit(evt) {
+    evt.preventDefault();
+    const config = {
+      swaps_enabled: evt.currentTarget.elements.config_swaps_enabled.checked,
+      party_app: evt.currentTarget.elements.config_party_app.checked,
+      waittime_app: evt.currentTarget.elements.config_waittime_app.checked
+    }
+    const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if (jwt == null) {
+      return;
+    }
+    const data = {
+      jwt: jwt["jwt"],
+      config: config
+    }
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
+      .then((result) => {
+	this.setState({metrics: result.data});
+      })
+      .catch((error) => {
+        if (error.response) {
+	  notifyError("Unable to change config");
+        } else if (error.request) {
+	  notifyError("Network error!");
+        } else {
+	  notifyError("Mysterious error is mysterious.");
+        }
+      });
+  }
+  componentDidMount() {
+    const jwt = JSON.parse(localStorage.getItem('jwt'));
     if (jwt == null) {
       return;
     }
@@ -236,13 +248,26 @@ function RoombotAdmin() {
       jwt: jwt["jwt"],
     }
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
-      .then((respText) => {
+      .then((result) => {
+	this.setState({metrics: result.data});
       })
       .catch((error) => {
+        //this.setState({errorMessage: error.message});
+        if (error.response) {
+	  if (error.response.status === 401) {
+	    this.setState({ error: 'auth' });
+          } else if (error.request) {
+	    notifyError("Network error.");
+          } else {
+	    notifyError("Mysterious error is mysterious.");
+            console.log("unhandled error " + error.response.status + ", " + error.response.data);
+          }
+	}
       });
   }
 
-  return (
+  render() {
+    return (
       <Accordion defaultActiveKey="0">
       <Accordion.Item eventKey="0">
         <Accordion.Header>Load Rooms & Guests</Accordion.Header>
@@ -261,15 +286,39 @@ function RoombotAdmin() {
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="2">
-        <Accordion.Header onClick={handleToggle}>Live Configuration</Accordion.Header>
+        <Accordion.Header>Live Configuration</Accordion.Header>
         <Accordion.Body>
           <div>
-          <InLineConfig />
+	    <Card>
+	      <Card.Header>Live Configuration</Card.Header>
+	      <Card.Body>
+		<Card.Title>Change RoomBaht Configuration</Card.Title>
+		<Form onSubmit={this.handleSubmit}>
+		  <Form.Check
+		    type="switch"
+		    id="config_swaps_enabled"
+		    label="Swaps Enabled"
+		    defaultChecked={this.state.metrics.swaps_enabled} />
+		  <Form.Check
+		    type="switch"
+		    id="config_party_app"
+		    label="Party App Enabled"
+		    defaultChecked={this.state.metrics.party_app} />
+		  <Form.Check
+		    type="switch"
+		    id="config_waittime_app"
+		    label="Waittime App Enabled"
+		    defaultChecked={this.state.metrics.waittime_app} />
+		  <Button variant="primary" type="submit">
+		    Change
+		  </Button>
+		</Form>
+	      </Card.Body>
+	    </Card>
           </div>
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>
-  );
+    )
+  }
 }
-
-export default RoombotAdmin;
