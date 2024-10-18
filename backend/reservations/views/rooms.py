@@ -1,11 +1,9 @@
 
-import os
 import logging
-import random
 import json
 import datetime
 import sys
-from django.core.mail import send_mail
+from constance import config
 from jinja2 import Environment, PackageLoader
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -47,7 +45,7 @@ def my_rooms(request):
                        "type": room.name_take3,
                        "swappable": room.swappable() and not room.cooldown(),
                        "cooldown": room.cooldown()} for room in rooms_mine],
-            'swaps_enabled': roombaht_config.SWAPS_ENABLED
+            'swaps_enabled': config.SWAPS_ENABLED
         }
 
         logger.debug("rooms for user %s: %s", email, rooms_mine)
@@ -94,7 +92,7 @@ def room_list(request):
         serializer = RoomSerializer(not_my_rooms, context={'request': request}, many=True)
         data = {
             'rooms': serializer.data,
-            'swaps_enabled': roombaht_config.SWAPS_ENABLED
+            'swaps_enabled': config.SWAPS_ENABLED
         }
 
         for room in data['rooms']:
@@ -103,12 +101,12 @@ def room_list(request):
             elif(len(room['number'])==4):
                 room["floorplans"]=FLOORPLANS[int(room["number"][:2])]
 
-            if roombaht_config.SWAPS_ENABLED and room['name_take3'] in room_types:
+            if config.SWAPS_ENABLED and room['name_take3'] in room_types:
                 room['available']=True
             else:
                 room['available']=False
 
-        if 'party' in roombaht_config.FEATURES:
+        if 'party' in roombaht_config.features():
             party_rooms = [x.room_number for x in Party.objects.all()]
             for room in data['rooms']:
                 if room['number'] in party_rooms:
@@ -148,7 +146,7 @@ def swap_request(request):
 
         data = request.data
 
-        if not roombaht_config.SWAPS_ENABLED:
+        if not config.SWAPS_ENABLED:
             return Response("Room swaps are not currently enabled",
                             status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -222,7 +220,7 @@ def swap_gen(request):
             return unauthenticated()
         email = auth_obj['email']
 
-        if not roombaht_config.SWAPS_ENABLED:
+        if not config.SWAPS_ENABLED:
             return Response("Room swaps are not currently enabled",
                             status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -262,7 +260,7 @@ def swap_it_up(request):
             return unauthenticated()
         email = auth_obj['email']
 
-        if not roombaht_config.SWAPS_ENABLED:
+        if not config.SWAPS_ENABLED:
             return Response("Room swaps are not currently enabled",
                             status=status.HTTP_501_NOT_IMPLEMENTED)
 

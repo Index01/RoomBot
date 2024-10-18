@@ -1,5 +1,6 @@
 import os
 from importlib import resources as impresources
+from constance import config
 import reservations
 
 
@@ -14,17 +15,20 @@ URL_SCHEMA = os.environ.get('ROOMBAHT_SCHEMA', 'http')
 
 JWT_KEY = os.environ['ROOMBAHT_JWT_KEY']
 
-SEND_ONBOARDING = os.environ.get('ROOMBAHT_SEND_ONBOARDING', 'false').lower() == 'true'
-ONBOARDING_BATCH = os.environ.get('ROOMBAHT_ONBOARDING_BATCH', '5')
-
 TEMP_DIR = os.environ.get('ROOMBAHT_TMP', '/tmp')
 
-IGNORE_TRANSACTIONS = os.environ.get('ROOMBAHT_IGNORE_TRANSACTIONS', '').split(',')
-SWAPS_ENABLED = os.environ.get('ROOMBAHT_SWAPS_ENABLED', 'true').lower() == 'true'
 GUEST_HOTELS = os.environ.get('ROOMBAHT_GUEST_HOTELS', 'Ballys,Nugget').split(',')
 
 VERSION = impresources.read_text(reservations, "version")
 
-FEATURES = os.environ.get('ROOMBAHT_FEATURES', '').split(',')
-
 ROOM_COOLDOWN = int(os.environ.get('ROOMBAHT_ROOM_COOLDOWN', 900))
+
+def features():
+    actual_features = []
+    if config.PARTY_APP:
+        actual_features.append('party')
+
+    if config.WAITTIME_APP:
+        actual_features.append('waittime')
+
+    return actual_features

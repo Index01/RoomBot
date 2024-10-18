@@ -1,5 +1,4 @@
 """Datatypes for importing guest and room lists"""
-# we don't need a StaffImport model because that table is directly translated to the db table
 
 from typing import Optional
 from pydantic import BaseModel, Field

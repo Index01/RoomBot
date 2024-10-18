@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
-from reservations.models import Guest, Staff
+from django.contrib.auth.models import User
+from reservations.models import Guest
 
 class Command(BaseCommand):
     help = "Show information on a guest/user"
@@ -61,13 +62,13 @@ class Command(BaseCommand):
 
         adult = ''
         try:
-            staff = Staff.objects.get(email=guest.email)
+            admin_user = User.objects.get(email=guest.email)
             adult = ' [staff'
-            if staff.is_admin:
-                adult += ' & admin'
+            if admin_user.is_superuser:
+                adult += ' & root'
 
             adult += '],'
-        except Staff.DoesNotExist:
+        except User.DoesNotExist:
             pass
 
         self.stdout.write(f"User {guest.name},{adult} otp: {guest.jwt}, can login: {guest.can_login}, last login: {last_login}")
