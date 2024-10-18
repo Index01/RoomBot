@@ -25,17 +25,17 @@ class UnknownProductError(Exception):
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    name = models.CharField("Name", max_length=240)
-    email = models.EmailField()
+    name = models.CharField("User Name", max_length=240)
+    email = models.EmailField("Email")
     ticket = models.CharField("Ticket", max_length=20)
     transfer = models.CharField("Transfer", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
-    jwt = models.CharField("JWT", max_length=240)
-    room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
+    jwt = models.CharField("Password", max_length=240)
+    room_number = models.CharField("Room Number", max_length=20, blank=True, null=True)
     hotel = models.CharField("Hotel", max_length=20, null=True, blank=True)
-    onboarding_sent = models.BooleanField("OnboardingSent", default=False)
-    can_login = models.BooleanField("CanLogin", default=False)
-    last_login = models.DateTimeField(blank=True, null=True)
+    onboarding_sent = models.BooleanField("Onboarding Sent", default=False)
+    can_login = models.BooleanField("Can Login", default=False)
+    last_login = models.DateTimeField("Last Login", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -60,6 +60,16 @@ class Guest(models.Model):
 class GuestAdmin(admin.ModelAdmin):
     date_heiarchy = 'created_at'
     exclude = ['invitation', 'jwt', 'updated_at']
+    fields = [
+        ('name', 'email', 'onboarding_sent'),
+        ('can_login', 'last_login'),
+        ('ticket', 'transfer')
+    ]
+    readonly_fields = ['name', 'email', 'ticket', 'transfer', 'can_login',
+                       'last_login']
+    search_fields = ['name', 'email']
+    description = 'A Guest'
+    search_help_text = 'Search by username or email'
 
 class Room(DirtyFieldsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -252,18 +262,18 @@ class Room(DirtyFieldsMixin, models.Model):
 class RoomsAdmin(admin.ModelAdmin):
     exclude = ['created_at',
                'updated_at',
-               'sp_ticket_id',
                'swap_code']
     fields = [
         ('number', 'name_take3', 'name_hotel'),
         ('is_placed', 'primary', 'secondary', 'check_in', 'check_out'),
         ('is_smoking', 'is_lakeview', 'is_special',
-         'is_hearing_accessible', 'is_mountainview', 'placed_by_roombot')
+         'is_hearing_accessible', 'is_mountainview', 'placed_by_roombot',
+         'sp_ticket_id')
     ]
     readonly_fields = [
         'check_in', 'check_out', 'is_smoking', 'is_lakeview', 'is_special',
         'is_hearing_accessible', 'is_mountainview', 'is_placed',
-        'placed_by_roombot'
+        'placed_by_roombot', 'sp_ticket_id'
     ]
     description = 'A Room'
     list_display = [
