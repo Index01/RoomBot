@@ -44,9 +44,6 @@ class Command(BaseCommand):
         if room.is_swappable:
             flags.append('swappable')
 
-        if room.is_art:
-            flags.append('art room')
-
         if room.is_comp:
             flags.append('comped')
 

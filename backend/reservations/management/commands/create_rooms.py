@@ -83,9 +83,6 @@ def create_rooms_main(cmd, args):
                 if room.name_hotel == 'Ballys':
                     room.is_swappable = True
 
-            if elem.art_room == 'Yes':
-                room.is_art = True
-
             if room.name_take3 not in ROOM_LIST:
                 room.is_special = True
                 room.is_available = False
@@ -101,10 +98,6 @@ def create_rooms_main(cmd, args):
             room.check_out = args['default_check_out']
         else:
             room.check_out = elem.check_out_date
-
-        # room notes are only adjustable via room spreadsheet
-        if elem.room_notes != room.notes:
-            room.notes = elem.room_notes
 
         # Cannot mark a room as non available based on being set to roombaht
         #   in spreadsheet if it already actually assigned, but you can mark
@@ -157,19 +150,10 @@ def create_rooms_main(cmd, args):
         elif room.primary != '' and (not room.guest) and room.is_available:
             # Cannot unassign an already unavailable room
             room.primary = ''
-            room.guest_notes = ''
             room.secondary = ''
-
-        if elem.guest_restriction_notes != room.guest_notes:
-            room.guest_notes = elem.guest_restriction_notes
 
         if elem.secondary_name != room.secondary:
             room.secondary = elem.secondary_name.title()
-
-        if elem.paying_guest == 'Comp':
-            room.is_comp = True
-        else:
-            room.is_comp = False
 
         if (elem.ticket_id_in_secret_party != room.sp_ticket_id
             and elem.ticket_id_in_secret_party != 'n/a'):
@@ -201,9 +185,6 @@ def create_rooms_main(cmd, args):
                 if room.is_placed:
                     room_msg += f", placed ({primary_name})"
 
-                if room.is_comp:
-                    room_msg += f", compd"
-
                 if room.is_special:
                     room_msg += ", special!"
 
@@ -228,9 +209,6 @@ def create_rooms_main(cmd, args):
 
             if room.is_swappable:
                 room_count_obj['swappable'] += 1
-
-            if room.is_art:
-                room_count_obj['art'] += 1
 
             rooms[room.name_take3] = room_count_obj
 

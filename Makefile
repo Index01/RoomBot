@@ -63,12 +63,9 @@ backend_tests: backend_env
 backend_migrations: backend_env
 	backend/venv/bin/python3 backend/manage.py makemigrations
 
-
 # targets to handle data for local dev environment
 sample_data:
-	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleBallysRoomList.csv --force
-	backend/venv/bin/python3 backend/manage.py create_rooms samples/exampleNuggetRoomList.csv --force --preserve --hotel-name=nugget
-	backend/venv/bin/python3 backend/manage.py create_staff samples/exampleMainStaffList.csv
+	./scripts/sample_data.sh
 
 backend_clean_data:
 	rm -rf backend/db.sqlite3

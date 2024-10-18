@@ -15,7 +15,6 @@ class Command(BaseCommand):
                 continue
 
             placed_msg = 'yes' if room.is_placed else 'no'
-            comp_msg = 'yes' if room.is_comp else 'no'
             art_msg = 'yes' if room.is_comp else 'no'
             special_msg = 'yes' if room.is_special else 'no'
             avail_msg = 'yes' if room.is_available else 'no'
