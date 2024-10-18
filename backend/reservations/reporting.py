@@ -15,7 +15,6 @@ logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger(__name__)
 
-
 def diff_swaps(swap_from, swap_to):
     fieldnames = ['Datetime', 'Swap From', 'Swap To']
     file = f"{roombaht_config.TEMP_DIR}/diff_swaps.csv"
@@ -193,21 +192,21 @@ def rooming_list_export(hotel):
             row['check_in_date'] = 'TBD'
             row['check_out_date'] = 'TBD'
         row["placed_by_roombaht"] = room.placed_by_roombot
-        row["paying_guest"] = "Comp" if room.is_comp else "Yes"
-        
+
         if room.guest and room.guest.ticket:
             row['sp_ticket_id'] = room.guest.ticket
-        elif room.guest and not room.guest.ticket and room.is_comp:
+        elif room.guest and not room.guest.ticket:
             row['sp_ticket_id'] = "n/a"
         else:
             # shouldnt have any of these, but here we are
-            logger.warning(f"No SP ticket state found for room: {room.number}")
+            logger.warning("No SP ticket state found for room: %s",  room.number)
             row['sp_ticket_id'] = ""
+
         row["guest_notes"] = room.guest_notes
         row["is_art"] = room.is_art
 
         rows.append(row)
-        
+
     # sort by room number
     sorted_rooms = sorted(rows, key=lambda x: int(x['room_number']))
 

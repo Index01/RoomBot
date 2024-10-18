@@ -80,16 +80,12 @@ class Room(DirtyFieldsMixin, models.Model):
     is_mountainview = models.BooleanField("MountainviewRoom", default=False)
     is_ada = models.BooleanField("ADA", default=False)
     is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
-    is_art = models.BooleanField("ArtRoom", default=False)
     is_special = models.BooleanField("SpecialRoom", default=False)
-    is_comp = models.BooleanField("CompRoom", default=False)
     is_placed = models.BooleanField("PlacedRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
     _check_out = models.DateField(blank=True, null=True, db_column='check_out')
-    notes = models.TextField(blank=True, verbose_name='RoomNotes')
-    guest_notes = models.TextField(blank=True, verbose_name='GuestNotes')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20, blank=True, null=True)
     primary = models.CharField("PrimaryContact", max_length=50)
     secondary = models.CharField("SecondaryContact", max_length=50)
@@ -242,10 +238,6 @@ class Room(DirtyFieldsMixin, models.Model):
         room_one.check_out = room_two.check_out
         room_two.check_in = room_one_check_in
         room_two.check_out = room_one_check_out
-
-        room_one_guest_notes = room_one.guest_notes
-        room_one.guest_notes = room_two.guest_notes
-        room_two.guest_notes = room_one_guest_notes
 
         room_one_sp_ticket_id = room_one.sp_ticket_id
         room_one.sp_ticket_id = room_two.sp_ticket_id
