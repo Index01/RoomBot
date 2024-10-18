@@ -57,7 +57,14 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 ROOT_URLCONF = 'backend.urls'
+
+SILENCED_SYSTEM_CHECKS = [
+    "security.W004",  # we only use https via nginx
+    "security.W008"
+]
 
 TEMPLATES = [
     {
