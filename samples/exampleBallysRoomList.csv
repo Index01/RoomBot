@@ -10,16 +10,16 @@ Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Re
 # Simple placed room w/o check-in/check-out
 305,Queen,,Foo,Bar,,,,Foo Placer,aaa001
 # Simple placed room with check-in/check-out
-306,Queen,,Foo,Baz,,Fri - 11/10,Mon - 11/13,Foo Placer,aaa002
+306,Queen,,Foo,Baz,,Fri 11/10,Mon 11/13,Foo Placer,aaa002
 # two generic art rooms
-307,King,,Foo,Baa,Foos Friend,Wed - 11/08,Mon - 11/13,Foo Placer,aaa005
-308,King,,Foo,Bac,,Fri - 11/10,Mon - 11/13,Foo Placer,aaa006
-# transferred art room - original ticket placed
+307,King,,Foo,Baa,Foos Friend,Wed 11/08,Mon 11/13,Foo Placer,aaa005
+308,King,,Foo,Bac,,Fri 11/10,Mon 11/13,Foo Placer,aaa006
+# transferred art room original ticket placed
 309,King,,Foo,Bab,,,,Foo Placer,aaa007
-# transferred art room - transferred ticket placed
+# transferred art room transferred ticket placed
 310,Queen,,Foo,Bal,,,,Foo Placer,aaa010
 # comp'd room
-311,Queen,Smoking,Staff,Staffy,Staffys Friend,Wed - 11/08,Mon - 11/13,Foo Placer,
+311,Queen,Smoking,Staff,Staffy,Staffys Friend,Wed 11/08,Mon 11/13,Foo Placer,
 #more free rooms
 400,Queen,,,,,,,Roombaht,
 401,Queen,,,,,,,Roombaht,

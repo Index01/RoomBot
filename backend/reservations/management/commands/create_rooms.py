@@ -102,7 +102,8 @@ def create_rooms_main(cmd, args):
         # Cannot mark a room as non available based on being set to roombaht
         #   in spreadsheet if it already actually assigned, but you can mark
         #   a room as non available/swappable if it is not assigned yet
-        if elem.placed_by == '' and not room.is_special and not room.is_available:
+        if (elem.placed_by == '' and not args['blank_is_available']) \
+           and not room.is_special and not room.is_available:
             if not room.guest and room.is_swappable:
                 room.is_swappable = False
             else:
@@ -140,7 +141,7 @@ def create_rooms_main(cmd, args):
                 else:
                     room.primary = primary_name.title()
 
-            if elem.placed_by == '':
+            if elem.placed_by == '' and not args['blank_is_available']:
                 cmd.stderr.write(f"Room {room.number} Reserved w/o placer")
 
             if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:

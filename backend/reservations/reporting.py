@@ -158,8 +158,6 @@ def rooming_list_export(hotel):
         "check_out_date",
         "placed_by_roombaht",
         "sp_ticket_id",
-        "guest_notes",
-        "is_art",
         "paying_guest"
     ]
 
@@ -201,9 +199,6 @@ def rooming_list_export(hotel):
             # shouldnt have any of these, but here we are
             logger.warning("No SP ticket state found for room: %s",  room.number)
             row['sp_ticket_id'] = ""
-
-        row["guest_notes"] = room.guest_notes
-        row["is_art"] = room.is_art
 
         rows.append(row)
 
