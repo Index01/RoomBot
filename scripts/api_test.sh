@@ -38,4 +38,5 @@ sleep 5
 "${SCRIPTDIR}/manage_dev" loaddata test_users
 "${SCRIPTDIR}/manage_dev" loaddata test_rooms
 "$TAVERN" backend/tavern/test_room_swap.tavern.yml
+"$TAVERN" backend/tavern/test_admin.tavern.yml
 SUCCESS="yea girl"

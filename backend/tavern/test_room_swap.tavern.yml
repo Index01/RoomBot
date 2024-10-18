@@ -99,10 +99,49 @@ stages:
       json:
         rooms:
           - number: 500
-            type: "Bally's - Standard 2 Queen"
+            type: "Queen"
             swappable: true
             cooldown: false
         swaps_enabled: true
+
+  - name: "request a swap for a non-existent room"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "69"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 404
+
+  - name: "request a swap for a non compatible room"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "502"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "request a swap for an art room"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "503"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
 
   - name: "request a swap"
     request:
@@ -162,7 +201,7 @@ stages:
       json:
         rooms:
           - number: 501
-            type: "Bally's - Standard 2 Queen"
+            type: "Queen"
             swappable: true
             cooldown: false
         swaps_enabled: true
@@ -205,6 +244,19 @@ stages:
     response:
       status_code: 400
 
+  - name: "get ur swap on oops bad code"
+    request:
+      url: "http://localhost:8000/api/swap_it_up/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "500"
+        swap_code: "lol butts"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
   - name: "get ur swap on"
     request:
       url: "http://localhost:8000/api/swap_it_up/"
@@ -231,7 +283,7 @@ stages:
       json:
         rooms:
           - number: 501
-            type: "Bally's - Standard 2 Queen"
+            type: "Queen"
             swappable: false
             cooldown: true
         swaps_enabled: true
@@ -249,7 +301,7 @@ stages:
       json:
         rooms:
           - number: 500
-            type: "Bally's - Standard 2 Queen"
+            type: "Queen"
             swappable: false
             cooldown: true
         swaps_enabled: true

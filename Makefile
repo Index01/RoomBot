@@ -55,6 +55,10 @@ backend_env:
 backend_dev: backend_env
 	./scripts/start_backend_dev.sh
 
+# tests are cool
+backend_tests: backend_env
+	./scripts/api_test.sh
+
 # automagically generate django migrations
 backend_migrations: backend_env
 	backend/venv/bin/python3 backend/manage.py makemigrations

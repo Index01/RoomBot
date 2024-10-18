@@ -120,47 +120,21 @@ def room_list(request):
 
 
 @api_view(['POST'])
-def room_reserve(request):
-    if request.method == 'POST':
-        auth_obj = authenticate(request)
-        if not auth_obj or 'email' not in auth_obj:
-            return unauthenticated()
-
-        #TODO(tb): there is prolly a more standard way of doing this. serializer probs tho.
-        data = request.data['guest']
-        logger.debug(f'data: {data}')
-
-        try:
-            guest = Guest.objects.filter(email=email)
-            room = Room.objects.filter(number=room_number, name_hotel='Ballys')
-            room.update(is_available=False, guest=guest[0])
-            room[0].save()
-        except IndexError as e:
-            return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_201_CREATED)
-
-
-@api_view(['PUT', 'DELETE'])
-def room_detail(request, pk):
+def room_detail(request, room_number):
     auth_obj = authenticate(request)
     if not auth_obj or 'email' not in auth_obj:
         return unauthenticated()
+
+    hotel = request.query_params.get('hotel', 'ballys').capitalize()
+    if hotel not in roombaht_config.GUEST_HOTELS:
+        return Response("invalid hotel", status=status.HTTP_400_BAD_REQUEST)
     try:
-        room = Room.objects.get(pk=pk)
+        room = Room.objects.filter(number=room_number, name_hotel=hotel)
     except Room.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'PUT':
-        serializer = RoomSerializer(room, data=request.data,context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        room.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+    if request.method == 'POST':
+        return Response(RoomSerializer(room[0], context={'request': request}).data)
 
 
 @api_view(['POST'])
