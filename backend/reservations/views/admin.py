@@ -707,13 +707,15 @@ def system_config(request):
         obj = {
             'swaps_enabled': config.SWAPS_ENABLED,
             'party_app': config.PARTY_APP,
-            'waittime_app': config.WAITTIME_APP
+            'waittime_app': config.WAITTIME_APP,
+            'send_onboarding': config.SEND_ONBOARDING
         }
         resp_status = status.HTTP_200_OK
         if 'config' in request.data:
             config.PARTY_APP = request.data['config']['party_app']
             config.WAITTIME_APP = request.data['config']['waittime_app']
             config.SWAPS_ENABLED = request.data['config']['swaps_enabled']
+            config.SEND_ONBOARDING = request.data['config']['send_onboarding']
             resp_status = status.HTTP_201_CREATED
 
         return Response(obj, status=resp_status)

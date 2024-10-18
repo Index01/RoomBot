@@ -205,7 +205,8 @@ export default class RoombotAdmin extends React.Component {
       metrics: {
 	swaps_enabled: undefined,
 	party_app: undefined,
-	wait_app: undefined
+	wait_app: undefined,
+	send_onboarding: undefined
       }
     }
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -215,7 +216,8 @@ export default class RoombotAdmin extends React.Component {
     const config = {
       swaps_enabled: evt.currentTarget.elements.config_swaps_enabled.checked,
       party_app: evt.currentTarget.elements.config_party_app.checked,
-      waittime_app: evt.currentTarget.elements.config_waittime_app.checked
+      waittime_app: evt.currentTarget.elements.config_waittime_app.checked,
+      send_onboarding: evt.currentTarget.elements.config_send_onboarding.checked
     }
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     if (jwt == null) {
@@ -309,6 +311,11 @@ export default class RoombotAdmin extends React.Component {
 		    id="config_waittime_app"
 		    label="Waittime App Enabled"
 		    defaultChecked={this.state.metrics.waittime_app} />
+		  <Form.Check
+		    type="switch"
+		    id="config_send_onboarding"
+		    label="Send Onboarding Emails"
+		    defaultChecked={this.state.metrics.send_onboarding} />
 		  <Button variant="primary" type="submit">
 		    Change
 		  </Button>
