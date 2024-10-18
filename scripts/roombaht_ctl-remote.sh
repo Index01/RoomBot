@@ -182,6 +182,13 @@ frontend_deploy() {
 }
 
 nginx_config() {
+    local CERTPATH="/etc/letsencrypt/live/${ROOMBAHT_HOST}"
+    if [ ! -d "$CERTPATH" ] ; then
+	certbot certonly --nginx \
+		-d "$ROOMBAHT_HOST" \
+		--email "$ROOMBAHT_TECH_EMAIL" \
+		--agree-tos --no-eff-email
+    fi
     if [ -e "/etc/nginx/sites-enabled/roombaht" ] ; then
 	rm "/etc/nginx/sites-enabled/roombaht"
     fi
@@ -259,13 +266,13 @@ elif [ "$ACTION" == "manage" ] ; then
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" $*
 elif [ "$ACTION" == "deploy" ] ; then
-    nginx_config
     frontend_deploy
     backend_deploy
     backend_venv
     backend_config
     db_connection
     db_migrate
+    nginx_config
 elif [ "$ACTION" == "quick_deploy" ] ; then
     backend_deploy
     backend_config

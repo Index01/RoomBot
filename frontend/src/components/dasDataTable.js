@@ -105,7 +105,7 @@ export default class RoomDataTable extends React.Component {
       this.setState({error: 'auth'});
       return;
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/rooms/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {

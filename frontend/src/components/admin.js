@@ -27,7 +27,7 @@ function GuestsCard() {
         jwt: jwt["jwt"],
         guest_list: file,
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/guest_upload/", guest )
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/guest_upload/", guest )
       .then(res => {
         setPhrase(res.data);
 	notifyOK("File uploaded succesfully.");
@@ -84,7 +84,7 @@ function GuestsCard() {
 
   useEffect(() => {
     if (isLoading) {
-      axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
+      axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
 	notifyOK("Guests processed");
         console.log(res.data.results);
 	setLoading(false);
@@ -153,7 +153,7 @@ function ReportCard() {
       jwt: jwt["jwt"],
     }
     if (isLoading) {
-       axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/run_reports/", data )
+      axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/run_reports/", data )
          .then((respText) => {
            console.log(JSON.parse(respText.data).admins);
            setLoading(false);
