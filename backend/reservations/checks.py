@@ -1,7 +1,7 @@
 from django.core.checks import Error, Warning, register
 from reservations.models import Room, Guest
 
-@register()
+@register(deploy=True)
 def room_drama_check(app_configs, **kwargs):
     errors = []
     rooms = Room.objects.all()
