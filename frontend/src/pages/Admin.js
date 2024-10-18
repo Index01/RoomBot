@@ -3,9 +3,14 @@ import RoombotAdmin from '../components/admin.js';
 import BasicVis from '../components/adminMetrics.js';
 import "../styles/RoombotAdmin.css";
 import React from 'react';
+import { createContext } from 'react';
 import { Toaster } from 'react-hot-toast';
 
 const AppAdmin = () => {
+  var updateMetrics = 0;
+  const onChange = () => {
+    updateMetrics++;
+  }
     return(
         <div className="componentContainer">
 
@@ -14,11 +19,11 @@ const AppAdmin = () => {
             </div>
 
             <div className="DTApp"> Roombot Metrics
-              <BasicVis/>
+              <BasicVis updateMetrics={updateMetrics}/>
             </div>
 
             <div className="DTApp"> Roombot Admin
-              <RoombotAdmin/>
+              <RoombotAdmin onChange={onChange}/>
             </div>
             <Toaster />
         </div>
