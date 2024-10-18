@@ -14,7 +14,7 @@ export function ModalParty(props) {
   const [description, setDescription] = useState('');
   const handleClose = () => setShow(false);
   const handleShow = () => {
-    axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/" + props.room_number + "/")
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/party/" + props.room_number + "/")
       .then(res => {
 	setDescription(res.data.description);
 	setShow(true);
@@ -50,7 +50,7 @@ export function ModalRequestSwap(props) {
     if (contacts === null) {
         return;
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_request/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/swap_request/", {
         jwt: jwt["jwt"],
         number: row.number,
 	    contact_info: contacts
@@ -148,7 +148,7 @@ export function ModalEnterCode(props) {
   const row = props.row.number;
 
   const handleAPICall = (code) => {
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_it_up/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/swap_it_up/", {
         jwt: jwt['jwt'],
         number: row,
         swap_code: code
@@ -244,7 +244,7 @@ export function ModalCreateCode(props) {
   const handleShow = () => {
     refreshTimer = setInterval(() =>
       {
-	axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
+	axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/my_rooms/", {
 	  jwt: jwt["jwt"]
 	})
 	  .then(res => {
@@ -265,7 +265,7 @@ export function ModalCreateCode(props) {
   }
   const handleAPICall = () => {
 
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/swap_gen/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/swap_gen/", {
             jwt: jwt['jwt'],
             number: {row},
       })
