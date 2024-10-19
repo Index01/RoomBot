@@ -198,8 +198,7 @@ def create_rooms_main(cmd, args):
                 room_count_obj = {
                     'count': 1,
                     'available': 0,
-                    'swappable': 0,
-                    'art': 0
+                    'swappable': 0
                 }
             else:
                 room_count_obj = rooms[room.name_take3]
@@ -219,21 +218,19 @@ def create_rooms_main(cmd, args):
     total_rooms = 0
     available_rooms = 0
     swappable_rooms = 0
-    art_rooms = 0
     for r_counts, counts in rooms.items():
         cmd.stdout.write((
             f"room {r_counts} total:{counts['count']}, available:{counts['available']}"
-            f", swappable:{counts['swappable']}, art:{counts['art']}"))
+            f", swappable:{counts['swappable']},"))
 
         total_rooms += counts['count']
         available_rooms += counts['available']
         swappable_rooms += counts['swappable']
-        art_rooms += counts['art']
 
     placed_rooms = total_rooms - available_rooms
     cmd.stdout.write((
         f"total:{total_rooms}, available:{available_rooms}, placed:{placed_rooms}"
-        f", swappable:{swappable_rooms}, art:{art_rooms}"))
+        f", swappable:{swappable_rooms}"))
 
 class Command(BaseCommand):
     help='Create/update rooms'
