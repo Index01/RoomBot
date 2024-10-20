@@ -67,17 +67,18 @@ ROOM_LIST = {
     ],
 
     "King Bed Suite Lake View Balcony": [
-        "Nugget - Lakeview Balcony Suite",
-        "Nugget - Lakeview Balcony Suite (DTS)"
+        "Nugget - King Lakeview Balcony Suite",
+        "Nugget - King Lakeview Balcony Suite (DTS)"
     ],
 
     "King Bed Suite Mountain View": [
-        "Nugget - Mountain View Suite"
+        "Nugget - King Mountain View Suite",
+        "Nugget - King Mountain View Suite (DTS)"
     ],
 
     "King Bed Suite Balcony": [
-        "Nugget - Pool View Balcony Suite",
-        "Nugget - Pool View Balcony Suite (DTS)"
+        "Nugget - King Pool View Balcony Suite",
+        "Nugget - King Pool View Balcony Suite (DTS)"
     ]
 }
 
