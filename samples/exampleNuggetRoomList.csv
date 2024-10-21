@@ -1,4 +1,4 @@
-Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Resident),Last Name (Resident),Secondary Name,Check-in Date,Check-out Date,Placed By,Ticket ID in SecretParty
+Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Resident),Last Name (Resident),Secondary Name,Check-In Date,Check-Out Date,Placed By,Ticket ID in SecretParty
 # Generic rooms and their features
 100,Standard King,Hearing Accessible,,,,,,Roombaht,
 101,Lakeview 2 Queens,Smoking,,,,,,Roombaht,

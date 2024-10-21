@@ -176,6 +176,7 @@ def swap_request(request):
             return Response(f"Room {swap_room.number} was swapped too recently",
                             status=status.HTTP_400_BAD_REQUEST)
 
+
         requester_swappable = []
         for room_number in requester_room_numbers:
             try:
@@ -240,6 +241,9 @@ def swap_gen(request):
             return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
 
         room = Room.objects.get(number=room_num, name_hotel='Ballys')
+        if room.guest.id not in [x.id for x in guest_instances]:
+            return Response(f"Naughty. Room {room.number} is not your room",
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if room.cooldown():
             return Response(f"Room {room.number} was swapped too recently",
@@ -247,7 +251,7 @@ def swap_gen(request):
 
         phrase=phrasing()
         room.swap_code=phrase
-        room.swap_time=make_aware(datetime.datetime.utcnow())
+        room.swap_code_time=make_aware(datetime.datetime.utcnow())
         room.save()
 
         logger.info(f"[+] Swap phrase generated {phrase}")
@@ -291,7 +295,8 @@ def swap_it_up(request):
             logger.warning("[-] No room matching code")
             return Response("No room matching that code", status=status.HTTP_400_BAD_REQUEST)
 
-        expiration = swap_room_theirs.swap_time+datetime.timedelta(seconds=3600)
+        exp_delta = datetime.timedelta(seconds=roombaht_config.SWAP_CODE_LIFE)
+        expiration = swap_room_theirs.swap_code_time + exp_delta
 
         if (expiration.timestamp() < make_aware(datetime.datetime.utcnow()).timestamp()):
             logger.warning("[-] Expired swap code")
@@ -299,6 +304,10 @@ def swap_it_up(request):
 
         if swap_room_mine.cooldown():
             return Response(f"Room {swap_room_mine.number} was swapped too recently",
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if swap_room_theirs.cooldown():
+            return Response(f"Room {swap_room_theirs.number} was swapped too recently",
                             status=status.HTTP_400_BAD_REQUEST)
 
         try:

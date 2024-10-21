@@ -12,24 +12,32 @@ usage() {
 }
 
 cleanup() {
-    if [ -n "$BACKEND_PID" ] ; then
-	kill "$BACKEND_PID"
-    fi
     if [ -e "$SQLITE" ] ; then
 	rm "$SQLITE"
     fi
+    PIDS="$(pgrep -f '.*manage.py runserver.*')"
+    if [ -n "$PIDS" ] ; then
+	for pid in $PIDS ; do
+	    if ps "$pid" &> /dev/null ; then
+		kill "$pid"
+	    fi
+	done
+    fi
+}
+
+init() {
+    nohup "${SCRIPTDIR}/start_backend_dev.sh" < /dev/null &> "$LOG" & disown
+    sleep 5
+}
+
+run_logs() {
     if [ -z "$SUCCESS" ] && [ -e "$LOG" ] ; then
 	cat "$LOG"
     fi
 }
 
-init() {
-    nohup "${SCRIPTDIR}/start_backend_dev.sh" &> "$LOG" &
-    BACKEND_PID="$!"
-    sleep 5
-}
-
 run() {
+    trap run_logs EXIT
     "${SCRIPTDIR}/manage_dev" loaddata test_users
     "$TAVERN" backend/tavern/test_login.tavern.yml
 
@@ -50,7 +58,6 @@ if [ -e "$SQLITE" ] ; then
 fi
 
 export ROOMBAHT_CONFIG="${ROOTDIR}/test.env"
-trap cleanup EXIT
 
 if [ "$1" == "init" ] ; then
     init
@@ -58,12 +65,15 @@ if [ "$1" == "init" ] ; then
 elif [ "$1" == "run" ] ; then
     run
     exit 0
-elif [ "$!" == "cleanup" ] ; then
+elif [ "$1" == "cleanup" ] ; then
     cleanup
     exit 0
-else
+elif [ "$#" == 0 ] ; then
     init
     run
     cleanup
     exit 0
+else
+    usage
+    exit 1
 fi

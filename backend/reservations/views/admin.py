@@ -622,16 +622,16 @@ def guest_file_upload(request):
         guest_fields, original_guests = ingest_csv(rows)
         guests = []
 
+        # basic input validation, make sure it's the right csv
+        if 'ticket_code' not in guest_fields or \
+           'product' not in guest_fields:
+            return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
+
         # figure out how to handle sku/product consistently between years
         for o_guest in original_guests:
             raw_product = o_guest['product']
             o_guest['product'] = re.sub(r'[\d\.]+ RS24 ', '', raw_product)
             guests.append(o_guest)
-
-        # basic input validation, make sure it's the right csv
-        if 'ticket_code' not in guest_fields or \
-           'product' not in guest_fields:
-            return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
 
         # build a list of products that we actually care about
         room_products = []

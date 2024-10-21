@@ -45,7 +45,6 @@ export default class BasicVis extends React.Component {
   }
 
   componentDidUpdate(oldProps) {
-    console.log("AAA " + oldProps.count + " / " + this.props.count);
     if (oldProps.count != this.props.count ) {
       this.loadMetrics();
     }

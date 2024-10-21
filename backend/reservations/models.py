@@ -83,6 +83,7 @@ class Room(DirtyFieldsMixin, models.Model):
     is_special = models.BooleanField("SpecialRoom", default=False)
     is_placed = models.BooleanField("PlacedRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
+    swap_code_time = models.DateTimeField(blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
     _check_out = models.DateField(blank=True, null=True, db_column='check_out')
@@ -217,6 +218,7 @@ class Room(DirtyFieldsMixin, models.Model):
         room_one.guest.room_number = room_two.number
 
         room_one.swap_code = None
+        room_one.swap_code_time = None
         guest_id_theirs = room_one.guest
         room_one.guest = room_two.guest
         room_two.guest = guest_id_theirs

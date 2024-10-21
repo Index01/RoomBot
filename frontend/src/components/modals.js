@@ -248,9 +248,8 @@ export function ModalCreateCode(props) {
 	  jwt: jwt["jwt"]
 	})
 	  .then(res => {
-	    const data = JSON.parse(res.data);
 	    var hasSwapped = true;
-	    data.rooms.forEach((room) => {
+	    res.data.rooms.forEach((room) => {
 	      if (room.number == row) {
 		hasSwapped = false;
 	      }

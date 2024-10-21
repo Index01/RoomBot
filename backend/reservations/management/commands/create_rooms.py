@@ -288,7 +288,6 @@ class Command(BaseCommand):
                     self.stderr.write('Wiping all data at user request!')
 
             Room.objects.all().delete()
-            Staff.objects.all().delete()
             Guest.objects.all().delete()
         else:
             if kwargs['dry_run']:
