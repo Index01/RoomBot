@@ -45,7 +45,7 @@ frontend_dev: frontend_build
 backend_env:
 	test -d backend/venv || \
 		( mkdir backend/venv && \
-			virtualenv -p python3.8 backend/venv) && \
+			virtualenv -p python3.10 backend/venv) && \
 		backend/venv/bin/python3 -m pip install --upgrade pip
 	backend/venv/bin/pip install \
 		-r backend/requirements.txt \
@@ -72,6 +72,7 @@ backend_clean_data:
 
 # clean up build artifacts and such
 backend_distclean: backend_clean backend_clean_data
+	rm -rf backend/venv
 
 backend_clean:
 	rm -rf build/roombaht-backend.tgz
