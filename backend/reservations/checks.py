@@ -35,7 +35,7 @@ def room_drama_check(app_configs, **kwargs):
                 errors.append(Error(f"Room {room.number} sp_ticket_id {room.sp_ticket_id} missing guest",
                                     hint='Manually reconcile w/ sources of truth'))
 
-            if room.number != guest.room_number \
+            if room.guest is not None and room.number != guest.room_number \
                and room.primary != guest.name \
                    and guest is not None:
                 try:
