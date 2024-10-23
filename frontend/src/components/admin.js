@@ -129,7 +129,10 @@ function GuestsCard(props) {
         <p></p>
         <ul className="card-subtitle mb-2 text-muted">
           {respText.map(item =>
-            <li key={item}>load response: {item}</li>
+            item.includes('shortage: 0') ?
+	      <li key={item}>load response: {item}</li>
+	    :
+              <li className="text-warning"  key={item}>load response: {item}</li >
           )}
         </ul>
 

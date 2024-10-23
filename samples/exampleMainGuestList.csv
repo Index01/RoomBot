@@ -49,27 +49,27 @@ hhh002,Hao,Foo,foo.hao@noop.com,Nugget - Lakeview Balcony 2 Queens,,
 hhh003,Hap,Foo,foo.hap@noop.com,Nugget - Lakeview Balcony 2 Queens,,
 hhh004,Haq,Foo,foo.haq@noop.com,Nugget - Standard King,,
 hhh005,Har,Foo,foo.har@noop.com,Nugget - Standard King (DTS),,
-hhh006,Maa,Foo,foo.maa@noop.com,Nugget - Pool View Balcony Suite,,
-hhh007,Mab,Foo,foo.mab@noop.com,Nugget - Pool View Balcony Suite,,
+hhh006,Maa,Foo,foo.maa@noop.com,Nugget - King Pool View Balcony Suite,,
+hhh007,Mab,Foo,foo.mab@noop.com,Nugget - King Pool View Balcony Suite,,
 # transferring a hard rock room
-hhh008,Has,Foo,foo.has@noop.com,Nugget - Mountain View Suite,,
-hhh009,Hat,Foo,foo.hat@noop.com,Nugget - Mountain View Suite,hhh008,
+hhh008,Has,Foo,foo.has@noop.com,Nugget - King Mountain View Suite,,
+hhh009,Hat,Foo,foo.hat@noop.com,Nugget - King Mountain View Suite,hhh008,
 # purchased placed room
 hhh010,Hat,Fob,fob.hat@noop.com,Nugget - Lakeview 2 Queens,,
 # double transfer placed suite
-hhh011,Mat,Fob,fob.mat@noop.com,Nugget - Lakeview Balcony Suite,,
-hhh012,Mat,Foz,foz.mat@noop.com,Nugget - Lakeview Balcony Suite,hhh011,
-hhh013,Mat,Foo,foo.mat@noop.com,Nugget - Lakeview Balcony Suite,hhh012,
+hhh011,Mat,Fob,fob.mat@noop.com,Nugget - King Lakeview Balcony Suite,,
+hhh012,Mat,Foz,foz.mat@noop.com,Nugget - King Lakeview Balcony Suite,hhh011,
+hhh013,Mat,Foo,foo.mat@noop.com,Nugget - King Lakeview Balcony Suite,hhh012,
 # non-placed rooms
-hhh014,Mat,Fon,fon.mat@noop.com,Nugget - Lakeview Balcony Suite,,
+hhh014,Mat,Fon,fon.mat@noop.com,Nugget - King Lakeview Balcony Suite,,
 hhh015,Map,Fon,fon.map@noop.com,Nugget - Lakeview King,,
 # non-placed transfer which will happen under update
 hhh016,Noo,Foo,foo.noo@noop.com,Nugget - Balcony King,,
 # placed transfer which will happen under update
 hhh017,Moo,Foo,foo.moo@noop.com,Nugget - Standard King,,
 # non-placed double transfer that will happen under initial and update
-hhh018,Moo,Aoo,aoo.moo@noop.com,Nugget - Pool View Balcony Suite,,
-hhh019,Moo,Boo,boo.moo@noop.com,Nugget - Pool View Balcony Suite,hhh018,
+hhh018,Moo,Aoo,aoo.moo@noop.com,Nugget - King Pool View Balcony Suite,,
+hhh019,Moo,Boo,boo.moo@noop.com,Nugget - King Pool View Balcony Suite,hhh018,
 # non-placed rooms for high roller
-hhh020,Bar,Foo,foo.bar@noop.com,Nugget - Pool View Balcony Suite,,
+hhh020,Bar,Foo,foo.bar@noop.com,Nugget - King Pool View Balcony Suite,,
 hhh021,Bar,Foo,foo.bar@noop.com,Nugget - Lakeview 2 Queens,,

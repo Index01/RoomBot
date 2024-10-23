@@ -20,7 +20,7 @@ class SubmitForm extends React.Component {
     handleSubmit = event => {
         event.preventDefault();
         const guest = {
-            email: this.state.email,
+            email: this.state.email.trim(),
             jwt: this.state.pass
         }
         if(this.state.pass==""){

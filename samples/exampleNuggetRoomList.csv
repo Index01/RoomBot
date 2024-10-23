@@ -1,14 +1,13 @@
-Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Resident),Last Name (Resident),Secondary Name,Check-in Date,Check-out Date,Placed By,Ticket ID in SecretParty
+Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Resident),Last Name (Resident),Secondary Name,Check-In Date,Check-Out Date,Placed By,Ticket ID in SecretParty
 # Generic rooms and their features
 100,Standard King,Hearing Accessible,,,,,,Roombaht,
-101,Lakeview 2 Queens,Smoking,,,,,,Roombaht,
+101,Double Queen Beds Lake View,Smoking,,,,,,Roombaht,
 102,Standard King,Smoking,,,,,,Roombaht,
 # some comp'd placed rooms
 103,Double Queen Beds Lake View,,Staff,Staffy,,,,Foo Placer,
 104,Double Queen Beds Lake View,,Staff,Staffy,,,,Foo Placer,
 # a placed purchased room
 105,Double Queen Beds,Balcony,Hat,Fob,,,,Foo Placer,hhh010
-106,Double Queen Beds,"Balcony, ADA, Smoking",,,,,,Roombaht,
 # placed transfer
 107,King Bed,,,,,,,Roombaht,
 # placed / compd room
@@ -23,7 +22,6 @@ Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Re
 114,King Bed Suite Balcony,,,,,,,Roombaht,
 115,King Bed Suite Balcony,,,,,,,Roombaht,
 116,Double Queen Beds Lake View Balcony,,,,,,,Roombaht,
-117,Double Queen Beds,,,,,,,Roombaht,
 118,Double Queen Beds Lake View,Smoking,,,,,,Roombaht,
 119,King Bed Suite Balcony,,,,,,,Roombaht,
 120,King Bed Suite Lake View Balcony,"Smoking, ADA",,,,,,Roombaht,
@@ -36,3 +34,4 @@ Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",First Name (Re
 203,Double Queen Beds Lake View Balcony,,,,,,,Roombaht,
 204,King Bed Lake View,,,,,,,Roombaht,
 205,King Bed Suite Mountain View,,,,,,,Roombaht,
+206,Double Queen Beds Lake View,,,,,,,Roombaht,

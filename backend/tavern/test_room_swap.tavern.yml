@@ -206,7 +206,42 @@ stages:
             cooldown: false
         swaps_enabled: true
 
+  - name: "but what if a swap but not actually my room"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number:
+          row: "501"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
   - name: "initiate a swap"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        number:
+          row: "{room_id}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                swap_phrase:
+                  type: "str"
+                  required: true
+
+  - name: "but what if a second swap code"
     request:
       url: "http://localhost:8000/api/swap_gen/"
       method: "POST"
@@ -230,19 +265,6 @@ stages:
                 swap_phrase:
                   type: "str"
                   required: true
-
-  - name: "initiate a swap during cooldown"
-    request:
-      url: "http://localhost:8000/api/swap_gen/"
-      method: "POST"
-      json:
-        jwt: "{jwt_token2}"
-        number:
-          row: "{room_id}"
-      headers:
-        content-type: "application/json"
-    response:
-      status_code: 400
 
   - name: "get ur swap on oops bad code"
     request:
@@ -269,6 +291,45 @@ stages:
         content-type: "application/json"
     response:
       status_code: 201
+
+  - name: "initiate a swap during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_it_up/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        number: "{room_id}"
+        swap_code: "{swap_code}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "cannot gen code for room during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        row:
+          number: "500"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "neither user can gen code for room during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        row:
+          number: "501"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
 
   - name: "retrieve updated list of users rooms"
     request:

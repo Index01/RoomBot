@@ -38,6 +38,9 @@ def create_rooms_main(cmd, args):
     for r in rooms_rows:
         try:
             room_data = RoomPlacementListIngest(**r)
+            if len([x for x in rooms_import_list if x.room == room_data.room]) > 0:
+                raise Exception(f"Duplicate room {room_data.room} in CSV, refusing to process file")
+
             rooms_import_list.append(room_data)
         except ValidationError as e:
             cmd.stderr.write(f"Validation error for row {e}")
@@ -288,7 +291,6 @@ class Command(BaseCommand):
                     self.stderr.write('Wiping all data at user request!')
 
             Room.objects.all().delete()
-            Staff.objects.all().delete()
             Guest.objects.all().delete()
         else:
             if kwargs['dry_run']:
