@@ -21,7 +21,7 @@ from ..models import Guest
 from ..models import Room
 from ..models import UnknownProductError
 from .rooms import phrasing
-from ..reporting import (dump_guest_rooms, diff_latest,
+from ..reporting import (diff_latest,
                          hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
@@ -521,32 +521,22 @@ def run_reports(request):
         logger.info("reports being run by %s", auth_obj['email'])
 
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
-        guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
         nugget_export_file = hotel_export('Nugget')
         ballys_roomslist_file = rooming_list_export("Ballys")
         nugget_roomslist_file = rooming_list_export("Nugget")
         attachments = [
-            guest_dump_file,
-            room_dump_file,
             ballys_export_file,
             nugget_export_file,
             ballys_roomslist_file,
             nugget_roomslist_file
         ]
-        if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
-            attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
-
-        if os.path.exists(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv"):
-            attachments.append(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
-
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
                    'Your report(s) are here. *theme song for Brazil plays*',
                    attachments)
 
-        return Response(str(json.dumps({"admins": admin_emails})),
-                        status=status.HTTP_201_CREATED)
+        return Response({"admins": admin_emails}, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

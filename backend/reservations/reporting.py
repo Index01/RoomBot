@@ -67,31 +67,6 @@ def diff_latest(rows):
 
     return diff_count
 
-def dump_guest_rooms():
-    guest_dump_file = f"{roombaht_config.TEMP_DIR}/guest_dump-{ts_suffix()}.csv"
-    room_dump_file = f"{roombaht_config.TEMP_DIR}/room_dump-{ts_suffix()}.csv"
-    guests = Guest.objects.all()
-    logger.debug(f'[-] dumping guests and room tables')
-    with open(guest_dump_file, 'w+') as guest_file:
-        header = [field.name for field in guests[0]._meta.fields if field.name!="jwt" and field.name!="invitation"]
-        writer = DictWriter(guest_file, fieldnames=header)
-        writer.writeheader()
-        for guest in guests:
-            data = model_to_dict(guest, fields=[field.name for field in guest._meta.fields if field.name!="jwt" and field.name!="invitation"])
-            writer.writerow(data)
-
-    rooms = Room.objects.all()
-    with open(room_dump_file, 'w+') as room_file:
-        header = [field.name for field in rooms[0]._meta.fields if field.name!="swap_code" and field.name!="swap_time"]
-        writer = DictWriter(room_file, fieldnames=header)
-        writer.writeheader()
-        for room in rooms:
-            data = model_to_dict(room, fields=[field.name for field in room._meta.fields if field.name!="swap_code" and field.name!="swap_time"])
-            writer.writerow(data)
-
-    logger.debug(f'[-] rooms done')
-    return guest_dump_file, room_dump_file
-
 def hotel_export(hotel):
     fields = [
         'room_number',
@@ -157,8 +132,7 @@ def rooming_list_export(hotel):
         "check_in_date",
         "check_out_date",
         "placed_by_roombaht",
-        "sp_ticket_id",
-        "paying_guest"
+        "sp_ticket_id"
     ]
 
     rows = []
