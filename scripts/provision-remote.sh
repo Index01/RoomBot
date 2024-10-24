@@ -45,6 +45,11 @@ sudo_user() {
     echo "${A_USER} ALL=(ALL) NOPASSWD:ALL" >> "$SUDO_FILE"
 }
 
+lock_user() {
+    local A_USER="$1"
+    usermod -s /usr/sbin/nologin "$A_USER"
+}
+
 os_freshen() {
     apt-get update
     apt-get upgrade -y
@@ -57,6 +62,7 @@ os_freshen
 add_user gadget otakup0pe
 add_user index Index01
 add_user roombaht
+lock_user ubuntu
 
 sudo_user gadget
 sudo_user index
