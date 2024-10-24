@@ -13,3 +13,11 @@ resource "aws_route53_record" "dev" {
   ttl = "300"
   records = [module.dev.public_ip]
 }
+
+resource "aws_route53_record" "prod" {
+  zone_id = aws_route53_zone.roombaht.id
+  name = "${var.domain}"
+  type = "A"
+  ttl = "300"
+  records = [module.prod.public_ip]
+}
