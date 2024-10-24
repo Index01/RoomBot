@@ -71,7 +71,7 @@ db_connection() {
 
 # wipe the database if present
 db_wipe() {
-    if psql -h "$ROOMBAHT_DB_HOST" -U root -l | grep -q "$ROOMBAHT_DB" ; then
+    if [ "$(psql -h "$ROOMBAHT_DB_HOST" -U root -Atc "select 1 from pg_database where datname='${ROOMBAHT_DB}'" postgres 2> /dev/null)" == "1" ] ; then
 	dropdb -h "$ROOMBAHT_DB_HOST" -U root "$ROOMBAHT_DB"
     fi
 }
@@ -89,7 +89,7 @@ db_snapshot() {
 
 # create database if needed and then issue migrations
 db_migrate() {
-    if ! psql -h "$ROOMBAHT_DB_HOST" -U root -l | grep -q "$ROOMBAHT_DB" ; then
+    if [ "$(psql -h "$ROOMBAHT_DB_HOST" -U root -Atc "select 1 from pg_database where datname='${ROOMBAHT_DB}'" postgres 2> /dev/null)" == "0" ] ; then
 	createdb -h "$ROOMBAHT_DB_HOST" -U root "$ROOMBAHT_DB"
     fi
     systemctl stop roombaht
@@ -213,11 +213,6 @@ shift
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 
-# FOR NOW
-if [ "$ROOMBAHT_DB" == "production" ] ; then
-    problems "not yet for prod tee-hee"
-fi
-
 if [ "$ACTION" == "load_staff" ] ; then
     STAFF_FILE="/tmp/${1}"
     shift
@@ -267,11 +262,11 @@ elif [ "$ACTION" == "manage" ] ; then
 	"/opt/roombaht-backend/manage.py" $*
 elif [ "$ACTION" == "deploy" ] ; then
     frontend_deploy
+    db_connection
+    db_migrate
     backend_deploy
     backend_venv
     backend_config
-    db_connection
-    db_migrate
     nginx_config
 elif [ "$ACTION" == "quick_deploy" ] ; then
     backend_deploy
