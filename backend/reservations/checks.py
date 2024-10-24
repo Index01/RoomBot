@@ -1,4 +1,4 @@
-from django.core.checks import Error, Warning, register
+from django.core.checks import Error, Warning, Info, register
 from reservations.models import Room, Guest
 
 @register(deploy=True)
@@ -14,6 +14,11 @@ def room_drama_check(app_configs, **kwargs):
             errors.append(Error(f"Room/guest name mismatch {room.primary} / {room.guest.name}",
                                 hint='Manually reconcile room/guest names'))
 
+        if room.is_placed and \
+           ('placeholder' in room.primary.lower() or
+            'reserve' in room.primary.lower()):
+            errors.append(Info(f"Placed room {room.number} ({room.name_hotel}) is vaguely held - {room.primary}, {room.secondary}"))
+
         # side effect of transferring placed rooms
         if room.sp_ticket_id:
             guest = None
@@ -24,6 +29,7 @@ def room_drama_check(app_configs, **kwargs):
                     errors.append(Error(f"Ticket {room.sp_ticket_id} room/guest number mismatch {room.number} / {guest.room_number}",
                                         hint='Manually reconcile room/guest numbers for specified ticket'))
 
+                if room.primary != guest.name:
                     errors.append(Error(f"Ticket {room.sp_ticket_id} room/guest name mismatch {room.primary} / {guest.name}",
                                         hint='Manually reconcile room/guest names for specified ticket'))
 
@@ -32,7 +38,7 @@ def room_drama_check(app_configs, **kwargs):
                                     hint='Good luck, I guess?'))
 
             if room.guest is None:
-                errors.append(Error(f"Room {room.number} sp_ticket_id {room.sp_ticket_id} missing guest",
+                errors.append(Error(f"Room {room.number} ({room.name_hotel}) sp_ticket_id {room.sp_ticket_id} missing guest",
                                     hint='Manually reconcile w/ sources of truth'))
 
             if room.guest is not None and room.number != guest.room_number \
