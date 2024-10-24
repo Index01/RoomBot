@@ -35,15 +35,28 @@ def create_rooms_main(cmd, args):
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
     rooms_import_list = []
+    dupe_rooms = []
+    dupe_tickets = []
     for r in rooms_rows:
         try:
             room_data = RoomPlacementListIngest(**r)
             if len([x for x in rooms_import_list if x.room == room_data.room]) > 0:
-                raise Exception(f"Duplicate room {room_data.room} in CSV, refusing to process file")
+                dupe_rooms.append(room_data.room)
+
+
+            if room_data.ticket_id_in_secret_party and \
+               len([x for x in rooms_import_list if x.ticket_id_in_secret_party == room_data.ticket_id_in_secret_party]) > 0:
+                dupe_tickets.append(room_data.ticket_id_in_secret_party)
 
             rooms_import_list.append(room_data)
         except ValidationError as e:
             cmd.stderr.write(f"Validation error for row {e}")
+
+    if len(dupe_rooms) > 0:
+        raise Exception(f"Duplicate room(s) {','.join(dupe_rooms)} in CSV, refusing to process file")
+
+    if len(dupe_tickets) > 0:
+        raise Exception(f"Duplicate ticket id(s) {','.join(dupe_tickets)} in CSV, refusing to process file")
 
     debug(cmd, args, "read in {len(rooms_rows)} rooms for {hotel}")
 
