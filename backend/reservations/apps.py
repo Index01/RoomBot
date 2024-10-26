@@ -7,4 +7,4 @@ class ReservationsConfig(AppConfig):
     verbose_name = 'Room Reservations'
 
     def ready(self):
-        from reservations.checks import room_drama_check
+        from reservations.checks import room_drama_check, guest_drama_check

@@ -2,6 +2,16 @@ from django.core.checks import Error, Warning, Info, register
 from reservations.models import Room, Guest
 
 @register(deploy=True)
+def guest_drama_check(app_configs, **kwargs):
+    errors = []
+    guests = Guest.objects.all()
+    for guest in guests:
+        if guest.jwt == '' and guest.can_login:
+            errors.append(Error(f"Guest {guest.email} has an empty jwt field!"))
+
+    return errors
+
+@register(deploy=True)
 def room_drama_check(app_configs, **kwargs):
     errors = []
     rooms = Room.objects.all()
