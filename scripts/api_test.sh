@@ -70,6 +70,7 @@ elif [ "$1" == "cleanup" ] ; then
     cleanup
     exit 0
 elif [ "$#" == 0 ] ; then
+    trap cleanup EXIT
     init
     run
     cleanup

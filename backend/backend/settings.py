@@ -98,8 +98,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'backend.db.backends.magic_postgres',
-            'NAME': os.environ['ROOMBAHT_DB'],
-            'PORT': 5432
+            'NAME': os.environ['ROOMBAHT_DB']
         }
     }
 
