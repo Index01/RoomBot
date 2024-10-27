@@ -96,7 +96,7 @@ export default class BasicVis extends React.Component {
           </Col>
           <Col xs lg="4">
               <h5> Unoccupied</h5>
-	      {this.state.metrics.rooms.map((metric) => {
+	    {this.state.metrics.rooms.map((metric) => {
 	        return (<div key={metric.room_type} className="card-subtitle mb-2 text-muted">{metric.room_type}: {metric['unoccupied']} of {metric['total']} total</div>)
 	      })}
           </Col>

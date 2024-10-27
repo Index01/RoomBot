@@ -177,8 +177,8 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @staticmethod
     def short_product_code(product):
-        for a_room, a_product in ROOM_LIST.items():
-            if product in a_product:
+        for a_room, a_detail in ROOM_LIST.items():
+            if product in a_detail['rooms']:
                 return a_room
 
         if product in ROOM_LIST.keys():

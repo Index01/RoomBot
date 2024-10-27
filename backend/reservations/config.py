@@ -15,7 +15,7 @@ def env_config(val, default=''):
 DEV = env_config('dev', 'false').lower() == 'true'
 DEV_MAIL = env_config('dev_mail')
 SEND_MAIL = env_config('send_mail', 'false').lower() == 'true'
-LOGLEVEL = env_config('loglevel').upper()
+LOGLEVEL = env_config('loglevel', 'info').upper()
 
 URL_HOST = env_config('host', 'localhost')
 URL_PORT = env_config('port', '3000')
