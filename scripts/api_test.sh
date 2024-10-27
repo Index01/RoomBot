@@ -50,6 +50,7 @@ run() {
 }
 
 SQLITE="${ROOTDIR}/test.sqlite"
+export PYTHONPATH="${ROOTDIR}/backend/tavern"
 TAVERN="${ROOTDIR}/backend/venv/bin/tavern-ci"
 LOG="${ROOTDIR}/test.log"
 

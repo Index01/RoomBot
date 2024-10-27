@@ -13,6 +13,7 @@ from random import randint
 from csv import DictReader, DictWriter
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status
 from django.core.mail import send_mail, EmailMessage, get_connection
 from fuzzywuzzy import process, fuzz
@@ -702,4 +703,18 @@ def fetch_reports(request):
        'hotel' not in request.data:
         return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
+    if request.data['hotel'].title() not in roombaht_config.GUEST_HOTELS:
+        return Response("unknown hotel", status=status.HTTP_400_BAD_REQUEST)
 
+    export_file = None
+    if request.data['report'] == 'hotel':
+        export_file = hotel_export(request.data['hotel'])
+    elif request.data['report'] == 'roomslist':
+        export_file = rooming_list_export(request.data['hotel'])
+    else:
+        return Response("unknown report", status=status.HTTP_400_BAD_REQUEST)
+
+    response = HttpResponse(open(export_file, 'r'), content_type='text/csv')
+    response['Content-Disposition'] = f"attachment; filename={os.path.basename(export_file)}"
+
+    return response

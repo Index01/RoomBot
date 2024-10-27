@@ -36,12 +36,17 @@ def login(request):
     elif request.method == 'POST':
         data = request.data
 
+        if 'email' not in data or \
+           'jwt' not in data:
+            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+
         logger.info(f"[+] User login attempt: {data['email']}")
         try:
             email = data['email'].lower()
         except KeyError:
             logger.info(f"[-] User login failed {data['email']}")
-            return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
+
         guest_email = Guest.objects.filter(email=email, can_login=True)
         staff_email = Staff.objects.filter(email=email)
         jwt_key = roombaht_config.JWT_KEY
