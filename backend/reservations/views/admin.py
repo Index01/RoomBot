@@ -640,7 +640,7 @@ def guest_file_upload(request):
         # build a list of products that we actually care about
         room_products = []
         for _take3_product, hotel_details in ROOM_LIST.items():
-            for product in hotel_details['rooms']:
+            for product in hotel_details.get('rooms', []):
                 room_products.append(product)
 
         for guest in guests:
