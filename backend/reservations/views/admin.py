@@ -199,9 +199,11 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                         if len(chain) > 0:
                             for chain_guest in chain:
                                 # add stubs to represent the transfers
+                                #   note these still get a pw given our auth model is tied to our guest model
                                 stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
                                              email=chain_guest.email,
-                                             ticket=chain_guest.ticket_code)
+                                             ticket=chain_guest.ticket_code,
+                                             jwt=phrasing())
                                 logger.debug("Created stub guest %s with ticket %s",
                                              chain_guest.email, chain_guest.ticket_code)
                                 if chain_guest.transferred_from_code:
@@ -358,7 +360,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             otp = phrasing()
             guest_update(guest_obj, otp, room)
             room_counts.allocated(room.name_take3)
-        elif trans_code =='' and guest_entries.count() > 0:
+        elif trans_code == '' and guest_entries.count() > 0:
             # There are a few cases that could pop up here
             # * admins / staff
             # * people share email addresses and soft-transfer rooms in sp
@@ -395,13 +397,15 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                 for chain_guest in chain:
                     # add stub guests (if does not already exist)
+                    #  note stubs still get a jwt bc the relationship between our auth and guest model
                     try:
                         _maybe_guest = Guest.objects.get(ticket=chain_guest.ticket_code)
                     except Guest.DoesNotExist:
                         stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
                         stub = Guest(name=stub_name,
                                      email=chain_guest.email,
-                                     ticket=chain_guest.ticket_code)
+                                     ticket=chain_guest.ticket_code,
+                                     jwt=phrasing())
                         logger.debug("Created stub guest %s with ticket %s",
                                      chain_guest.email, chain_guest.ticket_code)
 

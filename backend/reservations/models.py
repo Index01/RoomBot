@@ -88,8 +88,8 @@ class Room(DirtyFieldsMixin, models.Model):
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
     _check_out = models.DateField(blank=True, null=True, db_column='check_out')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20, blank=True, null=True)
-    primary = models.CharField("PrimaryContact", max_length=50)
-    secondary = models.CharField("SecondaryContact", max_length=50)
+    primary = models.CharField("PrimaryContact", max_length=200)
+    secondary = models.CharField("SecondaryContact", max_length=200)
     placed_by_roombot = models.BooleanField("PlacedByRoombot", default=False)
     guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 
