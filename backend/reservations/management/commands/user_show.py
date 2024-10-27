@@ -1,3 +1,4 @@
+import sys
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Guest, Staff
 
@@ -18,6 +19,8 @@ class Command(BaseCommand):
                             help='Search by full name instead of email.',
                             action='store_true',
                             default=False)
+        parser.add_argument('--field',
+                            help='Only show specific field.')
 
     def handle(self, *args, **kwargs):
         if 'search' not in kwargs:
@@ -42,6 +45,15 @@ class Command(BaseCommand):
             raise CommandError(f"No user found with search term {kwargs['search']} - did you specify right search type?")
 
         guest = guest_entries[0]
+
+        if kwargs['field']:
+            if kwargs['field'] == 'otp':
+                self.stdout.write(f"{guest.jwt}\n")
+            else:
+                raise CommandError(f"Only fields supported are 'otp'")
+
+            sys.exit(0)
+
         last_login = 'never'
         if guest.last_login:
             ll = guest.last_login

@@ -50,6 +50,7 @@ class DatabaseWrapper(base.DatabaseWrapper):
         except OperationalError as exp:
             error_code=exp.args[0]
             if error_code!='28P01':
+                logger.error("unexpected operational error %s!!", error_code)
                 raise exp
 
             logger.info("Authentication error. Going to refresh secret and try again.")

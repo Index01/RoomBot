@@ -9,7 +9,7 @@ frontend/public/layouts
 terraform/.terraform
 terraform/.terraform.lock.hcl
 test.log
-test.sqlite
+backend/test.sqlite
 
 # Created by https://www.toptal.com/developers/gitignore/api/vim,emacs,python,react
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,emacs,python,react

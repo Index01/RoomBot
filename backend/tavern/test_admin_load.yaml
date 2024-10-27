@@ -1,0 +1,37 @@
+---
+test_name: "guest load flow"
+stages:
+  - name: "can login as admin and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+      save:
+        json:
+          jwt_token: "jwt"
+
+  - name: "can upload base guest file"
+    request:
+      url: "http://localhost:8000/api/guest_upload/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        $ext:
+          function: ""
+      headers:
+        content-type: "application/json"

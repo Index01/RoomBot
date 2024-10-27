@@ -38,18 +38,28 @@ run_logs() {
 
 run() {
     trap run_logs EXIT
+    # fixture based basic login / auth flow
     "${SCRIPTDIR}/manage_dev" loaddata test_users
     "$TAVERN" backend/tavern/test_login.tavern.yml
 
+    # fixture based room swaps and (basic) admin functionality
     "${SCRIPTDIR}/manage_dev" loaddata test_users
     "${SCRIPTDIR}/manage_dev" loaddata test_rooms
     "$TAVERN" backend/tavern/test_room_swap.tavern.yml
     "$TAVERN" backend/tavern/test_admin.tavern.yml
 
+    # sample data based data loading
+    rm "$SQLITE"
+    {
+	"${SCRIPTDIR}/manage_dev" migrate ;
+	"${SCRIPTDIR}/manage_dev" create_rooms --hotel-name Ballys "${ROOTDIR}/samples/exampleBallysRoomList.csv" --preserve --force ;
+	"${SCRIPTDIR}/manage_dev" create_rooms --hotel-name Nugget "${ROOTDIR}/samples/exampleNuggetRoomList.csv" --preserve --force
+    } >> "$LOG"
+
     SUCCESS="yea girl"
 }
 
-SQLITE="${ROOTDIR}/test.sqlite"
+SQLITE="${ROOTDIR}/backend/test.sqlite"
 TAVERN="${ROOTDIR}/backend/venv/bin/tavern-ci"
 LOG="${ROOTDIR}/test.log"
 
