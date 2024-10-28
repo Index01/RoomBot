@@ -13,6 +13,7 @@ from random import randint
 from csv import DictReader, DictWriter
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status
 from django.core.mail import send_mail, EmailMessage, get_connection
 from fuzzywuzzy import process, fuzz
@@ -21,7 +22,7 @@ from ..models import Guest
 from ..models import Room
 from ..models import UnknownProductError
 from .rooms import phrasing
-from ..reporting import (dump_guest_rooms, diff_latest,
+from ..reporting import (diff_latest, dump_guest_rooms, swaps_report,
                          hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
@@ -525,32 +526,27 @@ def run_reports(request):
         logger.info("reports being run by %s", auth_obj['email'])
 
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
-        guest_dump_file, room_dump_file = dump_guest_rooms()
         ballys_export_file = hotel_export('Ballys')
         nugget_export_file = hotel_export('Nugget')
         ballys_roomslist_file = rooming_list_export("Ballys")
         nugget_roomslist_file = rooming_list_export("Nugget")
+        guest_dump_file, room_dump_file = dump_guest_rooms()
+        swaps_file = swaps_report()
         attachments = [
-            guest_dump_file,
-            room_dump_file,
             ballys_export_file,
             nugget_export_file,
             ballys_roomslist_file,
-            nugget_roomslist_file
+            nugget_roomslist_file,
+            guest_dump_file,
+            room_dump_file,
+            swaps_file
         ]
-        if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
-            attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
-
-        if os.path.exists(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv"):
-            attachments.append(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
-
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
                    'Your report(s) are here. *theme song for Brazil plays*',
                    attachments)
 
-        return Response(str(json.dumps({"admins": admin_emails})),
-                        status=status.HTTP_201_CREATED)
+        return Response({"admins": admin_emails}, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -700,3 +696,36 @@ def guest_file_upload(request):
                                }))
 
         return Response(resp, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def fetch_reports(request):
+    if request.method == 'POST':
+        auth_obj = authenticate_admin(request)
+        if not auth_obj or 'email' not in auth_obj or not auth_obj['admin']:
+            return unauthenticated()
+
+    if 'report' not in request.data or \
+       'hotel' not in request.data:
+        return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+
+    if request.data['hotel'].title() not in roombaht_config.GUEST_HOTELS:
+        return Response("unknown hotel", status=status.HTTP_400_BAD_REQUEST)
+
+    export_file = None
+    if request.data['report'] == 'hotel':
+        export_file = hotel_export(request.data['hotel'])
+    elif request.data['report'] == 'roomslist':
+        export_file = rooming_list_export(request.data['hotel'])
+    elif request.data['report'] == 'room':
+        _guest_file, export_file = dump_guest_rooms()
+    elif request.data['report'] == 'guest':
+        export_file, _room_file = dump_guest_rooms()
+    elif request.data['report'] == 'swaps':
+        export_file = swaps_report()
+    else:
+        return Response("unknown report", status=status.HTTP_400_BAD_REQUEST)
+
+    response = HttpResponse(open(export_file, 'r'), content_type='text/csv')
+    response['Content-Disposition'] = f"attachment; filename={os.path.basename(export_file)}"
+
+    return response

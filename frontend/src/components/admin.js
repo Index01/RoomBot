@@ -158,9 +158,9 @@ function ReportCard() {
     if (isLoading) {
       axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/run_reports/", data )
          .then((respText) => {
-           console.log(JSON.parse(respText.data).admins);
+           console.log(respText.data.admins);
            setLoading(false);
-           setRespText(JSON.parse(respText.data).admins);
+           setRespText(respText.data.admins);
          })
          .catch((error) => {
            setLoading(false);
@@ -173,10 +173,6 @@ function ReportCard() {
       <Card.Body>
         <Card.Title>Run the following reports:</Card.Title>
         <ListGroup variant="flush">
-          <ListGroup.Item>Diff GuestList</ListGroup.Item>
-          <ListGroup.Item>Diff Swaps</ListGroup.Item>
-          <ListGroup.Item>Guest Dump</ListGroup.Item>
-          <ListGroup.Item>Room Dump</ListGroup.Item>
           <ListGroup.Item>Hotel Exports</ListGroup.Item>
           <ListGroup.Item>Hotel Rooming Lists</ListGroup.Item>
         </ListGroup>

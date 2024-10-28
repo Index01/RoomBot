@@ -1,0 +1,118 @@
+---
+test_name: "reports plz"
+stages:
+  - name: "can login as admin and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                admin:
+                  type: "bool"
+                  required: true
+                jwt:
+                  type: "str"
+                  required: true
+      save:
+        json:
+          jwt_token: "jwt"
+
+  - name: "can fetch hotel report"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        hotel: "ballys"
+        report: "hotel"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      headers:
+        "content-type": "text/csv"
+      verify_response_with:
+        function: "tavern_utils:report_validator"
+        extra_kwargs:
+          rows:
+            - room_number: "500"
+              primary_name: "test user1"
+              check_in: "TBD"
+              check_out: "TBD"
+              room_type: "Standard 2 Queens"
+
+            - room_number: "501"
+              primary_name: "test user2"
+
+            - room_number: "502"
+              room_type: "King Bed"
+
+  - name: "can fetch rooms list report"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        hotel: "ballys"
+        report: "roomslist"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      headers:
+        "content-type": "text/csv"
+      verify_response_with:
+        function: "tavern_utils:report_validator"
+
+  - name: "can fetch raw room report"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        hotel: "ballys"
+        report: "room"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      headers:
+        "content-type": "text/csv"
+      verify_response_with:
+        function: "tavern_utils:report_validator"
+
+  - name: "can fetch raw guest report"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        hotel: "ballys"
+        report: "guest"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      headers:
+        "content-type": "text/csv"
+      verify_response_with:
+        function: "tavern_utils:report_validator"

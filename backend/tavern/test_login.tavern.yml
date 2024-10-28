@@ -8,6 +8,61 @@ stages:
     response:
       status_code: 200
 
+  - name: "must provide fields"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "must provide jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "must provide email"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "must provide proper email"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "ttestadmin@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
+  - name: "must provide proper pw"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+        jwt: "ttest jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
   - name: "can login as admin and get a jwt"
     request:
       url: "http://localhost:8000/api/login/"

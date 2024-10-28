@@ -11,12 +11,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from django.utils.timezone import make_aware
-from reservations.models import Guest, Room, SwapError
+from reservations.models import Guest, Room, SwapError, Swap
 from party.models import Party
 from ..serializers import *
 from ..helpers import phrasing
 from ..constants import FLOORPLANS
-from ..reporting import diff_swaps
 from reservations.helpers import my_url, send_email
 import reservations.config as roombaht_config
 from reservations.auth import authenticate, unauthenticated
@@ -316,6 +315,7 @@ def swap_it_up(request):
             return Response("Unable to swap rooms", status=status.HTTP_400_BAD_REQUEST)
 
         logger.info(f"[+] Weve got a SWAPPA!!! {swap_room_theirs} {swap_room_mine}")
-        diff_swaps(swap_room_theirs, swap_room_mine)
+
+        Swap.log(swap_room_theirs, swap_room_mine)
 
         return Response(status=status.HTTP_201_CREATED)

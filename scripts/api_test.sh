@@ -26,7 +26,8 @@ cleanup() {
 }
 
 init() {
-    nohup "${SCRIPTDIR}/start_backend_dev.sh" < /dev/null &> "$LOG" & disown
+    "${SCRIPTDIR}/manage_dev" migrate &> "$LOG"
+    nohup "${SCRIPTDIR}/start_backend_dev.sh" < /dev/null &>> "$LOG" & disown
     sleep 5
 }
 
@@ -46,10 +47,15 @@ run() {
     "$TAVERN" backend/tavern/test_room_swap.tavern.yml
     "$TAVERN" backend/tavern/test_admin.tavern.yml
 
+    "${SCRIPTDIR}/manage_dev" loaddata test_users
+    "${SCRIPTDIR}/manage_dev" loaddata test_rooms
+    "$TAVERN" backend/tavern/test_reports.tavern.yml
+
     SUCCESS="yea girl"
 }
 
 SQLITE="${ROOTDIR}/test.sqlite"
+export PYTHONPATH="${ROOTDIR}/backend/tavern"
 TAVERN="${ROOTDIR}/backend/venv/bin/tavern-ci"
 LOG="${ROOTDIR}/test.log"
 
