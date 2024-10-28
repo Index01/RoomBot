@@ -254,3 +254,24 @@ class Room(DirtyFieldsMixin, models.Model):
 
         room_two.guest.save()
         room_one.guest.save()
+
+class Swap(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    room_one = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='+')
+    room_two = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='+')
+    guest_one = models.ForeignKey(Guest, on_delete=models.PROTECT, related_name='+')
+    guest_two = models.ForeignKey(Guest, on_delete=models.PROTECT, related_name='+')
+
+    def __str__(self):
+        return f"{self.room_one} <-> {self.room_two}"
+
+    @staticmethod
+    def log(room_one, room_two):
+        a_swap = Swap()
+        a_swap.room_one = room_one
+        a_swap.room_two = room_two
+        a_swap.guest_one = room_one.guest
+        a_swap.guest_two = room_two.guest
+        a_swap.save()
+        return a_swap

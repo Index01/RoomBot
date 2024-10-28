@@ -103,8 +103,8 @@
     is_ada: false
     is_hearing_accessible: false
     is_special: false
-    is_placed: false
+    is_placed: true
     sp_ticket_id: "SP00005"
     primary: "test user4"
-    placed_by_roombot: true
+    placed_by_roombot: false
     guest: 5

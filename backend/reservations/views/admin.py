@@ -22,7 +22,7 @@ from ..models import Guest
 from ..models import Room
 from ..models import UnknownProductError
 from .rooms import phrasing
-from ..reporting import (diff_latest,
+from ..reporting import (diff_latest, dump_guest_rooms, swaps_report,
                          hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
@@ -530,11 +530,16 @@ def run_reports(request):
         nugget_export_file = hotel_export('Nugget')
         ballys_roomslist_file = rooming_list_export("Ballys")
         nugget_roomslist_file = rooming_list_export("Nugget")
+        guest_dump_file, room_dump_file = dump_guest_rooms()
+        swaps_file = swaps_report()
         attachments = [
             ballys_export_file,
             nugget_export_file,
             ballys_roomslist_file,
-            nugget_roomslist_file
+            nugget_roomslist_file,
+            guest_dump_file,
+            room_dump_file,
+            swaps_file
         ]
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
@@ -711,6 +716,12 @@ def fetch_reports(request):
         export_file = hotel_export(request.data['hotel'])
     elif request.data['report'] == 'roomslist':
         export_file = rooming_list_export(request.data['hotel'])
+    elif request.data['report'] == 'room':
+        _guest_file, export_file = dump_guest_rooms()
+    elif request.data['report'] == 'guest':
+        export_file, _room_file = dump_guest_rooms()
+    elif request.data['report'] == 'swaps':
+        export_file = swaps_report()
     else:
         return Response("unknown report", status=status.HTTP_400_BAD_REQUEST)
 
