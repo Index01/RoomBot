@@ -231,7 +231,7 @@ elif [ "$ACTION" == "load_rooms" ] ; then
     db_connection
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" \
-	create_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve --force
+	create_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve
 elif [ "$ACTION" == "clone_db" ] ; then
     if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
 	problems "can't clone prod to prod"
