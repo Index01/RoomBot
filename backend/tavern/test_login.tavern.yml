@@ -63,37 +63,17 @@ stages:
     response:
       status_code: 401
 
-  - name: "can login as admin and get a jwt"
+  - name: "must provide proper admin pw"
     request:
       url: "http://localhost:8000/api/login/"
       method: "POST"
       json:
         email: "testadmin@example.com"
-        jwt: "test jwt"
+        jwt: "ttest jwt"
       headers:
         content-type: "application/json"
     response:
-      status_code: 201
-      verify_response_with:
-        - function: tavern.helpers:validate_jwt
-          extra_kwargs:
-            jwt_key: "jwt"
-            key: "test"
-            algorithms: "HS256"
-            options:
-              verify_signature: true
-              verify_aud: false
-        - function: tavern.helpers:validate_pykwalify
-          extra_kwargs:
-            schema:
-              type: "map"
-              mapping:
-                admin:
-                  type: "bool"
-                  required: true
-                jwt:
-                  type: "str"
-                  required: true
+      status_code: 401
 
   - name: "can login as non-admin and get a jwt"
     request:
@@ -105,6 +85,9 @@ stages:
       headers:
         content-type: "application/json"
     response:
+      save:
+        json:
+          jwt_token: "jwt"
       status_code: 201
       verify_response_with:
         - function: tavern.helpers:validate_jwt
@@ -123,6 +106,28 @@ stages:
                 jwt:
                   type: "str"
                   required: true
+
+  - name: "can make request with valid token"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+
+  - name: "can not make request with broken token"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      json:
+        jwt: "ohno"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
 
   - name: "nugget user cannot log in"
     request:
@@ -147,3 +152,24 @@ stages:
         content-type: "application/json"
     response:
       status_code: 201
+
+  - name: "can request pw reset for invalid user"
+    request:
+      url: "http://localhost:8000/api/login_reset/"
+      method: "POST"
+      json:
+        guest:
+          email: "testuser2222@example.com"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "need to request with an email"
+    request:
+      url: "http://localhost:8000/api/login_reset/"
+      method: "POST"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400

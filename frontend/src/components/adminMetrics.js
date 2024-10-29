@@ -77,7 +77,7 @@ export default class BasicVis extends React.Component {
 	  </Col>
 	</Row>
         <Row className="justify-content-md-center">
-          <Col xs lg="4">
+          <Col xs lg="3">
               <h5> Guests</h5>
               <div className="card-subtitle mb-2 text-muted">Count: {this.state.metrics.guest_count}</div>
               <div className="card-subtitle mb-2 text-muted">Unique: {this.state.metrics.guest_unique}</div>
@@ -85,7 +85,7 @@ export default class BasicVis extends React.Component {
               <div className="card-subtitle mb-2 text-muted">Swaps Created: {this.state.metrics.rooms_swap_code_count}</div>
               <div className="card-subtitle mb-2 text-muted">Swaps Completed: {this.state.metrics.rooms_swap_success_count}</div>
           </Col>
-          <Col xs lg="4">
+          <Col xs lg="3">
               <h5> Rooms</h5>
               <div className="card-subtitle mb-2 text-muted">Count: {this.state.metrics.rooms_count}</div>
               <div className="card-subtitle mb-2 text-muted">Occupied: {this.state.metrics.rooms_occupied}</div>
@@ -94,9 +94,9 @@ export default class BasicVis extends React.Component {
               <div className="card-subtitle mb-2 text-muted">Manually Placed: {this.state.metrics.rooms_placed_manually}</div>
               <div className="card-subtitle mb-2 text-muted">RoomBot Placed: {this.state.metrics.rooms_placed_by_roombot}</div>
           </Col>
-          <Col xs lg="4">
+          <Col xs lg="6">
               <h5> Unoccupied</h5>
-	    {this.state.metrics.rooms.map((metric) => {
+	    {this.state.metrics.rooms.sort((a, b) => a.room_type > b.room_type ? 1 : -1).map((metric) => {
 	        return (<div key={metric.room_type} className="card-subtitle mb-2 text-muted">{metric.room_type}: {metric['unoccupied']} of {metric['total']} total</div>)
 	      })}
           </Col>

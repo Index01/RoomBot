@@ -18,7 +18,7 @@ def onboarding_email(email, otp):
         'hostname': my_url(),
         'email': email,
         'otp': otp,
-        'deadline': 'Sunday, November 3rd, 2024 at 5pm PST'
+        'deadline': 'Saturday, November 9th, 2024 at 5pm PST'
     }
     body_text = template.render(objz)
     send_email([email],
@@ -35,7 +35,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         guest_emails = Guest.objects \
             .filter(onboarding_sent=False,
-                    room_number__isnull=False,
+                    room__isnull=False,
                     can_login=True) \
             .order_by('?') \
             .values('email') \

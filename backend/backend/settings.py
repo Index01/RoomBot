@@ -66,6 +66,10 @@ SILENCED_SYSTEM_CHECKS = [
     "security.W008"
 ]
 
+# don't care about debug mode in dev
+if DEV_MODE:
+    SILENCED_SYSTEM_CHECKS.append('security.W018')
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

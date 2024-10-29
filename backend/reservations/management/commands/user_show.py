@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from reservations.models import Guest, Staff
+from reservations.models import Guest, Staff, Room
 
 class Command(BaseCommand):
     help = "Show information on a guest/user"
@@ -51,9 +51,11 @@ class Command(BaseCommand):
         if guest.onboarding_sent:
             onboarding = 'yes'
 
-        rooms = ','.join([f"{x.hotel} {x.room_number}" for x in guest_entries if x.room_number])
+        rooms = [str(x) for x in Room.objects.filter(guest__in=guest_entries)]
         if len(rooms) == 0:
             rooms = 'none'
+        else:
+            rooms = ','.join(rooms)
 
         tickets = ','.join([x.ticket for x in guest_entries if x.ticket])
         if len(tickets) == 0:

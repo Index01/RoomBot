@@ -27,5 +27,5 @@ def report_validator(response, **kwargs):
                     continue
 
                 assert field in room
-                print(f"Checking {row['room_number']} for {field}:{value}")
+                print(f"Checking {row['room_number']} for {field}:{value} (actual {room[field]})")
                 assert room[field] == value

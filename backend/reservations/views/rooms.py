@@ -33,11 +33,6 @@ def my_rooms(request):
 
         email = auth_obj['email']
 
-        try:
-            _guest_instances = Guest.objects.filter(email=email)
-        except IndexError:
-            return Response("No guest or room found", status=status.HTTP_400_BAD_REQUEST)
-
         rooms = Room.objects.filter(name_hotel='Ballys')
         rooms_mine = [elem for elem in rooms if elem.guest is not None and elem.guest.email==email]
 
@@ -63,19 +58,16 @@ def room_list(request):
         email = auth_obj['email']
         logger.debug("Valid guest %s viewing rooms", email)
         # we want to bubble up any room that is swappable, is not available,
-        #  is not special (chapel, etc), and does have a guest associated.
+        #  and does have a guest associated.
         #  the display layer will handle the per-room-type filtering
         rooms = Room.objects \
                     .filter(is_swappable=True,
                             is_available=False,
-                            is_special=False,
                             name_hotel='Ballys') \
                     .exclude(guest=None)
         guest_entries = Guest.objects.filter(email=email)
         room_types = []
-        guest_room_numbers = [guest.room_number
-                       for guest in guest_entries
-                       if guest.room_number is not None]
+        guest_room_numbers = [room.number for room in Room.objects.filter(guest__in=guest_entries)]
         for guest_room_number in guest_room_numbers:
             try:
                 guest_room = Room.objects.get(number=guest_room_number, name_hotel='Ballys')
@@ -157,9 +149,9 @@ def swap_request(request):
         except KeyError:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
-        requester_room_numbers = [x.room_number
-                                  for x in Guest.objects.filter(email=requester_email,
-                                                                room_number__isnull=False)]
+        requester_room_numbers = [room.number
+                                  for room in Room.objects \
+                                  .filter(guest__in=Guest.objects.filter(email=requester_email))]
 
         swap_room = None
         try:
@@ -233,14 +225,8 @@ def swap_gen(request):
         except KeyError as e:
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            guest_instances = Guest.objects.filter(email=email)
-            guest_id = guest_instances[0].id
-        except IndexError as e:
-            return Response("No guest found", status=status.HTTP_400_BAD_REQUEST)
-
         room = Room.objects.get(number=room_num, name_hotel='Ballys')
-        if room.guest.id not in [x.id for x in guest_instances]:
+        if room.guest.id not in [x.id for x in Guest.objects.filter(email=email)]:
             return Response(f"Naughty. Room {room.number} is not your room",
                             status=status.HTTP_400_BAD_REQUEST)
 

@@ -34,8 +34,9 @@ logging.basicConfig(stream=sys.stdout, level=roombaht_config.LOGLEVEL)
 
 logger = logging.getLogger('ViewLogger_admin')
 
-class RoomCounts:
+class RoomMeta:
     counts = {}
+    msgs = []
     def __init__(self):
         for room_type in ROOM_LIST.keys():
             self.counts[room_type] = {
@@ -57,12 +58,23 @@ class RoomCounts:
     def transfer(self, product):
         self.counts[product]['transfer'] += 1
 
+    def warning(self, msg):
+        logger.warning(msg)
+        self.msgs.append(f"[warning] {msg}")
+
+    def error(self, msg):
+        logger.error(msg)
+        self.msgs.append(f"[ERRAR] {msg}")
+
     def output(self):
         lines = []
         for room_type, counts in self.counts.items():
             if counts['orphan'] > 0:
                 logger.info("Reunited %s %s orphans", counts['orphan'], room_type)
 
+
+            remaining = Room.objects.filter(name_take3=room_type, is_available=True).count()
+            line = f"{room_type} shortage: {counts['shortage']} allocated: {counts['allocated']}, transfer: {counts['transfer']}, remaining: {remaining}, orphan: {counts['orphan']} (of {counts['available']} available)"
             if counts['shortage'] > 0:
                 logger.warning("%s room short inventory by %s! available:%s, allocated:%s, transfer: %s, orphan: %s",
                                room_type,
@@ -71,13 +83,14 @@ class RoomCounts:
                                counts['allocated'],
                                counts['transfer'],
                                counts['orphan'])
+                lines.append(f"warning: {line}")
+            else:
+                if counts['allocated'] > 0:
+                    lines.append(f"info: {line}")
 
-            remaining = Room.objects.filter(name_take3=room_type, is_available=True).count()
-            line = f"{room_type} shortage: {counts['shortage']} allocated: {counts['allocated']}, transfer: {counts['transfer']}, remaining: {remaining}, orphan: {counts['orphan']} (of {counts['available']} available)"
-            logger.info(line)
-            lines.append(line)
+                logger.info(line)
 
-        return lines
+        return lines + self.msgs
 
 def find_room(room_product):
     room_type = Room.short_product_code(room_product)
@@ -88,10 +101,8 @@ def find_room(room_product):
     # We only auto-assign rooms if these criteria are met
     #  * must be available
     #  * must not be art - we should rarely see these as art rooms are almost always placed
-    #  * must not be special room (i.e. unknown to roombaht)
     available_room = Room.objects \
                          .filter(is_available=True,
-                                 is_special=False,
                                  name_take3=room_type,
                                  name_hotel=hotel
                                  ) \
@@ -131,10 +142,59 @@ def transfer_chain(ticket, guest_rows, depth=1):
 
     return chain
 
-def reconcile_orphan_rooms(guest_rows, room_counts):
-    # rooms may be orphaned due to placement changes, data corruption, machine elves
+def reconcile_orphan_chain(guest_obj, guest_rows):
     orphan_tickets = []
+    chain = transfer_chain(guest_obj.transferred_from_code, guest_rows)
+    for chain_guest in chain:
+        chain_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
+        stub = None
+        # ensure stub exists and matches reality
+        try:
+            stub = Guest.objects.get(email=chain_guest.email,
+                                     ticket=chain_guest.ticket_code)
+            if chain_guest.transferred_from_code and \
+               stub.transfer != chain_guest.transferred_from_code:
+                raise Exception(f"unexpected mismatched sp transfer {chain_guest.ticket_code} "
+                                f"{chain_guest.transferred_from_code} -> {stub.transfer}")
+
+        except Guest.DoesNotExist:
+            # add stubs to represent the transfers
+            #   * note these still get a pw given our auth model is tied
+            #     to our guest model
+            stub = Guest(name=chain_name,
+                         email=chain_guest.email,
+                         ticket=chain_guest.ticket_code,
+                         jwt=phrasing())
+            logger.debug("Created stub guest %s with ticket %s",
+                         chain_guest.email, chain_guest.ticket_code)
+            if chain_guest.transferred_from_code:
+                stub.transfer = chain_guest.transferred_from_code
+
+            stub.save()
+
+        # mark this part of the transfer chain as already processed
+        orphan_tickets.append(chain_guest.ticket_code)
+
+    return orphan_tickets
+
+def reconcile_orphan_rooms(guest_rows, room_meta):
+    """
+    rooms in the database may be orphaned due to the following reasons, in
+    order of likelyhood of occuing
+      * non-comp'd placed rooms
+      * shuffling around of non-comp'd placed rooms
+      * data corruption
+      * non deterministic sp exports when resolving transfer chains
+      * machine elves
+
+    orphaned rooms manifest as having no associated guest record and
+    showing as non-available i.e. already has someone, placed
+    or otherwise within the room.
+    """
     def get_guest_obj(field, value):
+        """
+        helper function for retrieving guest object from ingested csv
+        """
         for guest in guest_rows:
             if field == 'name' and value == f"{guest.first_name} {guest.last_name}":
                 return guest
@@ -144,11 +204,17 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
         return None
 
+    orphan_tickets = []
     orphan_rooms = Room.objects \
-                       .filter(guest=None, is_available=False) \
-                       .exclude(primary='')
+                       .filter(guest=None,
+                               is_available=False) \
+                       .exclude(names__isnull=True)
     logger.debug("Attempting to reconcile %s orphan rooms", orphan_rooms.count())
     for room in orphan_rooms:
+        # if the room is placed and has no sp ticket id then ain't nothing to do
+        if room.is_placed and room.sp_ticket_id == '':
+            continue
+
         guest = None
         # first check for a guest entry by sp_ticket_id
         try:
@@ -159,60 +225,47 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
         except Guest.DoesNotExist:
             pass
 
-        if not guest:
-            # then check for a guest entry by room number
-            try:
-                guest = Guest.objects.get(room_number = room.number, hotel = room.name_hotel)
-                logger.info("Found guest %s by room_number in DB for orphan %s %s room %s",
-                            guest.email, room.name_take3, room.name_hotel, room.number)
-            except Guest.DoesNotExist:
-                pass
-
         if guest:
-            # we found one, how lovely. associate room with it.
-            room.guest = guest
-            if room.primary != guest.name:
-                logger.warning("names do not match for orphan room %s %s (%s, %s, %s fuzziness)",
-                               room.name_hotel, room.number, room.primary, guest.name,
-                               fuzz.ratio(room.primary, guest.name))
-                continue
+            # we found one, how lovely
+            #   * associate room with this guest record
+            #   * ensure the owner is listed as a room occupant
+            if not room.guest:
+                room.guest = guest
+            elif room.guest and room.guest != guest:
+                logger.info("marking orphan room %s %s as transferred %s -> %s",
+                            room.name_hotel, room.number, room.guest.name, guest.name)
+                if room.resident(guest):
+                    room_meta.warning(f"removing old owner {room.guest.name} of orphan room {room.name_hotel}"
+                                      f" {room.number} from list of room occupants {room.names}")
+                    room.resident_remove(guest.name)
 
-            if room.primary == '':
-                room.primary = guest.name
+            if not room.resident(guest):
+                room_meta.warning(f"owner of orphan room {room.name_hotel} {room.number}"
+                                  f" {guest.name} is not in list of room occupants {room.names}")
+                room.resident_add(guest.name)
 
-            room_counts.orphan(room.name_take3)
-            room.save()
+            room_meta.orphan(room.name_take3)
+            if room.is_dirty(check_relationship=True):
+                room.save()
         else:
-            # then check the guest list
+            # run through the rest of the sp export as it is not always in a
+            # consistent order and we may need to handle transfer chains
             guest_obj = None
             if room.sp_ticket_id is not None:
+                # try and find guest record from ticket id associated with orphan room
                 guest_obj = get_guest_obj('ticket', room.sp_ticket_id)
                 if guest_obj:
-                    logger.info("Found guest %s by ticket %s in CSV for orphan %s room %s %s",
-                                guest_obj.email,
-                                room.sp_ticket_id,
-                                room.name_take3,
-                                room.name_hotel,
-                                room.number)
-                    # if this is a transfer, need to account for those as well
+                    logger.debug("Found guest %s by ticket %s in CSV for orphan %s room %s %s",
+                                 guest_obj.email,
+                                 room.sp_ticket_id,
+                                 room.name_take3,
+                                 room.name_hotel,
+                                 room.number)
+                    # if this is a transfer, need to ensure every guest in transfer chain
+                    # exists as (at least) a stub entry
                     if guest_obj.transferred_from_code != '':
-                        chain = transfer_chain(guest_obj.transferred_from_code, guest_rows)
-                        if len(chain) > 0:
-                            for chain_guest in chain:
-                                # add stubs to represent the transfers
-                                #   note these still get a pw given our auth model is tied to our guest model
-                                stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
-                                             email=chain_guest.email,
-                                             ticket=chain_guest.ticket_code,
-                                             jwt=phrasing())
-                                logger.debug("Created stub guest %s with ticket %s",
-                                             chain_guest.email, chain_guest.ticket_code)
-                                if chain_guest.transferred_from_code:
-                                    stub.transfer = chain_guest.transferred_from_code
-
-                                stub.save()
-                                orphan_tickets.append(chain_guest.ticket_code)
-
+                        chain_tickets = reconcile_orphan_chain(guest_obj, guest_rows)
+                        orphan_tickets = orphan_tickets + chain_tickets
 
             if guest_obj:
                 # we have one, that's nice. make sure to use the same otp
@@ -224,21 +277,12 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
                 guest_update(guest_obj, otp, room)
             else:
-                logger.warning("Unable to find guest %s for (non-comp) orphan room %s %s",
-                               room.primary, room.name_hotel, room.number)
-
-                possibilities = [x for x in process.extract(room.primary, [f"{g.first_name} {g.last_name}" for g in guest_rows]) if x[1] > 85]
-                if len(possibilities) > 0:
-                    logger.warning("Found %s fuzzy name possibilities in CSV for %s in orphan room %s %s: %s",
-                                   len(possibilities),
-                                   room.primary,
-                                   room.name_hotel,
-                                   room.number,
-                                   ','.join([f"{x[0]}:{x[1]}" for x in possibilities]))
-
-
+                # this should only happen for "placeholder" rooms w/o actual names..
+                room_meta.warning(f"Unable to reconcile guest records for orphan room {room.name_hotel} {room.number}")
+                # ... and we will try again later...
                 continue
 
+        # mark this room as already processed
         if room.sp_ticket_id:
             orphan_tickets.append(room.sp_ticket_id)
 
@@ -248,75 +292,37 @@ def guest_update(guest_obj, otp, room, og_guest=None):
     ticket_code = guest_obj.ticket_code
     email = guest_obj.email
     guest = None
-    guest_changed = False
     try:
         # placed rooms may already have records
         # also sometimes people transfer rooms to themselves
         #   because why the frak not
         guest = Guest.objects.get(ticket=ticket_code,
                                   email=email)
-        logger.debug("Found existing ticket %s for %s", ticket_code, email)
-        if guest.room_number:
-            if guest.room_number == room.number:
-                logger.debug("Existing guest %s already associated with room %s (%s)",
-                             email,
-                             room.number,
-                             room.name_tak3)
-            else:
-                # transfers for placed users
-                logger.warning("Existing guest %s not moving from %s to %s (%s)",
-                               email,
-                               guest.room_number,
-                               room.number,
-                               room.name_take3)
-
-            return
-
-        logger.debug("Existing guest %s assigned to %s %s (%s)",
-                     email, room.number, room.name_hotel, room.name_take3)
-        guest.room_number = room.number
-        guest_changed = True
+        msg = f"Found existing ticket {ticket_code} for {email}, assigned to {room.name_hotel} {room.name_take3}"
+        logger.debug(msg)
 
     except Guest.DoesNotExist:
         # but most of the time the guest does not exist yet
         guest = Guest(name=f"{guest_obj.first_name} {guest_obj.last_name}".title(),
                       ticket=guest_obj.ticket_code,
                       jwt=otp,
-                      email=email,
-                      room_number=room.number,
-                      hotel=room.name_hotel)
+                      email=email)
 
         if guest_obj.transferred_from_code:
             guest.transfer = guest_obj.transferred_from_code
 
         logger.debug("New guest %s in %s room %s (%s)",
                      email, room.name_hotel, room.number, room.name_take3)
-        guest_changed = True
 
     if room.name_hotel == 'Ballys':
         guest.can_login = True
-        guest_changed = True
 
     # save guest (if needed) and then...
-    if guest_changed:
+    if guest.is_dirty():
         guest.save()
 
-    if room.primary != '' and room.primary != guest.name:
-        logger.warning("%s Room %s already has a name set: %s, guest %s!",
-                       room.name_hotel, room.number, room.primary, guest.name)
-
-    # unassociated original owner (if present)
-    if room.guest and og_guest:
-        if room.guest != og_guest:
-            logger.warning("Unexpected original owner %s for %s room %s",
-                           room.guest.email, room.name_hotel, room.number)
-
-        room.guest.room_number = None
-        logger.debug("Removing original owner %s for %s room %s",
-                     room.guest.email, room.name_hotel, room.number)
-        room.guest.save()
-
-    # update sp_ticket_id for placed rooms
+    # update sp_ticket_id for placed rooms, this will happen
+    # when processing transfers
     if room.is_placed \
        and room.sp_ticket_id \
        and room.sp_ticket_id != guest.ticket:
@@ -328,10 +334,13 @@ def guest_update(guest_obj, otp, room, og_guest=None):
     room.guest = guest
     room.is_available = False
 
-    room.primary = guest.name
-    room.save()
+    if not room.resident(guest):
+        room.resident_add(guest.name)
 
-def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
+    if room.is_dirty(check_relationship=True):
+        room.save()
+
+def create_guest_entries(guest_rows, room_meta, orphan_tickets=[]):
     transferred_tickets = []
 
     for guest_obj in guest_rows:
@@ -351,49 +360,58 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             # Unknown ticket, no transfer; new user
             room = find_room(guest_obj.product)
             if not room:
-                # sometimes this happens due to room transfers not being complete.
+                # this should only happen if we have actually run out of inventory
+                # which if we are properly tracking room inventory should not happen.
+                # note it *could* also happen with data corruption or a transfer has occured
+                # for a placed room and the room itself not being updated
                 logger.warning("No empty rooms for product %s available for %s",
                                guest_obj.product, guest_obj.email)
-                room_counts.shortage(Room.short_product_code(guest_obj.product))
+                room_meta.shortage(Room.short_product_code(guest_obj.product))
                 continue
 
-            logger.info("Email doesnt exist: %s. Creating new guest contact.", guest_obj.email)
+            logger.debug("Guest does not exist for %s. Creating new guest contact.", guest_obj.email)
             otp = phrasing()
             guest_update(guest_obj, otp, room)
-            room_counts.allocated(room.name_take3)
+            room_meta.allocated(room.name_take3)
         elif trans_code == '' and guest_entries.count() > 0:
+            # Unknown ticket, no transfer, already at least a user record. When this
+            # happens we make sure that none of the user entries are associated
+            # with this particular ticket before finding them a room.
             # There are a few cases that could pop up here
             # * admins / staff
+            # * people may have multiple rooms
             # * people share email addresses and soft-transfer rooms in sp
+            #
             if guest_entries.filter(ticket = ticket_code).count() == 0:
                 room = find_room(guest_obj.product)
                 if not room:
                     logger.warning("No empty rooms for product %s available for %s",
                                    guest_obj.product,
                                    guest_entries[0].email)
-                    room_counts.shortage(Room.short_product_code(guest_obj.product))
+                    room_meta.shortage(Room.short_product_code(guest_obj.product))
                     continue
 
                 logger.debug("assigning room %s to (unassigned ticket/room) %s",
                              room.number, guest_entries[0].email)
                 guest_update(guest_obj, guest_entries[0].jwt, room)
-                room_counts.allocated(room.name_take3)
+                room_meta.allocated(room.name_take3)
             else:
-                logger.warning("Not sure how to handle non-transfer, existing user ticket %s",
-                               ticket_code)
+                room_meta.warning(f"Not sure how to handle non-transfer, existing user ticket {ticket_code}")
 
         elif trans_code != "":
             # Transfered ticket...
             existing_guest = None
             transfer_room = None
+            # start by loading the original owner of the room; who is transfering it
             try:
-                existing_guest = Guest.objects.get(ticket=trans_code)
+                existing_guest = Guest.original_room(trans_code)
             except Guest.DoesNotExist:
-                # sometimes this happens due to transfers showing up earlier in the sp export than
-                # the origial ticket. so we go through the full set of rows
+                # This may happen because the non-deterministic order of the secret party exports
+                # and when this happens we ensure stub users for full transfer chain
                 chain = transfer_chain(trans_code, guest_rows)
                 if len(chain) == 0:
-                    logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
+                    # Data should not be this non-deterministic tho
+                    room_meta.warning(f"Ticket transfer ({trans_code}) but no previous guest found")
                     continue
 
                 for chain_guest in chain:
@@ -417,22 +435,29 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                         transferred_tickets.append(chain_guest.ticket_code)
 
-
+                # Now that the transfer chain exists, we can figure out who most
+                # recently owned the room. Note the room may or may not have
+                # already been assigned!
                 existing_guest = Guest.objects.get(ticket=chain[-1].ticket_code)
-                if existing_guest.room_number:
-                    transfer_room = Room.objects.get(number=existing_guest.room_number,
-                                                     name_hotel = Room.derive_hotel(guest_obj.product))
-                else:
+                transfer_room = None
+                transfer_rooms = Room.objects.filter(guest = existing_guest)
+                if transfer_rooms.count() > 1:
+                    logger.error("Multiple rooms (%s) found for %s guest entry",
+                                 ','.join([f"{x.name_hotel} {x.number}" for x in transfer_rooms]),
+                                 existing_guest.email)
+                    continue
+                elif transfer_rooms.count() == 0:
                     transfer_room = find_room(guest_obj.product)
-
                     if not transfer_room:
                         logger.warning("No empty rooms of product %s available for %s",
                                        guest_obj.product,
                                        guest_obj.email)
-                        room_counts.shortage(Room.short_product_code(guest_obj.product))
+                        room_meta.shortage(Room.short_product_code(guest_obj.product))
                         continue
 
                 email_chain = ','.join([x.email for x in chain])
+                # Ensure the guest record exists either way. For existing, we copy the
+                # jwt around, otherwise we make a new one.
                 if guest_entries.count() == 0:
                     logger.debug("Processing transfer %s (%s) from %s to (new guest) %s",
                                  trans_code,
@@ -450,15 +475,15 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     otp = guest_entries[0].jwt
                     guest_update(guest_obj, otp, transfer_room)
 
-                room_counts.allocated(transfer_room.name_take3)
-                room_counts.transfer(transfer_room.name_take3)
+                room_meta.allocated(transfer_room.name_take3)
+                room_meta.transfer(transfer_room.name_take3)
 
                 continue
 
-            if existing_guest.room_number is not None:
-                existing_room = Room.objects.get(number = existing_guest.room_number,
-                                                 name_hotel = Room.derive_hotel(guest_obj.product))
-            else:
+            existing_room = None
+            try:
+                existing_room = Room.objects.get(guest=existing_guest)
+            except Room.DoesNotExist:
                 logger.debug("Unable to find existing room for %s" % existing_guest)
                 continue
 
@@ -484,12 +509,12 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                 otp = guest_entries[0].jwt
                 guest_update(guest_obj, otp, existing_room, og_guest=existing_guest)
 
-            room_counts.allocated(existing_room.name_take3)
-            room_counts.transfer(existing_room.name_take3)
+            room_meta.allocated(existing_room.name_take3)
+            room_meta.transfer(existing_room.name_take3)
 
 
         else:
-            logger.warning("Not sure how to handle ticket %s", ticket_code)
+            room_meta.error(f"Not sure how to handle ticket {ticket_code}")
 
 
 @api_view(['POST'])
@@ -504,13 +529,16 @@ def create_guests(request):
 
         guest_rows = [SecretPartyGuestIngest(**guest) for guest in original_guests]
         # actually keep some metrics here
-        room_counts = RoomCounts()
+        room_meta = RoomMeta()
         # start by seeing if we can address orphaned placed rooms
-        orphan_tickets = reconcile_orphan_rooms(guest_rows, room_counts)
+        orphan_tickets = reconcile_orphan_rooms(guest_rows, room_meta)
         # handle basic ingestion of guests
-        create_guest_entries(guest_rows, room_counts, orphan_tickets)
+        create_guest_entries(guest_rows, room_meta, orphan_tickets)
 
-        lines = room_counts.output()
+        lines = room_meta.output()
+        if len(lines) == 0:
+            lines = ['info: No changes made.']
+
         logger.info("guest list uploaded by %s", auth_obj['email'])
         return Response({'csv_file': guests_csv, 'results': lines},
                         status=status.HTTP_200_OK)
@@ -526,21 +554,17 @@ def run_reports(request):
         logger.info("reports being run by %s", auth_obj['email'])
 
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
-        ballys_export_file = hotel_export('Ballys')
-        nugget_export_file = hotel_export('Nugget')
-        ballys_roomslist_file = rooming_list_export("Ballys")
-        nugget_roomslist_file = rooming_list_export("Nugget")
         guest_dump_file, room_dump_file = dump_guest_rooms()
         swaps_file = swaps_report()
         attachments = [
-            ballys_export_file,
-            nugget_export_file,
-            ballys_roomslist_file,
-            nugget_roomslist_file,
             guest_dump_file,
             room_dump_file,
             swaps_file
         ]
+        for hotel in roombaht_config.GUEST_HOTELS:
+            attachments.append(hotel_export(hotel))
+            attachments.append(rooming_list_export(hotel))
+
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
                    'Your report(s) are here. *theme song for Brazil plays*',
@@ -569,8 +593,8 @@ def request_metrics(request):
         # rooms available: has not yet been placed, roombaht or other
         rooms_available = rooooms.exclude(is_available=False).count()
         # rooms placed by roombot: rooms available to be placed by
-        rooms_placed_by_roombot = rooooms.exclude(placed_by_roombot=False).count()
-        rooms_placed_manually = rooooms.exclude(placed_by_roombot=True).count()
+        rooms_placed_by_roombot = rooooms.filter(is_placed=False).count()
+        rooms_placed_manually = rooooms.filter(is_placed=True).count()
         rooms_swap_code_count = rooooms.filter(swap_code__isnull=False).count()
 
         if(rooms_occupied!=0 and rooms_count!=0):
@@ -607,6 +631,56 @@ def request_metrics(request):
         return Response(metrics, status=status.HTTP_201_CREATED)
 
 
+def validate_sp_row():
+    """
+    This function returns a function used to generate individual
+    sp export rows based on sku / product derivations
+    """
+
+    # build a list of products that we actually care about
+    # these are used for validation of specific sp export rows
+    room_products = []
+    for _take3_product, hotel_details in ROOM_LIST.items():
+        for product in hotel_details.get('rooms', []):
+            room_products.append(product)
+
+    def validate(row):
+        # if we don't know the product, drop it
+        if row['product'] not in room_products:
+            logger.debug("Ticket %s has product we don't care about: %s",
+                         row['ticket_code'],
+                         row['product'])
+            return False
+
+        if Room.derive_hotel(row['product']) not in roombaht_config.GUEST_HOTELS:
+            logger.debug("Unable to derive hotel for tx %s: %s",
+                         row['ticket_code'],
+                         row['product'])
+            return False
+
+        # we may want to ignore this transaction
+        if row['ticket_code'] in roombaht_config.IGNORE_TRANSACTIONS:
+            logger.debug("Skipping ticket %s as it is on our ignore list",
+                         row['ticket_code'])
+            return False
+
+        # we will not process any transactions more than once
+        existing_ticket = None
+
+        try:
+            existing_ticket = Guest.objects.get(ticket=row['ticket_code'])
+        except Guest.DoesNotExist:
+            pass
+
+        if existing_ticket:
+            logger.debug("[-] Ticket %s from upload already in db",
+                           row['ticket_code'])
+            return False
+
+        return True
+
+    return validate
+
 @api_view(['POST'])
 def guest_file_upload(request):
     if request.method == 'POST':
@@ -628,55 +702,22 @@ def guest_file_upload(request):
             return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
 
         # figure out how to handle sku/product consistently between years
+        # until then, strip out the parts roombaht don't care about
         for o_guest in original_guests:
             raw_product = o_guest['product']
             o_guest['product'] = re.sub(r'[\d\.]+ RS24 ', '', raw_product)
             guests.append(o_guest)
 
-        # build a list of products that we actually care about
-        room_products = []
-        for _take3_product, hotel_details in ROOM_LIST.items():
-            for product in hotel_details.get('rooms', []):
-                room_products.append(product)
-
+        row_validator = validate_sp_row()
         for guest in guests:
-            # we only care about these hotels
-            try:
-                if Room.derive_hotel(guest['product']) not in roombaht_config.GUEST_HOTELS:
-                    logger.debug("Unable to derive hotel for tx %s: %s",
-                                 guest['ticket_code'],
-                                 guest['product'])
-                    continue
-            except UnknownProductError as erp:
-                logger.debug("Non-room product for tx %s: %s",
-                               guest['ticket_code'],
-                               erp.product)
-                continue
-
-            # if we don't know the product, drop it
-            if guest['product'] not in room_products:
-                logger.debug("Ticket %s has product we don't care about: %s",
-                             guest['ticket_code'],
-                             guest['product'])
-                continue
-
-            # if the ticket already is in the system, drop it
-            existing_ticket = None
-
-            try:
-                existing_ticket = Guest.objects.get(ticket=guest['ticket_code'])
-            except Guest.DoesNotExist:
-                pass
-
-            if existing_ticket:
-                logger.warning("[-] Ticket %s from upload already in db", guest['ticket_code'])
-                continue
-
-            if guest['ticket_code'] in roombaht_config.IGNORE_TRANSACTIONS:
-                logger.debug("Skipping ticket %s as it is on our ignore list", guest['ticket_code'])
+            if not row_validator(guest):
                 continue
 
             new_guests.append(guest)
+
+        if len(new_guests) > 0 and len(new_guests) != len(guests):
+            logger.info("Processing partial upload. %s entries - %s",
+                        len(new_guests), ','.join([x['ticket_code'] for x in new_guests]))
 
         # write out the csv for future use
         egest_csv(new_guests,

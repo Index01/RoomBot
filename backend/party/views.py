@@ -21,11 +21,11 @@ class PartyViewSet(viewsets.ModelViewSet):
 
         # we allow looking up the room by
         # * email
-        # * primary name
+        # * names
         room = None
         try:
             room = Room.objects.get(name_hotel='Ballys', number=room_number)
-            if secret.lower() not in room.primary.lower() and \
+            if secret.lower() not in room.names.lower() and \
                (room.guest is not None and (secret.lower() != room.guest.email.lower())):
                 return Response('Must specify the email or name of the room owner', status=status.HTTP_400_BAD_REQUEST)
 
@@ -41,7 +41,7 @@ class PartyViewSet(viewsets.ModelViewSet):
         if secret is None:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        if secret.lower() not in room.primary.lower() and \
+        if secret.lower() not in room.names.lower() and \
                (room.guest is not None and (secret.lower() != room.guest.email.lower())):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 

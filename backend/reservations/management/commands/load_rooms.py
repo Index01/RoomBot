@@ -1,5 +1,4 @@
 import sys
-from fuzzywuzzy import fuzz
 from django.core.management.base import BaseCommand, CommandError
 from pydantic import ValidationError
 from reservations.helpers import ingest_csv
@@ -12,7 +11,7 @@ def changes(room):
     msg = f"{room.name_hotel:9}{room.number:4} changes\n"
     for field, values in room.get_dirty_fields(verbose=True).items():
         saved = values['saved']
-        if room.guest and field == 'primary' :
+        if room.guest and field == 'names' :
             saved = f"{saved} (owner {room.guest.name})"
         msg=f"{msg}    {field} {saved} -> {values['current']}\n"
 
@@ -41,7 +40,7 @@ def create_rooms_main(cmd, args):
         try:
             room_data = RoomPlacementListIngest(**r)
             if len([x for x in rooms_import_list if x.room == room_data.room]) > 0:
-                dupe_rooms.append(room_data.room)
+                dupe_rooms.append(str(room_data.room))
 
 
             if room_data.ticket_id_in_secret_party and \
@@ -94,13 +93,11 @@ def create_rooms_main(cmd, args):
 
             if elem.placed_by == 'Roombaht' or \
                (elem.placed_by == '' and args['blank_is_available']):
-                room.placed_by_roombot = True
                 room.is_available = True
                 if room.name_hotel == 'Ballys':
                     room.is_swappable = True
 
             if room.name_take3 not in ROOM_LIST:
-                room.is_special = True
                 room.is_available = False
                 room.is_swappable = False
 
@@ -119,7 +116,7 @@ def create_rooms_main(cmd, args):
         #   in spreadsheet if it already actually assigned, but you can mark
         #   a room as non available/swappable if it is not assigned yet
         if (elem.placed_by == '' and not args['blank_is_available']) \
-           and not room.is_special and not room.is_available:
+           and not room.is_available:
             if not room.guest and room.is_swappable:
                 room.is_swappable = False
             else:
@@ -129,33 +126,10 @@ def create_rooms_main(cmd, args):
         # TODO: Note that as we normalize names via .title() to remove chances of capitalization
         #       drama we lose the fact that some folk have mixed capitalization names i.e.
         #       Name McName and I guess we need to figure out how to handle that
-        primary_name = None
-        if elem.first_name_resident != '':
-            primary_name = elem.first_name_resident
-            if elem.last_name_resident == '':
-                cmd.stderr.write(f"No last name for room {room.number}")
-            else:
-                primary_name = f"{primary_name} {elem.last_name_resident}"
-
-            if room.primary != primary_name.title():
-                if room.guest and room.guest.transfer:
-                    trans_guest = room.guest.chain()[-1]
-                    if elem.ticket_id_in_secret_party == room.guest.ticket:
-                        fuzziness = fuzz.ratio(room.primary, primary_name)
-                        if fuzziness >= int(args['fuzziness']):
-                            room.primary = primary_name.title()
-                        else:
-                            cmd.stderr.write((
-                                f"Not updating primary name for room {room.number} transfer {room.guest.transfer}"
-                                f" {room.primary}->{primary_name} ({fuzziness} fuzziness exceeds threshold of {args['fuzziness']}"))
-                    elif trans_guest.name == primary_name.title():
-                            cmd.stderr.write((
-                                f"Not updating primary name for room {room.number} transfer {room.guest.transfer}"
-                                f" {room.primary} -> {primary_name}"))
-                    else:
-                        room.primary = primary_name.title()
-                else:
-                    room.primary = primary_name.title()
+        if elem.names != '':
+            for name in elem.names.split(','):
+                if not room.resident(name):
+                    room.resident_add(name.title())
 
             if elem.placed_by == '' and not args['blank_is_available']:
                 cmd.stderr.write(f"Room {room.number} Reserved w/o placer")
@@ -164,13 +138,9 @@ def create_rooms_main(cmd, args):
                 room.is_placed = True
 
             room.available = False
-        elif room.primary != '' and (not room.guest) and room.is_available:
+        elif room.names != '' and (not room.guest) and room.is_available:
             # Cannot unassign an already unavailable room
-            room.primary = ''
-            room.secondary = ''
-
-        if elem.secondary_name != room.secondary:
-            room.secondary = elem.secondary_name.title()
+            room.names = ''
 
         if (elem.ticket_id_in_secret_party != room.sp_ticket_id
             and elem.ticket_id_in_secret_party != 'n/a'):
@@ -200,10 +170,7 @@ def create_rooms_main(cmd, args):
                     room_msg += ', available'
 
                 if room.is_placed:
-                    room_msg += f", placed ({primary_name})"
-
-                if room.is_special:
-                    room_msg += ", special!"
+                    room_msg += f", placed ({room.names})"
 
                 room.save_dirty_fields()
                 cmd.stdout.write(room_msg)
@@ -280,9 +247,6 @@ class Command(BaseCommand):
                             help='Do not actually make changes',
                             action='store_true',
                             default=False)
-        parser.add_argument('--fuzziness',
-                            help='Fuzziness confidence factor for updating name changes (default 95)',
-                            default='95')
         parser.add_argument('--debug',
                             help='Debug Mode. Much Debug. Wow.',
                             action='store_true',

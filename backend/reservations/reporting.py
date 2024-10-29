@@ -25,7 +25,7 @@ def swaps_report():
         'room_two',
         'guest_two_email'
     ]
-    writer = DictWriter(swaps_file, fieldnames=header)
+    writer = DictWriter(open(swaps_file, 'w'), fieldnames=header)
     writer.writeheader()
     for swap in Swap.objects.all():
         row = {
@@ -83,8 +83,7 @@ def hotel_export(hotel):
         'room_type',
         'check_in',
         'check_out',
-        'primary_name',
-        'secondary_name'
+        'names'
     ]
     rooms = Room.objects.filter(name_hotel = hotel.title())
     if rooms.count() == 0:
@@ -96,26 +95,26 @@ def hotel_export(hotel):
 
         row = {
             'room_number': room.number,
-            'room_type': room.hotel_sku(),
-            'primary_name': room.primary
+            'room_type': room.hotel_sku()
         }
+        names_list = room.names.split(',')
+        if len(names_list) == 1:
+            row['names'] = room.names
+        else:
+            row['names'] = f'"{",".join(names_list)}"'
+
         if room.check_in and room.check_out:
             row['check_in'] = room.check_in
             row['check_out'] = room.check_out
         elif room.check_in and not room.check_out:
-            logger.warning("Room %s missing check out date", room.number)
             row['check_in'] = room.check_in
             row['check_out'] = 'TBD'
         elif room.check_out and not room.check_in:
-            logger.warning("Room %s missing check in date", room.number)
             row['check_in'] = 'TBD'
             row['check_out'] = room.check_out
         else:
             row['check_in'] = 'TBD'
             row['check_out'] = 'TBD'
-
-        if room.secondary != '':
-            row['secondary_name'] = room.secondary
 
         rows.append(row)
 
@@ -136,44 +135,33 @@ def rooming_list_export(hotel):
     cols = [
         "room_number",
         "room_type",
-        "first_name",
-        "last_name",
-        "secondary_name",
+        "names",
         "check_in_date",
         "check_out_date",
-        "placed_by_roombaht",
+        "is_placed",
         "sp_ticket_id"
     ]
 
     rows = []
     for room in rooms:
-        # hacky split to first/last name
-        primary_name = room.primary.split(" ", 1)
-        first_name = primary_name[0]
-        last_name = primary_name[1] if len(primary_name)>1 else ""
         row = {
             'room_number': room.number,
             'room_type': room.hotel_sku(),
-            'first_name': first_name,
-            'last_name': last_name,
+            'names': room.names,
+            'is_placed': room.is_placed
         }
-        if room.secondary != '':
-            row['secondary_name'] = room.secondary
         if room.check_in and room.check_out:
             row['check_in_date'] = take3_date(room.check_in)
             row['check_out_date'] = take3_date(room.check_out)
         elif room.check_in and not room.check_out:
-            logger.warning("Room %s missing check out date", room.number)
             row['check_in_date'] = take3_date(room.check_in)
             row['check_out_date'] = 'TBD'
         elif room.check_out and not room.check_in:
-            logger.warning("Room %s missing check in date", room.number)
             row['check_in_date'] = 'TBD'
             row['check_out_date'] = take3_date(room.check_out)
         else:
             row['check_in_date'] = 'TBD'
             row['check_out_date'] = 'TBD'
-        row["placed_by_roombaht"] = room.placed_by_roombot
 
         if room.guest and room.guest.ticket:
             row['sp_ticket_id'] = room.guest.ticket
@@ -181,7 +169,7 @@ def rooming_list_export(hotel):
             row['sp_ticket_id'] = "n/a"
         else:
             # shouldnt have any of these, but here we are
-            logger.warning("No SP ticket state found for room: %s",  room.number)
+            logger.warning("No SP ticket state found for : %s",  room.number)
             row['sp_ticket_id'] = ""
 
         rows.append(row)

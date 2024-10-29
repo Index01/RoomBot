@@ -15,10 +15,9 @@ class Command(BaseCommand):
                 continue
 
             placed_msg = 'yes' if room.is_placed else 'no'
-            special_msg = 'yes' if room.is_special else 'no'
             avail_msg = 'yes' if room.is_available else 'no'
             msg = (
                 f"{room.name_hotel:10}{room.number:5}{room.hotel_sku():40} "
-                f"Available: {avail_msg:4} Placed:{placed_msg:4} Special:{special_msg:4}"
+                f"Available: {avail_msg:4} Placed:{placed_msg:4}"
             )
             self.stdout.write(msg)

@@ -28,8 +28,6 @@
     can_login: true
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
-    room_number: "500"
-    hotel: "Ballys"
 
 - model: "reservations.guest"
   pk: 3
@@ -40,8 +38,6 @@
     can_login: true
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
-    room_number: "501"
-    hotel: "Ballys"
 
 - model: "reservations.guest"
   pk: 4
@@ -52,8 +48,6 @@
     can_login: false
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
-    room_number: "500"
-    hotel: "Nugget"
 
 - model: "reservations.guest"
   pk: 5
@@ -64,5 +58,3 @@
     can_login: false
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
-    room_number: "502"
-    hotel: "Ballys"

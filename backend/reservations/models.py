@@ -21,7 +21,7 @@ class UnknownProductError(Exception):
         self.product = product
         super().__init__(f"Unknown product: {product}")
 
-class Guest(models.Model):
+class Guest(DirtyFieldsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField("Name", max_length=240)
@@ -30,30 +30,20 @@ class Guest(models.Model):
     transfer = models.CharField("Transfer", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
-    room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
-    hotel = models.CharField("Hotel", max_length=20, null=True, blank=True)
     onboarding_sent = models.BooleanField("OnboardingSent", default=False)
     can_login = models.BooleanField("CanLogin", default=False)
     last_login = models.DateTimeField(blank=True, null=True)
 
+    @staticmethod
+    def original_room(trans_code):
+        existing_guest = Guest.objects.get(ticket=trans_code)
+        if existing_guest.transfer:
+            return Guest.original_room(existing_guest.transfer)
+
+        return existing_guest
+
     def __str__(self):
         return self.name
-
-    @staticmethod
-    def traverse_transfer(chain):
-        obj = chain[-1]
-        if not obj.transfer:
-            return chain
-
-        guest = Guest.objects.get(ticket=obj.transfer)
-        chain.append(guest)
-        if guest.transfer:
-            return Guest.traverse_transfer(chain)
-
-        return chain
-
-    def chain(self):
-        return Guest.traverse_transfer([self])
 
 
 class Staff(models.Model):
@@ -80,7 +70,6 @@ class Room(DirtyFieldsMixin, models.Model):
     is_mountainview = models.BooleanField("MountainviewRoom", default=False)
     is_ada = models.BooleanField("ADA", default=False)
     is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
-    is_special = models.BooleanField("SpecialRoom", default=False)
     is_placed = models.BooleanField("PlacedRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
     swap_code_time = models.DateTimeField(blank=True, null=True)
@@ -88,13 +77,51 @@ class Room(DirtyFieldsMixin, models.Model):
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
     _check_out = models.DateField(blank=True, null=True, db_column='check_out')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20, blank=True, null=True)
-    primary = models.CharField("PrimaryContact", max_length=200)
-    secondary = models.CharField("SecondaryContact", max_length=200)
-    placed_by_roombot = models.BooleanField("PlacedByRoombot", default=False)
+    names = models.CharField("Names", max_length=200, null=True, blank=True)
     guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
+        if len(roombaht_config.GUEST_HOTELS) > 1:
+            return f"{self.name_hotel} {self.number}"
+
         return str(self.number)
+
+    def resident(self, name):
+        """
+        check to see if a given name (or guest) is resident in the room
+        """
+        names = [x.lower() for x in self._resident_list()]
+        if isinstance(name, str):
+            return name.lower() in names
+
+        if isinstance(name, Guest):
+            return name.name.lower() in names
+
+        return False
+
+    def _resident_list(self):
+        if self.names and self.names != '':
+            return self.names.split(',')
+
+        return []
+
+    def resident_add(self, name):
+        if self.resident(name):
+            return
+
+        room_names = self._resident_list()
+        room_names.append(name)
+        room_names.sort()
+        self.names = ','.join(room_names)
+
+    def resident_remove(self, name):
+        if not self.resident(name):
+            return
+
+        room_names = self._resident_list()
+        room_names.remove(name)
+        room_names.sort()
+        self.names = ','.join(room_names)
 
     @property
     def check_out(self):
@@ -126,8 +153,7 @@ class Room(DirtyFieldsMixin, models.Model):
 
     def swappable(self):
         return self.guest \
-            and self.is_swappable \
-            and (not self.is_special)
+            and self.is_swappable
 
     def cooldown(self):
         if not self.swap_time:
@@ -214,25 +240,15 @@ class Room(DirtyFieldsMixin, models.Model):
                            room_two.name_hotel, room_two.number)
             raise SwapError('Room two is not swappable')
 
-        room_two.guest.room_number = room_one.number
-        room_one.guest.room_number = room_two.number
-
         room_one.swap_code = None
         room_one.swap_code_time = None
         guest_id_theirs = room_one.guest
         room_one.guest = room_two.guest
         room_two.guest = guest_id_theirs
 
-        room_one_primary = room_one.primary
-        room_one_secondary = room_one.secondary
-        room_one.primary = room_two.primary
-        room_two.primary = room_one_primary
-
-        if room_two.secondary:
-            room_one.secondary = room_two.secondary
-
-        if room_one.secondary:
-            room_two.secondary = room_one_secondary
+        room_one_names = room_one.names
+        room_one.names = room_two.names
+        room_two.names = room_one_names
 
         room_one_check_in = room_one.check_in
         room_one_check_out = room_one.check_out

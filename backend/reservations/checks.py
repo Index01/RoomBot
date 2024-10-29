@@ -7,7 +7,25 @@ def guest_drama_check(app_configs, **kwargs):
     guests = Guest.objects.all()
     for guest in guests:
         if guest.jwt == '' and guest.can_login:
-            errors.append(Error(f"Guest {guest.email} has an empty jwt field!"))
+            errors.append(Error(f"Guest {guest.email} has an empty jwt field!",
+                                hint='Indicative of guest import bug. Will require manual reconciliation.',
+                                obj=guest))
+
+        if guest.transfer:
+            try:
+                Guest.objects.get(ticket=guest.transfer)
+            except Guest.DoesNotExist:
+                errors.append(Error(f"Guest {guest.email} a transfer ({guest.transfer}) that we cannot find",
+                                    hint='Indicative of guest import bug. Will require manual reconciliation.',
+                                    obj=guest))
+
+    for guest_email in Guest.objects.values('email').distinct():
+        for guest in Guest.objects.filter(email=guest_email):
+            guest_jwt = set([x.jwt for x in guest])
+            if len(guest_jwt) > 1:
+                errors.append(Error(f"Guest {guest.email} has {len(guest_jwt)} distinct jwt entries!",
+                                    hint='Indicative of guest import bug. Will require manual reconciliation.',
+                                    obj=guest))
 
     return errors
 
@@ -16,57 +34,36 @@ def room_drama_check(app_configs, **kwargs):
     errors = []
     rooms = Room.objects.all()
     for room in rooms:
-        if room.guest and room.number != room.guest.room_number:
-            errors.append(Error(f"Room/guest number mismatch {room.number} / {room.guest.room_number}",
-                                hint='Manually reconcile room/guest numbers'))
-
-        if room.guest and room.primary != room.guest.name:
-            errors.append(Error(f"Room/guest name mismatch {room.primary} / {room.guest.name}",
-                                hint='Manually reconcile room/guest names'))
-
-        if room.is_placed and \
-           ('placeholder' in room.primary.lower() or
-            'reserve' in room.primary.lower()):
-            errors.append(Info(f"Placed room {room.number} ({room.name_hotel}) is vaguely held - {room.primary}, {room.secondary}"))
+        if room.guest and \
+           not room.resident(room.guest):
+            errors.append(Error(f"Room/guest name mismatch {room.names} / {room.guest}",
+                                hint='Manually reconcile room/guest names',
+                                obj=room))
 
         # side effect of transferring placed rooms
-        if room.sp_ticket_id:
+        if room.sp_ticket_id and room.guest:
             guest = None
-            alt_msg = ''
             try:
                 guest = Guest.objects.get(ticket=room.sp_ticket_id)
-                if room.number != guest.room_number:
-                    errors.append(Error(f"Ticket {room.sp_ticket_id} room/guest number mismatch {room.number} / {guest.room_number}",
-                                        hint='Manually reconcile room/guest numbers for specified ticket'))
+                if room.guest != guest:
+                    errors.append(Error(f"Ticket {room.sp_ticket_id} guest mismatch {room.guest} / {guest}",
+                                        hint='Manually reconcile guest entries. Good luck.',
+                                        obj=room))
 
-                if room.primary != guest.name:
-                    errors.append(Error(f"Ticket {room.sp_ticket_id} room/guest name mismatch {room.primary} / {guest.name}",
-                                        hint='Manually reconcile room/guest names for specified ticket'))
+                if room.guest and not room.resident(room.guest):
+                    errors.append(Error(f"Ticket {room.sp_ticket_id} guest {room.guest.name} not found among {room.names}",
+                                        hint='Manually reconcile room/guest names for specified ticket',
+                                        obj=room))
 
             except Guest.DoesNotExist:
-                errors.append(Error(f"Original owner for ticket {room.sp_ticket_id} not found",
-                                    hint='Good luck, I guess?'))
+                errors.append(Warning(f"No guest record for ticket {room.sp_ticket_id} found",
+                                    hint='Has guest list been imported? Reconcile with source(s) of truth.',
+                                    obj=room))
 
-            if room.guest is None:
-                errors.append(Error(f"Room {room.number} ({room.name_hotel}) sp_ticket_id {room.sp_ticket_id} missing guest",
-                                    hint='Manually reconcile w/ sources of truth'))
-
-            if room.guest is not None and room.number != guest.room_number \
-               and room.primary != guest.name \
-                   and guest is not None:
-                try:
-                    guest = Guest.objects.get(transfer=room.sp_ticket_id)
-                    if room.number != guest.room_number:
-                        errors.append(Error(f"Ticket {room.sp_ticket_id} transfer {guest.ticket} room/guest number mismatch {room.number} / {guest.room_number}",
-                                            hint='Manually reconcile room/guest numbers for specified ticket(s)'))
-
-                    if room.primary != guest.name:
-                        errors.append(Error(f"Ticket {room.sp_ticket_id} transfer {guest.ticket} room/guest name mismatch {room.primary} / {guest.name}",
-                                            hint='Manually reconcile room/guest names for specified ticket(s)'))
-
-                except Guest.DoesNotExist:
-                    errors.append(Error(f"Ticket {room.sp_ticket_id} transfer owner not found",
-                                  hint='Good luck, I guess?'))
+        elif room.sp_ticket_id and not room.guest:
+            errors.append(Warning(f"Ticket {room.sp_ticket_id} without any guest record",
+                                hint='Has guest list been imported? Reconcile with source(s) of truth.',
+                                obj=room))
 
         # general corruption which could bubble up during orm/sql manipulation
         if room.check_in is None:

@@ -143,6 +143,8 @@ backend_config() {
 	-e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
 	-e "s/@FEATURES@/${ROOMBAHT_FEATURES}/" \
+	-e "s/@URL_PORT@/${ROOMBAHT_URL_PORT}/" \
+	-e "s/@URL_SCHEMA@/${ROOMBAHT_URL_SCHEMA}/" \
 	"${BACKEND_DIR}/config/roombaht-systemd.conf" \
 	> "/etc/systemd/system/roombaht.service"
     chmod o-rwx "/etc/systemd/system/roombaht.service"
@@ -161,6 +163,8 @@ backend_config() {
 	-e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
 	-e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
+	-e "s/@URL_PORT@/${ROOMBAHT_URL_PORT}/" \
+	-e "s/@URL_SCHEMA@/${ROOMBAHT_URL_SCHEMA}/" \
 	"${BACKEND_DIR}/scripts/roombaht-oob.sh" \
 	> "/opt/roombaht-backend/scripts/roombaht-oob"
     chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"
@@ -220,7 +224,7 @@ if [ "$ACTION" == "load_staff" ] ; then
 	problems "Unable to load staff from ${STAFF_FILE}"
     fi
     "/opt/roombaht-backend/venv/bin/python3" \
-	"/opt/roombaht-backend/manage.py" "create_staff" "${STAFF_FILE}"
+	"/opt/roombaht-backend/manage.py" "load_staff" "${STAFF_FILE}"
 elif [ "$ACTION" == "load_rooms" ] ; then
     HOTEL="$1"
     ROOM_FILE="/tmp/${2}"
@@ -231,7 +235,7 @@ elif [ "$ACTION" == "load_rooms" ] ; then
     db_connection
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" \
-	create_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve
+	load_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve
 elif [ "$ACTION" == "clone_db" ] ; then
     if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
 	problems "can't clone prod to prod"

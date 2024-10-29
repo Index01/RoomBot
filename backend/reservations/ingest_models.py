@@ -24,9 +24,7 @@ class RoomPlacementListIngest(BaseModel):
     room: int = Field(alias='Room')
     room_type: str = Field(alias='Room Type')
     room_features: Optional[str] = Field(alias='Room Features (Accessibility, Lakeview, Smoking)')
-    first_name_resident: Optional[str] = Field(alias='First Name (Resident)')
-    last_name_resident: Optional[str] = Field(alias='Last Name (Resident)')
-    secondary_name: Optional[str] = Field(alias='Secondary Name')
+    names: Optional[str] = Field(alias='Names')
     # check in and out are currently strings, not dates
     check_in_date: Optional[str] = Field(alias='Check-In Date')
     check_out_date: Optional[str] = Field(alias='Check-Out Date')

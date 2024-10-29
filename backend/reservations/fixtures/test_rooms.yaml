@@ -7,18 +7,9 @@
     number: "500"
     name_take3: "Queen"
     name_hotel: "Ballys"
-    is_available: false
     is_swappable: true
-    is_smoking: false
-    is_lakeview: false
-    is_mountainview: false
-    is_ada: false
-    is_hearing_accessible: false
-    is_special: false
-    is_placed: false
     sp_ticket_id: "SP00001"
-    primary: "test user1"
-    placed_by_roombot: true
+    names: "test user1"
     guest: 2
 
 - model: "reservations.room"
@@ -29,18 +20,9 @@
     number: "501"
     name_take3: "Queen"
     name_hotel: "Ballys"
-    is_available: false
     is_swappable: true
-    is_smoking: false
-    is_lakeview: false
-    is_mountainview: false
-    is_ada: false
-    is_hearing_accessible: false
-    is_special: false
-    is_placed: false
     sp_ticket_id: "SP00002"
-    primary: "test user2"
-    placed_by_roombot: true
+    names: "test user2"
     guest: 3
 
 - model: "reservations.room"
@@ -51,18 +33,9 @@
     number: "500"
     name_take3: "King Bed Balcony"
     name_hotel: "Nugget"
-    is_available: false
     is_swappable: true
-    is_smoking: false
-    is_lakeview: false
-    is_mountainview: false
-    is_ada: false
-    is_hearing_accessible: false
-    is_special: false
-    is_placed: false
     sp_ticket_id: "SP00003"
-    primary: "test user3"
-    placed_by_roombot: true
+    names: "test user3"
     guest: 4
 
 - model: "reservations.room"
@@ -73,18 +46,9 @@
     number: "502"
     name_take3: "King Bed"
     name_hotel: "Ballys"
-    is_available: false
     is_swappable: true
-    is_smoking: false
-    is_lakeview: false
-    is_mountainview: false
-    is_ada: false
-    is_hearing_accessible: false
-    is_special: false
-    is_placed: false
     sp_ticket_id: "SP00004"
-    primary: "test user4"
-    placed_by_roombot: true
+    names: "test user4,test user4 junior"
     guest: 5
 
 - model: "reservations.room"
@@ -95,16 +59,21 @@
     number: "503"
     name_take3: "Queen"
     name_hotel: "Ballys"
-    is_available: false
     is_swappable: false
-    is_smoking: false
-    is_lakeview: false
-    is_mountainview: false
-    is_ada: false
-    is_hearing_accessible: false
-    is_special: false
     is_placed: true
     sp_ticket_id: "SP00005"
-    primary: "test user4"
-    placed_by_roombot: false
+    names: "test user4"
     guest: 5
+
+- model: "reservations.room"
+  pk: 6
+  fields:
+    created_at: "1999-12-31T23:59:59+00:00"
+    updated_at: "1999-12-31T23:59:59+00:00"
+    number: "504"
+    name_take3: "Queen"
+    name_hotel: "Ballys"
+    is_swappable: false
+    is_available: true
+    is_placed: false
+    names: ""

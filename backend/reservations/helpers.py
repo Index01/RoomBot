@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import re
 import sys
 
 from datetime import datetime
@@ -43,11 +44,16 @@ def real_date(a_date: str, year=None):
         if len(sub_date_bits) == 2:
             date = sub_date
 
+    elif len(a_date.split('/')) == 3:
+        r_date = re.search(r'(\d+)/(\d+)/(\d+)', a_date)
+        if r_date:
+            return parse_date(f"{r_date[3]}-{r_date[2]}-{r_date[1]}")
+
     if not date:
         raise Exception(f"Unexpected date format {a_date}")
 
     month, day = date.lstrip().split('/')
-    return parse_date("%s-%s-%s" % (year, month, day))
+    return parse_date(f"{year}-{month}-{day}")
 
 def take3_date(date_obj):
     """Converts date string "mm-dd-yyyy" to "day - mm/dd"
