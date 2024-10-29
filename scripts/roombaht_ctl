@@ -131,7 +131,7 @@ elif [ "$ACTION" == "snapshot" ] ; then
     yeet_script
     yeet_ctl "${ACTION} snapshot"
 elif [ "$ACTION" == "wipe" ] || [ "$ACTION" == "clone_db" ] ; then
-    echo "This will completely wipe the database and it will be super annoying to get it back."
+    echo "This will completely wipe the '${ROOMBAHT_DB}' database and it will be super annoying to get it back."
     echo "Are you sure? [y/n]"
     read -r -s -n 1 answer
     if [ "$answer" != "y" ] ; then

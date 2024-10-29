@@ -41,7 +41,7 @@ def create_rooms_main(cmd, args):
         try:
             room_data = RoomPlacementListIngest(**r)
             if len([x for x in rooms_import_list if x.room == room_data.room]) > 0:
-                dupe_rooms.append(room_data.room)
+                dupe_rooms.append(str(room_data.room))
 
 
             if room_data.ticket_id_in_secret_party and \
