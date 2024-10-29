@@ -143,6 +143,8 @@ backend_config() {
 	-e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
 	-e "s/@FEATURES@/${ROOMBAHT_FEATURES}/" \
+	-e "s/@URL_PORT@/${ROOMBAHT_URL_PORT}/" \
+	-e "s/@URL_SCHEMA@/${ROOMBAHT_URL_SCHEMA}/" \
 	"${BACKEND_DIR}/config/roombaht-systemd.conf" \
 	> "/etc/systemd/system/roombaht.service"
     chmod o-rwx "/etc/systemd/system/roombaht.service"
@@ -161,6 +163,8 @@ backend_config() {
 	-e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
 	-e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
+	-e "s/@URL_PORT@/${ROOMBAHT_URL_PORT}/" \
+	-e "s/@URL_SCHEMA@/${ROOMBAHT_URL_SCHEMA}/" \
 	"${BACKEND_DIR}/scripts/roombaht-oob.sh" \
 	> "/opt/roombaht-backend/scripts/roombaht-oob"
     chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"

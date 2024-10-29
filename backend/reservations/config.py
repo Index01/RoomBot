@@ -18,8 +18,8 @@ SEND_MAIL = env_config('send_mail', 'false').lower() == 'true'
 LOGLEVEL = env_config('loglevel', 'info').upper()
 
 URL_HOST = env_config('host', 'localhost')
-URL_PORT = env_config('port', '3000')
-URL_SCHEMA = env_config('schema', 'http')
+URL_PORT = env_config('url_port', '3000')
+URL_SCHEMA = env_config('url_schema', 'http')
 
 JWT_KEY = env_config('jwt_key')
 

@@ -526,21 +526,17 @@ def run_reports(request):
         logger.info("reports being run by %s", auth_obj['email'])
 
         admin_emails = [admin.email for admin in Staff.objects.filter(is_admin=True)]
-        ballys_export_file = hotel_export('Ballys')
-        nugget_export_file = hotel_export('Nugget')
-        ballys_roomslist_file = rooming_list_export("Ballys")
-        nugget_roomslist_file = rooming_list_export("Nugget")
         guest_dump_file, room_dump_file = dump_guest_rooms()
         swaps_file = swaps_report()
         attachments = [
-            ballys_export_file,
-            nugget_export_file,
-            ballys_roomslist_file,
-            nugget_roomslist_file,
             guest_dump_file,
             room_dump_file,
             swaps_file
         ]
+        for hotel in roombaht_config.GUEST_HOTELS:
+            attachments.append(hotel_export(hotel))
+            attachments.append(rooming_list_export(hotel))
+
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
                    'Your report(s) are here. *theme song for Brazil plays*',
