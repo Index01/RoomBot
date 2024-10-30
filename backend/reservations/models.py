@@ -26,8 +26,8 @@ class Guest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField("Name", max_length=240)
     email = models.EmailField()
-    ticket = models.CharField("Ticket", max_length=20)
-    transfer = models.CharField("Transfer", max_length=20)
+    ticket = models.CharField("Ticket", max_length=20, unique=True)
+    transfer = models.CharField("Transfer", max_length=20, unique=True)
     invitation = models.CharField("Invitation", max_length=20)
     jwt = models.CharField("JWT", max_length=240)
     room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
@@ -36,25 +36,21 @@ class Guest(models.Model):
     can_login = models.BooleanField("CanLogin", default=False)
     last_login = models.DateTimeField(blank=True, null=True)
 
+    @staticmethod
+    def chain(trans_code, guest_chain=[]):
+        try:
+            existing_guest = Guest.objects.get(ticket=trans_code)
+        except Guest.DoesNotExist:
+            return guest_chain
+
+        guest_chain.append(existing_guest)
+        if existing_guest.transfer:
+            return Guest.chain(existing_guest.transfer, guest_chain)
+
+        return guest_chain
+
     def __str__(self):
         return self.name
-
-    @staticmethod
-    def traverse_transfer(chain):
-        obj = chain[-1]
-        if not obj.transfer:
-            return chain
-
-        guest = Guest.objects.get(ticket=obj.transfer)
-        chain.append(guest)
-        if guest.transfer:
-            return Guest.traverse_transfer(chain)
-
-        return chain
-
-    def chain(self):
-        return Guest.traverse_transfer([self])
-
 
 class Staff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

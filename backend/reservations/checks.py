@@ -9,6 +9,14 @@ def guest_drama_check(app_configs, **kwargs):
         if guest.jwt == '' and guest.can_login:
             errors.append(Error(f"Guest {guest.email} has an empty jwt field!"))
 
+        if guest.ticket and Guest.objects.filter(ticket = guest.ticket).count() > 1:
+            errors.append(Error(f"Guest {guest.email} has multiple tickets assocaited with it!"))
+
+    multi_room_guests = [','.join(x.room_set.all()) for x in Guest.objects.all() if x.room_set.count() > 1]
+    if len(multi_room_guests) > 0:
+        errors.append(Error(f"Guests have has multiple rooms {multi_room_guests}"))
+
+
     return errors
 
 @register(deploy=True)
@@ -23,11 +31,6 @@ def room_drama_check(app_configs, **kwargs):
         if room.guest and room.primary != room.guest.name:
             errors.append(Error(f"Room/guest name mismatch {room.primary} / {room.guest.name}",
                                 hint='Manually reconcile room/guest names'))
-
-        if room.is_placed and \
-           ('placeholder' in room.primary.lower() or
-            'reserve' in room.primary.lower()):
-            errors.append(Info(f"Placed room {room.number} ({room.name_hotel}) is vaguely held - {room.primary}, {room.secondary}"))
 
         # side effect of transferring placed rooms
         if room.sp_ticket_id:
