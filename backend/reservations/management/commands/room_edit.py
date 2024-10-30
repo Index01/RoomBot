@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Room
 from reservations.management import getch
+import reservations.config as roombaht_config
 
 class Command(BaseCommand):
     help = "Edit aspects of a room"

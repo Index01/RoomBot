@@ -4,6 +4,8 @@
   fields:
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
     number: "500"
     name_take3: "Queen"
     name_hotel: "Ballys"
@@ -18,6 +20,8 @@
   fields:
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
     number: "501"
     name_take3: "Queen"
     name_hotel: "Ballys"
@@ -32,6 +36,8 @@
   fields:
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
     number: "500"
     name_take3: "King Bed Balcony"
     name_hotel: "Nugget"
@@ -46,36 +52,36 @@
   fields:
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
     number: "502"
     name_take3: "King Bed"
     name_hotel: "Ballys"
     is_swappable: true
     is_placed: false
-    sp_ticket_id: "SP00004"
-    primary: "test user4"
     placed_by_roombot: true
-    guest: 5
 
 - model: "reservations.room"
   pk: 5
   fields:
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
     number: "503"
     name_take3: "Queen"
     name_hotel: "Ballys"
     is_available: false
-    is_placed: true
-    sp_ticket_id: "SP00005"
-    primary: "test user4"
-    placed_by_roombot: false
-    guest: 5
+    is_placed: false
+    placed_by_roombot: true
 
 - model: "reservations.room"
   pk: 6
   fields:
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
     number: "504"
     name_take3: "Queen"
     name_hotel: "Ballys"

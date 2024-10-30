@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Room
+import reservations.config as roombaht_config
 
 class Command(BaseCommand):
     help = "Show information on a room"

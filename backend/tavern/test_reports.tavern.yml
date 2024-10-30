@@ -80,8 +80,8 @@ stages:
           rows:
             - room_number: "500"
               primary_name: "test user2"
-              check_in: "TBD"
-              check_out: "TBD"
+              check_in: "1999-12-31"
+              check_out: "2000-01-02"
               room_type: "Standard 2 Queens"
 
             - room_number: "501"

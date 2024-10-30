@@ -48,10 +48,19 @@ run() {
     "$TAVERN" backend/tavern/test_admin.tavern.yml
     "$TAVERN" backend/tavern/test_reports.tavern.yml
 
-    # then run tests following typical import data flow
+    # we want to test cli tools
     source "${ROOTDIR}/test.env"
-    "${SCRIPTDIR}/manage_dev" flush --noinput
-    "${SCRIPTDIR}/manage_dev" migrate
+
+    manage room_list &>> "$LOG"
+    manage room_list -t Queen &>> "$LOG"
+    manage room_show --hotel ballys 503 &>> "$LOG"
+    manage user_show testadmin@example.com &>> "$LOG"
+    manage user_show testuser1@example.com &>> "$LOG"
+    manage check --deploy &>> "$LOG"
+
+    # then run tests following typical import data flow
+    "${SCRIPTDIR}/manage_dev" flush --noinput &>> "$LOG"
+    "${SCRIPTDIR}/manage_dev" migrate &>> "$LOG"
     manage create_staff "${ROOTDIR}/samples/exampleMainStaffList.csv"
     manage create_rooms \
            "${ROOTDIR}/samples/exampleBallysRoomList.csv" \
@@ -64,6 +73,11 @@ run() {
 
     "${SCRIPTDIR}/manage_dev" loaddata test_users
     "$TAVERN" backend/tavern/test_guests.tavern.yml
+    manage room_list &>> "$LOG"
+    manage room_list -t Queen &>> "$LOG"
+    manage room_show --hotel ballys 400 &>> "$LOG"
+    manage room_show --hotel nugget 110 &>> "$LOG"
+    manage check --deploy &>> "$LOG"
 
     SUCCESS="yea girl"
 }
