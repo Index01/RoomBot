@@ -1,6 +1,50 @@
 ---
 test_name: "admin api flow"
 stages:
+  - name: "non admin can always log in"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testuser1@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+      save:
+        json:
+          jwt_token2: "jwt"
+
+  - name: "non admin cannot get metrics tho"
+    request:
+      url: "http://localhost:8000/api/request_metrics/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
+  - name: "need to provide creds for admin"
+    request:
+      url: "http://localhost:8000/api/request_metrics/"
+      method: "POST"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
   - name: "can login as admin and get a jwt"
     request:
       url: "http://localhost:8000/api/login/"
