@@ -1,5 +1,5 @@
 ---
-test_name: "reports plz"
+test_name: "guest uploads plz"
 stages:
   - name: "can login as admin and get a jwt"
     request:
@@ -36,83 +36,56 @@ stages:
         json:
           jwt_token: "jwt"
 
-  - name: "can fetch hotel report"
+  - name: "can upload initial guest csv"
     request:
-      url: "http://localhost:8000/api/fetch_reports/"
+      url: "http://localhost:8000/api/guest_upload/"
       method: "POST"
       json:
         jwt: "{jwt_token}"
-        hotel: "ballys"
-        report: "hotel"
+        $ext:
+          function: tavern_utils:guest_csv
+          extra_kwargs:
+            file: "exampleMainGuestList.csv"
+
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "can process initial guest csv"
+    request:
+      url: "http://localhost:8000/api/create_guests/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
       headers:
         content-type: "application/json"
     response:
       status_code: 200
-      headers:
-        "content-type": "text/csv"
-      verify_response_with:
-        function: "tavern_utils:report_validator"
-        extra_kwargs:
-          rows:
-            - room_number: "500"
-              primary_name: "test user2"
-              check_in: "TBD"
-              check_out: "TBD"
-              room_type: "Standard 2 Queens"
 
-            - room_number: "501"
-              primary_name: "test user1"
-
-            - room_number: "502"
-              room_type: "King Bed"
-
-  - name: "can fetch rooms list report"
+  - name: "can upload intermedaite guest csv"
     request:
-      url: "http://localhost:8000/api/fetch_reports/"
+      url: "http://localhost:8000/api/guest_upload/"
       method: "POST"
       json:
         jwt: "{jwt_token}"
-        hotel: "ballys"
-        report: "roomslist"
+        $ext:
+          function: tavern_utils:guest_csv
+          extra_kwargs:
+            file: "exampleIncrementalGuestList.csv"
+
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "can process intermediate guest csv"
+    request:
+      url: "http://localhost:8000/api/create_guests/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
       headers:
         content-type: "application/json"
     response:
       status_code: 200
-      headers:
-        "content-type": "text/csv"
-      verify_response_with:
-        function: "tavern_utils:report_validator"
-
-  - name: "can fetch raw room report"
-    request:
-      url: "http://localhost:8000/api/fetch_reports/"
-      method: "POST"
-      json:
-        jwt: "{jwt_token}"
-        hotel: "ballys"
-        report: "room"
-      headers:
-        content-type: "application/json"
-    response:
-      status_code: 200
-      headers:
-        "content-type": "text/csv"
-      verify_response_with:
-        function: "tavern_utils:report_validator"
-
-  - name: "can fetch raw guest report"
-    request:
-      url: "http://localhost:8000/api/fetch_reports/"
-      method: "POST"
-      json:
-        jwt: "{jwt_token}"
-        hotel: "ballys"
-        report: "guest"
-      headers:
-        content-type: "application/json"
-    response:
-      status_code: 200
-      headers:
-        "content-type": "text/csv"
-      verify_response_with:
-        function: "tavern_utils:report_validator"

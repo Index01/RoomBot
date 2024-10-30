@@ -103,11 +103,9 @@ def hotel_export(hotel):
             row['check_in'] = room.check_in
             row['check_out'] = room.check_out
         elif room.check_in and not room.check_out:
-            logger.warning("Room %s missing check out date", room.number)
             row['check_in'] = room.check_in
             row['check_out'] = 'TBD'
         elif room.check_out and not room.check_in:
-            logger.warning("Room %s missing check in date", room.number)
             row['check_in'] = 'TBD'
             row['check_out'] = room.check_out
         else:

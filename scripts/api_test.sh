@@ -4,41 +4,41 @@ set -e
 SCRIPTDIR=$( cd "${0%/*}" && pwd)
 ROOTDIR="${SCRIPTDIR%/*}"
 
-usage() {
-    echo "${0}                               init, test, cleanup"
-    echo "${0}      test                     execute tests"
-    echo "${0}      init                     initialize test environment"
-    echo "${0}      cleanup                  cleanup test environment"
-}
-
 cleanup() {
     if [ -e "$SQLITE" ] ; then
-	rm "$SQLITE"
+        rm "$SQLITE"
     fi
-    PIDS="$(pgrep -f '.*manage.py runserver.*')"
-    if [ -n "$PIDS" ] ; then
-	for pid in $PIDS ; do
-	    if ps "$pid" &> /dev/null ; then
-		kill "$pid"
-	    fi
-	done
+    "${SCRIPTDIR}/test_infra.sh" stop
+    if [ -z "$SUCCESS" ] && [ -e "$LOG" ] ; then
+        cat "$LOG"
     fi
+    "${SCRIPTDIR}/test_infra.sh" report
 }
 
 init() {
-    "${SCRIPTDIR}/manage_dev" migrate &> "$LOG"
-    nohup "${SCRIPTDIR}/start_backend_dev.sh" < /dev/null &>> "$LOG" & disown
-    sleep 5
+    "${SCRIPTDIR}/test_infra.sh" start
+    local COUNT=5
+    while [ "$COUNT" -gt 0 ] ; do
+        if ! curl -o /dev/null -s http://localhost:8000/api/login/ ; then
+            sleep 1
+            COUNT="$((COUNT - 1))"
+	    if [ "$COUNT" -le 0 ] ; then
+		echo "Unable to start backend???"
+		exit 1
+	    fi
+        else
+            COUNT=0
+        fi
+    done
 }
 
-run_logs() {
-    if [ -z "$SUCCESS" ] && [ -e "$LOG" ] ; then
-	cat "$LOG"
-    fi
+manage() {
+    "${ROOTDIR}/backend/venv/bin/coverage" \
+	run -a "${ROOTDIR}/backend/manage.py" $*
 }
 
 run() {
-    trap run_logs EXIT
+    # first run tests with static fixtures
     "${SCRIPTDIR}/manage_dev" loaddata test_users
     "$TAVERN" backend/tavern/test_login.tavern.yml
 
@@ -46,16 +46,31 @@ run() {
     "${SCRIPTDIR}/manage_dev" loaddata test_rooms
     "$TAVERN" backend/tavern/test_room_swap.tavern.yml
     "$TAVERN" backend/tavern/test_admin.tavern.yml
+    "$TAVERN" backend/tavern/test_reports.tavern.yml
+
+    # then run tests following typical import data flow
+    source "${ROOTDIR}/test.env"
+    "${SCRIPTDIR}/manage_dev" flush --noinput
+    "${SCRIPTDIR}/manage_dev" migrate
+    manage create_staff "${ROOTDIR}/samples/exampleMainStaffList.csv"
+    manage create_rooms \
+           "${ROOTDIR}/samples/exampleBallysRoomList.csv" \
+           --hotel ballys --preserve --force \
+           --default-check-in="1999/1/1" --default-check-out="1999/1/10"
+    manage create_rooms \
+           "${ROOTDIR}/samples/exampleNuggetRoomList.csv" \
+           --hotel nugget --preserve --force \
+           --default-check-in "1999/1/1" --default-check-out "1999/1/10"
 
     "${SCRIPTDIR}/manage_dev" loaddata test_users
-    "${SCRIPTDIR}/manage_dev" loaddata test_rooms
-    "$TAVERN" backend/tavern/test_reports.tavern.yml
+    "$TAVERN" backend/tavern/test_guests.tavern.yml
 
     SUCCESS="yea girl"
 }
 
-SQLITE="${ROOTDIR}/test.sqlite"
+SQLITE="${ROOTDIR}/backend/test.sqlite"
 export PYTHONPATH="${ROOTDIR}/backend/tavern"
+export ROOTDIR
 TAVERN="${ROOTDIR}/backend/venv/bin/tavern-ci"
 LOG="${ROOTDIR}/test.log"
 
@@ -65,22 +80,6 @@ fi
 
 export ROOMBAHT_CONFIG="${ROOTDIR}/test.env"
 
-if [ "$1" == "init" ] ; then
-    init
-    exit 0
-elif [ "$1" == "run" ] ; then
-    run
-    exit 0
-elif [ "$1" == "cleanup" ] ; then
-    cleanup
-    exit 0
-elif [ "$#" == 0 ] ; then
-    trap cleanup EXIT
-    init
-    run
-    cleanup
-    exit 0
-else
-    usage
-    exit 1
-fi
+trap cleanup EXIT
+init
+run

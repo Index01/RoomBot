@@ -86,7 +86,7 @@ def login_reset(request):
             data = request.data["guest"]
             email = data["email"].lower()
         except KeyError as e:
-            logger.info(f"[+] Reset fail missing field: {data['email']}")
+            logger.info(f"[+] Reset fail missing field: email")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
         logger.info("[+] User reset attempt: %s", email)
