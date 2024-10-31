@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Room
 from reservations.management import getch
+import reservations.config as roombaht_config
 
 class Command(BaseCommand):
     help = "Edit aspects of a room"
@@ -17,12 +18,6 @@ class Command(BaseCommand):
 
         parser.add_argument('--check-out',
                             help='Specify check-out date (MM/DD, blank string to remove)')
-
-        parser.add_argument('--notes',
-                            help='Specify room notes (blank string to remove')
-
-        parser.add_argument('--guest-notes',
-                            help='Specify guest notes (blank string to remove')
 
         parser.add_argument('--hotel-name',
                             default='Ballys',
@@ -86,12 +81,8 @@ class Command(BaseCommand):
         if kwargs['swappable'] and kwargs['not_swappable']:
             raise CommandError("Cannot specify both --swappable and --not-swappable")
 
-        hotel = None
-        if kwargs['hotel_name'].lower() == 'ballys':
-            hotel = 'Ballys'
-        elif kwargs['hotel_name'].lower() == 'nugget':
-            hotel = 'Nugget'
-        else:
+        hotel = kwargs['hotel_name'].title()
+        if hotel not in roombaht_config.GUEST_HOTELS:
             raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
 
         room = None
@@ -104,8 +95,7 @@ class Command(BaseCommand):
             if kwargs['swappable'] \
                or kwargs['not_swappable'] \
                or kwargs['primary'] \
-               or kwargs['secondary'] \
-               or kwargs['guest_notes']:
+               or kwargs['secondary']:
                 raise CommandError('do not specify other args when unassigning room')
 
         if kwargs['unassign']:
@@ -122,7 +112,6 @@ class Command(BaseCommand):
             room.guest = None
             room.primary = ''
             room.secondary = ''
-            room.guest_notes = ''
             room.is_available = True
             room.is_swappable = True
             room.save()
@@ -140,12 +129,6 @@ class Command(BaseCommand):
 
         if kwargs['check_out'] is not None:
             room.check_out = kwargs['check_out']
-
-        if kwargs['notes'] is not None and kwargs['notes'] != room.notes:
-            room.notes = kwargs['notes']
-
-        if kwargs['guest_notes'] is not None and kwargs['guest_notes'] != room.guest_notes:
-            room.guest_notes = kwargs['guest_notes']
 
         if kwargs['swappable'] and not room.is_swappable:
             room.is_swappable = True

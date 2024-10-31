@@ -25,16 +25,16 @@ def swaps_report():
         'room_two',
         'guest_two_email'
     ]
-    writer = DictWriter(swaps_file, fieldnames=header)
+    writer = DictWriter(open(swaps_file, 'w'), fieldnames=header)
     writer.writeheader()
     for swap in Swap.objects.all():
         row = {
-            swap.create_at,
-            swap.room_one.name_take3,
-            swap.room_one.number,
-            swap.guest_one.email,
-            swap.room_two.number,
-            swap.guest_two.email
+            'timestamp': swap.created_at,
+            'room_type': swap.room_one.name_take3,
+            'room_one': swap.room_one.number,
+            'guest_one_email': swap.guest_one.email,
+            'room_two': swap.room_two.number,
+            'guest_two_email': swap.guest_two.email
         }
         writer.writerow(row)
 
@@ -103,11 +103,9 @@ def hotel_export(hotel):
             row['check_in'] = room.check_in
             row['check_out'] = room.check_out
         elif room.check_in and not room.check_out:
-            logger.warning("Room %s missing check out date", room.number)
             row['check_in'] = room.check_in
             row['check_out'] = 'TBD'
         elif room.check_out and not room.check_in:
-            logger.warning("Room %s missing check in date", room.number)
             row['check_in'] = 'TBD'
             row['check_out'] = room.check_out
         else:

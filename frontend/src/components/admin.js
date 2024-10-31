@@ -30,6 +30,7 @@ function GuestsCard(props) {
     axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/guest_upload/", guest )
       .then(res => {
         setPhrase(res.data);
+	setRespText([]);
 	notifyOK("File uploaded succesfully.");
       })
       .catch((error) => {

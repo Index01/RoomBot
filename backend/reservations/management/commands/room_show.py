@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from reservations.models import Room
+import reservations.config as roombaht_config
 
 class Command(BaseCommand):
     help = "Show information on a room"
@@ -15,12 +16,8 @@ class Command(BaseCommand):
             raise CommandError("Must specify room number")
 
         room = None
-        hotel = None
-        if kwargs['hotel_name'].lower() == 'ballys':
-            hotel = 'Ballys'
-        elif kwargs['hotel_name'].lower() == 'nugget':
-            hotel = 'Nugget'
-        else:
+        hotel = kwargs['hotel_name'].title()
+        if hotel not in roombaht_config.GUEST_HOTELS:
             raise CommandError(f"Invalid hotel {kwargs['hotel_name']} specified")
 
         try:

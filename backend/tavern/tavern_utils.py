@@ -1,3 +1,4 @@
+import os
 from csv import DictReader
 
 def get_room_row(number, rooms):
@@ -27,5 +28,14 @@ def report_validator(response, **kwargs):
                     continue
 
                 assert field in room
-                print(f"Checking {row['room_number']} for {field}:{value}")
+                print(f"Checking {row['room_number']} for {field}:{value} (actual value {room[field]})")
                 assert room[field] == value
+
+def guest_csv(**kwargs):
+    """ Read CSV list as list of lines """
+    filename = kwargs['file']
+    lines = []
+    with open(f"{os.environ['ROOTDIR']}/samples/{filename}", 'r') as csv_h:
+        lines = csv_h.read()
+
+    return {'guest_list': lines}

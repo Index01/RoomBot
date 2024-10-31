@@ -30,6 +30,7 @@
     updated_at: "1999-12-31T23:59:59+00:00"
     room_number: "500"
     hotel: "Ballys"
+    ticket: "SP00001"
 
 - model: "reservations.guest"
   pk: 3
@@ -42,6 +43,7 @@
     updated_at: "1999-12-31T23:59:59+00:00"
     room_number: "501"
     hotel: "Ballys"
+    ticket: "SP00002"
 
 - model: "reservations.guest"
   pk: 4
@@ -54,6 +56,7 @@
     updated_at: "1999-12-31T23:59:59+00:00"
     room_number: "500"
     hotel: "Nugget"
+    ticket: "SP00003"
 
 - model: "reservations.guest"
   pk: 5
@@ -64,5 +67,3 @@
     can_login: false
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
-    room_number: "502"
-    hotel: "Ballys"

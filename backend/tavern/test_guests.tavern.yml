@@ -1,0 +1,91 @@
+---
+test_name: "guest uploads plz"
+stages:
+  - name: "can login as admin and get a jwt"
+    request:
+      url: "http://localhost:8000/api/login/"
+      method: "POST"
+      json:
+        email: "testadmin@example.com"
+        jwt: "test jwt"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+      verify_response_with:
+        - function: tavern.helpers:validate_jwt
+          extra_kwargs:
+            jwt_key: "jwt"
+            key: "test"
+            algorithms: "HS256"
+            options:
+              verify_signature: true
+              verify_aud: false
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                admin:
+                  type: "bool"
+                  required: true
+                jwt:
+                  type: "str"
+                  required: true
+      save:
+        json:
+          jwt_token: "jwt"
+
+  - name: "can upload initial guest csv"
+    request:
+      url: "http://localhost:8000/api/guest_upload/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        $ext:
+          function: tavern_utils:guest_csv
+          extra_kwargs:
+            file: "exampleMainGuestList.csv"
+
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "can process initial guest csv"
+    request:
+      url: "http://localhost:8000/api/create_guests/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+
+  - name: "can upload intermedaite guest csv"
+    request:
+      url: "http://localhost:8000/api/guest_upload/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        $ext:
+          function: tavern_utils:guest_csv
+          extra_kwargs:
+            file: "exampleIncrementalGuestList.csv"
+
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 201
+
+  - name: "can process intermediate guest csv"
+    request:
+      url: "http://localhost:8000/api/create_guests/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
