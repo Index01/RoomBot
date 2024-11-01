@@ -29,7 +29,7 @@ def create_rooms_main(cmd, args):
     elif args['hotel_name'].lower() == 'nugget':
         hotel = 'Nugget'
     else:
-        raise Exception(f"Unknown hotel name {args['hotel_name']}specified")
+        raise Exception(f"Unknown hotel name {args['hotel_name']} specified")
 
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
@@ -41,7 +41,6 @@ def create_rooms_main(cmd, args):
             room_data = RoomPlacementListIngest(**r)
             if len([x for x in rooms_import_list if x.room == room_data.room]) > 0:
                 dupe_rooms.append(str(room_data.room))
-
 
             if room_data.ticket_id_in_secret_party and \
                len([x for x in rooms_import_list if x.ticket_id_in_secret_party == room_data.ticket_id_in_secret_party]) > 0:

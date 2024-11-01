@@ -65,6 +65,9 @@ SILENCED_SYSTEM_CHECKS = [
     "security.W004",  # we only use https via nginx
     "security.W008"
 ]
+# don't care about debug mode in dev
+if DEV_MODE:
+    SILENCED_SYSTEM_CHECKS.append('security.W018')
 
 # don't care about debug mode in dev
 if DEV_MODE:

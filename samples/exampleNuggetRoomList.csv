@@ -1,37 +1,37 @@
 Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",Names,Check-In Date,Check-Out Date,Placed By,Ticket ID in SecretParty
 # Generic rooms and their features
-100,Standard King,Hearing Accessible,,,,Roombaht,
-101,Double Queen Beds Lake View,Smoking,,,,Roombaht,
-102,Standard King,Smoking,,,,Roombaht,
+100,Standard King,Hearing Accessible,,Fri 11/10,Mon 11/13,Roombaht,
+101,Double Queen Beds Lake View,Smoking,,Fri 11/10,Mon 11/13,Roombaht,
+102,Standard King,Smoking,,Fri 11/10,Mon 11/13,Roombaht,
 # some comp'd placed rooms
-103,Double Queen Beds Lake View,,Staff Staffy,,,Foo Placer,
-104,Double Queen Beds Lake View,,Staff Staffy,,,Foo Placer,
+103,Double Queen Beds Lake View,,Staff Staffy,Fri 11/10,Mon 11/13,Foo Placer,
+104,Double Queen Beds Lake View,,Staff Staffy,Fri 11/10,Mon 11/13,Foo Placer,
 # a placed purchased room
-105,Double Queen Beds,Balcony,Fob Hat,,,Foo Placer,hhh010
+105,Double Queen Beds,Balcony,Fob Hat,Fri 11/10,Mon 11/13,Foo Placer,hhh010
 # placed transfer
-107,King Bed,,,,,Roombaht,
+107,King Bed,,,Fri 11/10,Mon 11/13,Roombaht,
 # placed / compd room
-108,King Bed,Mountain View,Fop Hat,,,Foo Placer,
+108,King Bed,Mountain View,Fop Hat,Fri 11/10,Mon 11/13,Foo Placer,
 # placed transfer
-109,King Bed,MountainView,Moo Foo,,,Foo Placer,hhh017
+109,King Bed,MountainView,Moo Foo,Fri 11/10,Mon 11/13,Foo Placer,hhh017
 # more generic rooms
-110,King Bed,,,,,Roombaht,
-111,King Bed Suite Mountain View,,,,,Roombaht,
-112,King Bed Suite Lake View Balcony,,Mat Foo,,,Foo Placer,hhh011
-113,King Bed Suite Balcony,,,,,Roombaht,
-114,King Bed Suite Balcony,,,,,Roombaht,
-115,King Bed Suite Balcony,,,,,Roombaht,
-116,Double Queen Beds Lake View Balcony,,,,,Roombaht,
-118,Double Queen Beds Lake View,Smoking,,,,Roombaht,
-119,King Bed Suite Balcony,,,,,Roombaht,
-120,King Bed Suite Lake View Balcony,"Smoking, ADA",,,,Roombaht,
-121,King Bed Lake View,Balcony,,,,Roombaht,
+110,King Bed,,,Fri 11/10,Mon 11/13,Roombaht,
+111,King Bed Suite Mountain View,,,Fri 11/10,Mon 11/13,Roombaht,
+112,King Bed Suite Lake View Balcony,,Mat Foo,Fri 11/10,Mon 11/13,Foo Placer,hhh011
+113,King Bed Suite Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+114,King Bed Suite Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+115,King Bed Suite Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+116,Double Queen Beds Lake View Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+118,Double Queen Beds Lake View,Smoking,,Fri 11/10,Mon 11/13,Roombaht,
+119,King Bed Suite Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+120,King Bed Suite Lake View Balcony,"Smoking, ADA",,Fri 11/10,Mon 11/13,Roombaht,
+121,King Bed Lake View,Balcony,,Fri 11/10,Mon 11/13,Roombaht,
 # this room is a normal purchase that gets transferred
-200,King Bed Suite Lake View Balcony,,,,,Roombaht,
+200,King Bed Suite Lake View Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
 # comp'd suite that is also art
-201,King Bed Suite Mountain View,,"Mop Fob,Mop Buddy",,,Foo Placer,
-202,King Bed Balcony,,,,,Roombaht,
-203,Double Queen Beds Lake View Balcony,,,,,Roombaht,
-204,King Bed Lake View,,,,,Roombaht,
-205,King Bed Suite Mountain View,,,,,Roombaht,
-206,Double Queen Beds Lake View,,,,,Roombaht,
+201,King Bed Suite Mountain View,,"Mop Fob,Mop Buddy",Fri 11/10,Mon 11/13,Foo Placer,
+202,King Bed Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+203,Double Queen Beds Lake View Balcony,,,Fri 11/10,Mon 11/13,Roombaht,
+204,King Bed Lake View,,,Fri 11/10,Mon 11/13,Roombaht,
+205,King Bed Suite Mountain View,,,Fri 11/10,Mon 11/13,Roombaht,
+206,Double Queen Beds Lake View,,,Fri 11/10,Mon 11/13,Roombaht,

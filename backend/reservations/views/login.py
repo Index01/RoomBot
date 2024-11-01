@@ -41,7 +41,6 @@ def login(request):
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
         email = data['email']
-
         guest_email = Guest.objects.filter(email=email, can_login=True)
         staff_email = Staff.objects.filter(email=email)
         jwt_key = roombaht_config.JWT_KEY

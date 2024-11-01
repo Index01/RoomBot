@@ -28,6 +28,7 @@
     can_login: true
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    ticket: "SP00001"
 
 - model: "reservations.guest"
   pk: 3
@@ -38,6 +39,7 @@
     can_login: true
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    ticket: "SP00002"
 
 - model: "reservations.guest"
   pk: 4
@@ -48,6 +50,7 @@
     can_login: false
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    ticket: "SP00003"
 
 - model: "reservations.guest"
   pk: 5
@@ -58,3 +61,4 @@
     can_login: false
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+    ticket: "SP00005"

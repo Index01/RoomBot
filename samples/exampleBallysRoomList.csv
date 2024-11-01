@@ -1,41 +1,44 @@
 Room,Room Type,"Room Features (Accessibility, Lakeview, Smoking)",Names,Check-In Date,Check-Out Date,Placed By,Ticket ID in SecretParty
+# A Special Room
 # generic rooms
-301,King,Hearing Accessible,,,,Roombaht,
+301,King,Hearing Accessible,,Fri 11/10,Mon 11/13,Roombaht,
 # generic room
-302,Queen,Smoking,,,,Roombaht,
-303,King,Lakeview,,,,Roombaht,
-304,Queen,ADA,,,,Roombaht,
+302,Queen,Smoking,,Fri 11/10,Mon 11/13,Roombaht,
+303,King,Lakeview,,Fri 11/10,Mon 11/13,Roombaht,
+304,Queen,ADA,,Fri 11/10,Mon 11/13,Roombaht,
 # Simple placed room w/o check-in/check-out
-305,Queen,,Foo Bar,,,Foo Placer,aaa001
+305,Queen,,Foo Bar,Fri 11/10,Mon 11/13,Foo Placer,aaa001
 # Simple placed room with check-in/check-out
 306,Queen,,Foo Baz,Fri 11/10,Mon 11/13,Foo Placer,aaa002
 # two generic art rooms
 307,King,,"Foo Baa,Foos Friend",Wed 11/08,Mon 11/13,Foo Placer,aaa005
 308,King,,Foo Bac,Fri 11/10,Mon 11/13,Foo Placer,aaa006
 # transferred art room original ticket placed
-309,King,,"Foo Bab",,,Foo Placer,aaa007
+309,King,,Foo Bab,Fri 11/10,Mon 11/13,Foo Placer,aaa007
 # transferred art room transferred ticket placed
-310,Queen,,"Foo Bal",,,Foo Placer,aaa010
+310,Queen,,Foo Bal,Fri 11/10,Mon 11/13,Foo Placer,aaa010
 # comp'd room
-311,Queen,Smoking,"Staff Staffy,Staffys Friend",Wed 11/08,Mon 11/13,Foo Placer,
+311,Queen,Smoking,"Staff,Staffy,Staffys Friend",Wed 11/08,Mon 11/13,Foo Placer,
 #more free rooms
-400,Queen,,,,,Roombaht,
-401,Queen,,,,,Roombaht,
-402,Queen,,,,,Roombaht,
-403,Queen,,,,,Roombaht,
-404,King,,,,,Roombaht,
-405,Queen,,Foo Kar,,,Foo Placer,aaa016
+400,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+401,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+402,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+403,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+404,King,,,Fri 11/10,Mon 11/13,Roombaht,
+405,Queen,,Foo Kar,Fri 11/10,Mon 11/13,Foo Placer,aaa016
 # placed room that will be transfered twice
-406,Queen,,Fob TxBar,,,Foo Placer,aaa020
+406,Queen,,Fob TxBar,Fri 11/10,Mon 11/13,Foo Placer,aaa020
 # batch of rooms for a special person
-407,Queen,,Rock Lobster,,,Foo Placer,
-408,King,,Rock Lobster,,,Foo Placer,
-410,King,,Rock Lobster,,,Foo Placer,aaa023
+407,Queen,,Rock Lobster,Fri 11/10,Mon 11/13,Foo Placer,
+408,King,,Rock Lobster,Fri 11/10,Mon 11/13,Foo Placer,
+410,King,,Rock Lobster,Fri 11/10,Mon 11/13,Foo Placer,aaa023
 # more free rooms
-411,Queen,,,,,Roombaht,
-412,King,,,,,Roombaht,
-413,King,,,,,Roombaht,
-414,King,,,,,Roombaht,
-415,Queen,,,,,Roombaht,
-416,King,,,,,Roombaht,
-417,Queen,,,,,Roombaht,
+411,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+412,King,,,Fri 11/10,Mon 11/13,Roombaht,
+413,King,,,Fri 11/10,Mon 11/13,Roombaht,
+414,King,,,Fri 11/10,Mon 11/13,Roombaht,
+415,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+416,King,,,Fri 11/10,Mon 11/13,Roombaht,
+417,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+418,Queen,,,Fri 11/10,Mon 11/13,Roombaht,
+419,Queen,,,Fri 11/10,Mon 11/13,Roombaht,

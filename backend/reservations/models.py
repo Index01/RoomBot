@@ -34,17 +34,21 @@ class Guest(DirtyFieldsMixin, models.Model):
     can_login = models.BooleanField("CanLogin", default=False)
     last_login = models.DateTimeField(blank=True, null=True)
 
-    @staticmethod
-    def original_room(trans_code):
-        existing_guest = Guest.objects.get(ticket=trans_code)
-        if existing_guest.transfer:
-            return Guest.original_room(existing_guest.transfer)
-
-        return existing_guest
 
     def __str__(self):
         return self.name
 
+    def chain(trans_code, guest_chain=[]):
+        try:
+            existing_guest = Guest.objects.get(ticket=trans_code)
+        except Guest.DoesNotExist:
+            return guest_chain
+
+        guest_chain.append(existing_guest)
+        if existing_guest.transfer:
+            return Guest.chain(existing_guest.transfer, guest_chain)
+
+        return guest_chain
 
 class Staff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

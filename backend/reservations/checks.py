@@ -1,23 +1,56 @@
 from django.core.checks import Error, Warning, Info, register
 from reservations.models import Room, Guest
 
+def ticket_chain(p_guest, p_chain=[]):
+    a_chain = [p_guest] + p_chain
+
+    if not p_guest.transfer or p_guest.transfer == '':
+        return a_chain
+
+    try:
+        a_guest = Guest.objects.get(ticket=p_guest.transfer)
+    except Guest.DoesNotExist:
+        return a_chain
+
+    return ticket_chain(a_guest, a_chain)
+
 @register(deploy=True)
 def guest_drama_check(app_configs, **kwargs):
     errors = []
     guests = Guest.objects.all()
+
+
     for guest in guests:
         if guest.jwt == '' and guest.can_login:
-            errors.append(Error(f"Guest {guest.email} has an empty jwt field!",
-                                hint='Indicative of guest import bug. Will require manual reconciliation.',
-                                obj=guest))
+            errors.append(Warning(f"Guest {guest.email} has an empty jwt field!",
+                                  hint="Reset password via ux or user_edit"),
+                          obj=guest)
 
-        if guest.transfer:
-            try:
-                Guest.objects.get(ticket=guest.transfer)
-            except Guest.DoesNotExist:
-                errors.append(Error(f"Guest {guest.email} a transfer ({guest.transfer}) that we cannot find",
-                                    hint='Indicative of guest import bug. Will require manual reconciliation.',
-                                    obj=guest))
+        if guest.ticket and Guest.objects.filter(ticket = guest.ticket).count() > 1:
+            errors.append(Error(f"Guest {guest.email}, ticket {guest.ticket} shared with other users"))
+
+        guest_transfer_chain = ticket_chain(guest)
+        chain_tail = [x for x in guest_transfer_chain if x.transfer == '']
+        if len(chain_tail) == 0:
+            errors.append(Error(f"Transfer chail tail not found {[x.ticket for x in guest_transfer_chain]}",
+                          hint="Unable to find guest record w/o transfer in this chain." \
+                                "Manually reconcile against SP exports.", obj=guest))
+
+        for chain_guest in guest_transfer_chain:
+            if chain_guest.transfer == '' \
+               and chain_guest.ticket != '' \
+                and chain_guest.room_set.count() > 0:
+                try:
+                    chain_room = Room.objects.get(guest=chain_guest)
+                    if chain_room.is_placed and chain_guest.ticket != chain_room.sp_ticket_id:
+                        errors.append(Warning(f"Placed room {chain_room.name_take3} {chain_room.number} ticket {chain_room.sp_ticket_id}" \
+                                              f"does not match guest {guest.name}, ticket {guest.ticket}",
+                                      hint="Manual reconciliation? Good luck, starfighter.",
+                                      obj=guest))
+                except Room.DoesNotExist:
+                    errors.append(Warning(f"Unable to find corresponding room for {guest.email}, ticket {guest.ticket}",
+                                          hint="Reimporting SP or manual reconciliation (or bug!)",
+                                          obj=guest))
 
     for guest_email in Guest.objects.values('email').distinct():
         for guest in Guest.objects.filter(email=guest_email):
@@ -26,6 +59,10 @@ def guest_drama_check(app_configs, **kwargs):
                 errors.append(Error(f"Guest {guest.email} has {len(guest_jwt)} distinct jwt entries!",
                                     hint='Indicative of guest import bug. Will require manual reconciliation.',
                                     obj=guest))
+
+    multi_room = [','.join([str(x) for x in Guest.objects.all() if x.room_set.count() > 1])]
+    if len([x for x in multi_room if len(x) > 0]) > 0:
+        errors.append(Error(f"Guest records with multiple associated rooms {multi_room}"))
 
     return errors
 
@@ -56,14 +93,12 @@ def room_drama_check(app_configs, **kwargs):
                                         obj=room))
 
             except Guest.DoesNotExist:
-                errors.append(Warning(f"No guest record for ticket {room.sp_ticket_id} found",
-                                    hint='Has guest list been imported? Reconcile with source(s) of truth.',
-                                    obj=room))
+                errors.append(Error(f"Original owner of {room.name_hotel} {room.number} with ticket {room.sp_ticket_id} not found",
+                                    hint='Good luck, I guess?', obj=room))
 
-        elif room.sp_ticket_id and not room.guest:
-            errors.append(Warning(f"Ticket {room.sp_ticket_id} without any guest record",
-                                hint='Has guest list been imported? Reconcile with source(s) of truth.',
-                                obj=room))
+            if room.guest is None:
+                errors.append(Error(f"Room {room.number} ({room.name_hotel}) sp_ticket_id {room.sp_ticket_id} missing guest",
+                                    hint='Manually reconcile w/ sources of truth', obj=room))
 
         # general corruption which could bubble up during orm/sql manipulation
         if room.check_in is None:

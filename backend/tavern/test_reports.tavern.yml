@@ -36,6 +36,30 @@ stages:
         json:
           jwt_token: "jwt"
 
+  - name: "must specify fields"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "must specify real hotel"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        hotel: "hilton"
+        report: "hotel"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
   - name: "can fetch hotel report"
     request:
       url: "http://localhost:8000/api/fetch_reports/"
@@ -56,19 +80,15 @@ stages:
           rows:
             - room_number: "500"
               names: "test user2"
-              check_in: "TBD"
-              check_out: "TBD"
+              check_in: "1999-12-31"
+              check_out: "2000-01-02"
               room_type: "Standard 2 Queens"
 
             - room_number: "501"
               names: "test user1"
-              check_in: "TBD"
-              check_out: "TBD"
-              room_type: "Standard 2 Queens"
 
             - room_number: "502"
               room_type: "King Bed"
-              names: "\"test user4,test user4 junior\""
 
   - name: "can fetch rooms list report"
     request:
@@ -112,6 +132,23 @@ stages:
         jwt: "{jwt_token}"
         hotel: "ballys"
         report: "guest"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      headers:
+        "content-type": "text/csv"
+      verify_response_with:
+        function: "tavern_utils:report_validator"
+
+  - name: "can fetch swaps report"
+    request:
+      url: "http://localhost:8000/api/fetch_reports/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        hotel: "ballys"
+        report: "swaps"
       headers:
         content-type: "application/json"
     response:

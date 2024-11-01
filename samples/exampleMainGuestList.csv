@@ -73,3 +73,7 @@ hhh019,Moo,Boo,boo.moo@noop.com,Nugget - King Pool View Balcony Suite,hhh018,
 # non-placed rooms for high roller
 hhh020,Bar,Foo,foo.bar@noop.com,Nugget - King Pool View Balcony Suite,,
 hhh021,Bar,Foo,foo.bar@noop.com,Nugget - Lakeview 2 Queens,,
+# one transferred and one purchased room
+hhz001,Daz,Foo,foo.daz@noop.com,Bally's - Standard 2 Queen,,
+hha002,Daz,Foo,foo.daz@noop.com,Bally's - Standard 2 Queen,,
+hha003,Eaz,Foo,foo.eaz@noop.com,Bally's - Standard 2 Queen,hha002,

@@ -40,7 +40,6 @@ stop() {
 	    fi
 	done
     fi
-
 }
 
 report() {
@@ -65,4 +64,3 @@ else
     usage
     exit 1
 fi
-

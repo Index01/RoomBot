@@ -1,4 +1,3 @@
-
 import os
 import time
 import logging
@@ -206,9 +205,9 @@ def reconcile_orphan_rooms(guest_rows, room_meta):
 
     orphan_tickets = []
     orphan_rooms = Room.objects \
-                       .filter(guest=None,
-                               is_available=False) \
-                       .exclude(names__isnull=True)
+                       .filter(guest=None, is_available=False) \
+                       .exclude(names='') \
+                       .exclude(sp_ticket_id__exact='')
     logger.debug("Attempting to reconcile %s orphan rooms", orphan_rooms.count())
     for room in orphan_rooms:
         # if the room is placed and has no sp ticket id then ain't nothing to do
@@ -216,6 +215,7 @@ def reconcile_orphan_rooms(guest_rows, room_meta):
             continue
 
         guest = None
+        chain = []
         # first check for a guest entry by sp_ticket_id
         try:
             if room.sp_ticket_id:
@@ -264,8 +264,30 @@ def reconcile_orphan_rooms(guest_rows, room_meta):
                     # if this is a transfer, need to ensure every guest in transfer chain
                     # exists as (at least) a stub entry
                     if guest_obj.transferred_from_code != '':
-                        chain_tickets = reconcile_orphan_chain(guest_obj, guest_rows)
-                        orphan_tickets = orphan_tickets + chain_tickets
+                        chain = transfer_chain(guest_obj.transferred_from_code, guest_rows)
+                        if len(chain) > 0:
+                            for chain_guest in chain:
+                                # add stubs to represent the transfers
+                                #   note these still get a pw given our auth model is tied to our guest model
+                                stub = None
+                                try:
+                                    stub = Guest.objects.get(ticket=chain_guest.ticket_code)
+                                    logger.debug("Found stub guest %s with ticket %s",
+                                                 chain_guest.email, chain_guest.ticket_code)
+                                except Guest.DoesNotExist:
+                                    stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
+                                                 email=chain_guest.email,
+                                                 ticket=chain_guest.ticket_code,
+                                                 jwt=phrasing())
+
+                                    logger.debug("Created stub guest %s with ticket %s",
+                                                 chain_guest.email, chain_guest.ticket_code)
+
+                                if chain_guest.transferred_from_code:
+                                    stub.transfer = chain_guest.transferred_from_code
+
+                                stub.save()
+                                orphan_tickets.append(chain_guest.ticket_code)
 
             if guest_obj:
                 # we have one, that's nice. make sure to use the same otp
@@ -402,23 +424,31 @@ def create_guest_entries(guest_rows, room_meta, orphan_tickets=[]):
             # Transfered ticket...
             existing_guest = None
             transfer_room = None
-            # start by loading the original owner of the room; who is transfering it
-            try:
-                existing_guest = Guest.original_room(trans_code)
-            except Guest.DoesNotExist:
-                # This may happen because the non-deterministic order of the secret party exports
-                # and when this happens we ensure stub users for full transfer chain
+            chain = []
+
+            for chain_guest in Guest.chain(trans_code):
+                if chain_guest.room_set.count() == 1:
+                    existing_guest = chain_guest
+
+            if not existing_guest:
+                # sometimes this happens due to transfers showing up earlier in the sp export than
+                # the origial ticket. so we go through the full set of rows
                 chain = transfer_chain(trans_code, guest_rows)
                 if len(chain) == 0:
                     # Data should not be this non-deterministic tho
                     room_meta.warning(f"Ticket transfer ({trans_code}) but no previous guest found")
                     continue
 
-                for chain_guest in chain:
+                for chain_guest in [guest_obj] + chain:
                     # add stub guests (if does not already exist)
-                    #  note stubs still get a jwt bc the relationship between our auth and guest model
+                    #  note stubs still get a jwt bc the relationship between
+                    #  our auth and guest model
+                    stub = None
                     try:
-                        _maybe_guest = Guest.objects.get(ticket=chain_guest.ticket_code)
+                        stub = Guest.objects.get(ticket=chain_guest.ticket_code)
+                        logger.debug("Found stub guest %s with ticket %s",
+                                     chain_guest.email, chain_guest.ticket_code)
+
                     except Guest.DoesNotExist:
                         stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
                         stub = Guest(name=stub_name,
@@ -431,22 +461,15 @@ def create_guest_entries(guest_rows, room_meta, orphan_tickets=[]):
                         if chain_guest.transferred_from_code:
                             stub.transfer = chain_guest.transferred_from_code
 
-                        stub.save()
+                    stub.save()
 
-                        transferred_tickets.append(chain_guest.ticket_code)
+                    transferred_tickets.append(chain_guest.ticket_code)
 
-                # Now that the transfer chain exists, we can figure out who most
-                # recently owned the room. Note the room may or may not have
-                # already been assigned!
-                existing_guest = Guest.objects.get(ticket=chain[-1].ticket_code)
-                transfer_room = None
-                transfer_rooms = Room.objects.filter(guest = existing_guest)
-                if transfer_rooms.count() > 1:
-                    logger.error("Multiple rooms (%s) found for %s guest entry",
-                                 ','.join([f"{x.name_hotel} {x.number}" for x in transfer_rooms]),
-                                 existing_guest.email)
-                    continue
-                elif transfer_rooms.count() == 0:
+                # now should be able to look it up
+                existing_guest = Guest.chain(trans_code)[-1]
+                if existing_guest.room_set.count() > 0:
+                    transfer_room = existing_guest.room_set.all()[0]
+                else:
                     transfer_room = find_room(guest_obj.product)
                     if not transfer_room:
                         logger.warning("No empty rooms of product %s available for %s",
@@ -727,6 +750,11 @@ def guest_file_upload(request):
         first_row = {}
         if len(new_guests) > 0:
             first_row = new_guests[0]
+
+        if len(new_guests) > 0 and len(new_guests) != len(guests):
+            logger.info("Processing %s new entries: %s",
+                        len(new_guests), ','.join([x['ticket_code'] for x in new_guests]))
+
 
         resp = str(json.dumps({"received_rows": len(guests),
                                "valid_rows": len(new_guests),
