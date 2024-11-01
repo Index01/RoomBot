@@ -120,6 +120,10 @@ stages:
             type: "Queen"
             swappable: true
             cooldown: false
+          - number: 505
+            type: "Queen"
+            swappable: false
+            cooldown: false
         swaps_enabled: true
 
   - name: "need auth to request swap"
@@ -424,6 +428,10 @@ stages:
             type: "Queen"
             swappable: false
             cooldown: true
+          - number: 505
+            type: "Queen"
+            swappable: false
+            cooldown: false
         swaps_enabled: true
 
   - name: "retrieve updated list of second users rooms"

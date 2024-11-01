@@ -67,3 +67,17 @@
     can_login: false
     created_at: "1999-12-31T23:59:59+00:00"
     updated_at: "1999-12-31T23:59:59+00:00"
+
+- model: "reservations.guest"
+  pk: 6
+  fields:
+    name: "test user1"
+    email: "testuser1@example.com"
+    jwt: "test jwt"
+    can_login: true
+    created_at: "1999-12-31T23:59:59+00:00"
+    updated_at: "1999-12-31T23:59:59+00:00"
+    room_number: "505"
+    hotel: "Ballys"
+    ticket: "SP00004"
+
