@@ -44,7 +44,6 @@ def guest_drama_check(app_configs, **kwargs):
                 try:
                     chain_room = Room.objects.get(name_hotel=chain_guest.hotel, number=chain_guest.room_number)
                     if chain_room.is_placed and chain_guest.ticket != chain_room.sp_ticket_id:
-                        import ipdb ; ipdb.set_trace()
                         errors.append(Warning(f"Room {chain_room.name_take3} {chain_room.number} ticket {chain_room.sp_ticket_id}" \
                                               f" does not match guest {guest.name}, ticket {guest.ticket}",
                                       hint="Manual reconciliation? Good luck, starfighter.",
