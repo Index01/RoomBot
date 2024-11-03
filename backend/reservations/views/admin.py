@@ -284,6 +284,7 @@ def guest_update(guest_obj, otp, room, og_guest=None):
         logger.debug("Existing guest %s assigned to %s %s (%s)",
                      email, room.number, room.name_hotel, room.name_take3)
         guest.room_number = room.number
+        guest.hotel = room.name_hotel
         guest_changed = True
 
     except Guest.DoesNotExist:
@@ -321,6 +322,7 @@ def guest_update(guest_obj, otp, room, og_guest=None):
                            room.guest.email, room.name_hotel, room.number)
 
         room.guest.room_number = None
+        room.guest.hotel = None
         logger.debug("Removing original owner %s for %s room %s",
                      room.guest.email, room.name_hotel, room.number)
         room.guest.save()
@@ -424,7 +426,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                                      email=chain_guest.email,
                                      ticket=chain_guest.ticket_code,
                                      jwt=phrasing())
-                        logger.debug("BBB Created stub guest %s with ticket %s",
+                        logger.debug("Created stub guest %s with ticket %s",
                                      chain_guest.email, chain_guest.ticket_code)
 
                         if chain_guest.transferred_from_code:
