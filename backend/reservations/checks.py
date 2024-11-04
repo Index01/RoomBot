@@ -69,7 +69,7 @@ def room_drama_check(app_configs, **kwargs):
             errors.append(Error(f"Room/guest number mismatch {room.name_hotel} {room.number} / {room.guest.email} {room.guest.hotel} {room.guest.room_number}",
                                 hint='Manually reconcile room/guest numbers', obj=room))
 
-        if room.guest and room.primary != room.guest.name:
+        if room.guest and (room.primary != room.guest.name and room.guest.name not in [x.strip() for x in room.secondary.split(',')]):
             errors.append(Error(f"Room/guest name mismatch {room.name_hotel} {room.number} {room.primary} / {room.guest.name}",
                                 hint='Manually reconcile room/guest names', obj=room))
 
@@ -83,7 +83,7 @@ def room_drama_check(app_configs, **kwargs):
                     errors.append(Error(f"Ticket {room.sp_ticket_id} room/guest number mismatch {room.number} / {guest.room_number}",
                                         hint='Manually reconcile room/guest numbers for specified ticket', obj=room))
 
-                if room.primary != guest.name:
+                if room.primary != guest.name and guest.name not in [x.strip() for x in room.secondary.split(',')]:
                     errors.append(Error(f"Room {room.name_hotel} {room.number} {room.sp_ticket_id} room/guest name mismatch {room.primary} / {guest.name}",
                                         hint='Manually reconcile room/guest names for specified ticket',
                                         obj=room))
