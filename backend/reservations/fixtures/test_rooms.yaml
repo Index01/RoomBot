@@ -88,3 +88,20 @@
     is_swappable: false
     is_available: true
     is_placed: false
+
+- model: "reservations.room"
+  pk: 7
+  fields:
+    created_at: "1999-12-31T23:59:59+00:00"
+    updated_at: "1999-12-31T23:59:59+00:00"
+    _check_in: "1999-12-31"
+    _check_out: "2000-01-02"
+    number: "505"
+    name_take3: "Queen"
+    name_hotel: "Ballys"
+    primary: "test user1"
+    is_swappable: false
+    is_available: false
+    is_placed: true
+    sp_ticket_id: "SP00004"
+    guest: 6
