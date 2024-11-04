@@ -91,8 +91,8 @@ export function ModalRequestSwap(props) {
   return (
     <>
       {props.swaps_enabled ?
-      <Button disabled={row.available ? false : true}
-	    variant={row.available ? "outline-primary" : "outline-secondary"}
+      <Button disabled={row.available && row.is_swappable ? false : true}
+	    variant={row.available && row.is_swappable ? "outline-primary" : "outline-secondary"}
             size="sm"
             onClick={handleShow}>
             SendSwapRequest
