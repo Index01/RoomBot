@@ -61,8 +61,7 @@ def room_list(request):
         #  and does have a guest associated.
         #  the display layer will handle the per-room-type filtering
         rooms = Room.objects \
-                    .filter(is_swappable=True,
-                            is_available=False,
+                    .filter(is_available=False,
                             name_hotel='Ballys') \
                     .exclude(guest=None)
         guest_entries = Guest.objects.filter(email=email)
@@ -226,6 +225,9 @@ def swap_gen(request):
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
         room = Room.objects.get(number=room_num, name_hotel='Ballys')
+        if not room.swappable():
+            return Response(f"Room {room.number} is not swappable",
+                            status=status.HTTP_400_BAD_REQUEST)
         if room.guest.id not in [x.id for x in Guest.objects.filter(email=email)]:
             return Response(f"Naughty. Room {room.number} is not your room",
                             status=status.HTTP_400_BAD_REQUEST)
