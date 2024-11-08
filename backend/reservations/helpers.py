@@ -47,7 +47,7 @@ def real_date(a_date: str, year=None):
     elif len(a_date.split('/')) == 3:
         r_date = re.search(r'(\d+)/(\d+)/(\d+)', a_date)
         if r_date:
-            return parse_date(f"{r_date[3]}-{r_date[2]}-{r_date[1]}")
+            return parse_date(f"{r_date[1]}-{r_date[2]}-{r_date[3]}")
 
     if not date:
         raise Exception(f"Unexpected date format {a_date}")

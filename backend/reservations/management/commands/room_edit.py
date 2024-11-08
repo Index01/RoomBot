@@ -16,6 +16,9 @@ class Command(BaseCommand):
         parser.add_argument('--check-in',
                             help='Specify check-in date (MM/DD, blank string to remove)')
 
+        parser.add_argument('--ticket',
+                            help='Specify specify ticket associated with room (blank string to remove)')
+
         parser.add_argument('--check-out',
                             help='Specify check-out date (MM/DD, blank string to remove)')
 
@@ -95,6 +98,7 @@ class Command(BaseCommand):
             if kwargs['swappable'] \
                or kwargs['not_swappable'] \
                or kwargs['primary'] \
+               or kwargs['ticket'] \
                or kwargs['secondary']:
                 raise CommandError('do not specify other args when unassigning room')
 
@@ -114,6 +118,7 @@ class Command(BaseCommand):
             room.secondary = ''
             room.is_available = True
             room.is_swappable = True
+            room.sp_ticket_id = ''
             room.save()
             self.stdout.write("Unassigned room")
             return
@@ -129,6 +134,9 @@ class Command(BaseCommand):
 
         if kwargs['check_out'] is not None:
             room.check_out = kwargs['check_out']
+
+        if kwargs['ticket'] is not None and kwargs['ticket'] != room.sp_ticket_id:
+            room.sp_ticket_id = kwargs['ticket']
 
         if kwargs['swappable'] and not room.is_swappable:
             room.is_swappable = True
