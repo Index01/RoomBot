@@ -110,10 +110,12 @@ class Command(BaseCommand):
             if getch().lower() != 'y':
                 raise CommandError('user said nope')
 
-            room.guest.room_number = None
-            room.guest.hotel = None
-            room.guest.save()
-            room.guest = None
+            if room.guest:
+                room.guest.room_number = None
+                room.guest.hotel = None
+                room.guest.save()
+                room.guest = None
+
             room.primary = ''
             room.secondary = ''
             room.is_available = True
