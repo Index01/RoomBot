@@ -1,20 +1,20 @@
-resource "aws_iam_policy" "roombaht" {
-  name = "roombaht-host"
-  description = "roombaht instance acccess controls"
-  policy = templatefile("${path.module}/templates/roombaht.json",
-    {
-      key_id = aws_kms_key.roombaht.arn
-      secret_id = aws_db_instance.roombaht.master_user_secret[0].secret_arn
-    })
-  tags = {
-    "Name" = "roombaht host access"
-    "repo" = "Index01/RoomBot"
-  }
-  depends_on = [
-    aws_db_instance.roombaht,
-    aws_kms_key.roombaht
-  ]
-}
+#resource "aws_iam_policy" "roombaht" {
+#  name = "roombaht-host"
+#  description = "roombaht instance acccess controls"
+#  policy = templatefile("${path.module}/templates/roombaht.json",
+#    {
+#      key_id = aws_kms_key.roombaht.arn
+#      secret_id = aws_db_instance.roombaht.master_user_secret[0].secret_arn
+#    })
+#  tags = {
+#    "Name" = "roombaht host access"
+#    "repo" = "Index01/RoomBot"
+#  }
+#  depends_on = [
+#    aws_db_instance.roombaht,
+#    aws_kms_key.roombaht
+#  ]
+#}
 
 resource "aws_kms_key" "roombaht" {
   description = "The Roombaht Key"
@@ -26,10 +26,10 @@ resource "aws_iam_role" "roombaht" {
   assume_role_policy = file("${path.module}/files/roombaht_role.json")
 }
 
-resource "aws_iam_role_policy_attachment" "roombaht" {
-  role = aws_iam_role.roombaht.name
-  policy_arn = aws_iam_policy.roombaht.arn
-}
+#resource "aws_iam_role_policy_attachment" "roombaht" {
+#  role = aws_iam_role.roombaht.name
+#  policy_arn = aws_iam_policy.roombaht.arn
+#}
 
 resource "aws_iam_instance_profile" "roombaht" {
   name = "roombaht"
