@@ -9,3 +9,12 @@ services:
       - ./backend:/usr/src/app
     env_file:
       - dev.env
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-compose
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend:/app
+    command: /app/scripts/entrypoint-compose.sh
