@@ -29,4 +29,4 @@ RUN uv sync --frozen
 
 ENV PATH="/root/.venv/bin:$PATH"
 
-CMD ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD sh -c "uv run python manage.py wait_for_db && uv run python manage.py runserver 0.0.0.0:8000"
