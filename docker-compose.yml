@@ -8,7 +8,9 @@ services:
     volumes:
       - ./backend:/usr/src/app
     env_file:
-      - dev.env
+      - docker-dev.env
+    depends_on:
+      - db
   frontend:
     build:
       context: ./frontend
@@ -18,3 +20,13 @@ services:
     volumes:
       - ./frontend:/app
     command: /app/scripts/entrypoint-compose.sh
+    depends_on:
+      - backend
+  db:
+    image: postgres:16.4-alpine3.20
+    ports:
+      - 5432:5432
+    volumes:
+      - ./.dev-data/roombaht-postgres:/var/lib/postgresql/data
+    env_file:
+      - docker-dev.env
