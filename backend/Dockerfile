@@ -1,4 +1,5 @@
 FROM python:3.10.18-slim-bookworm
+COPY --from=ghcr.io/astral-sh/uv:0.8.15 /uv /uvx /bin/
 
 ENV PYTHONWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -11,10 +12,6 @@ RUN apt-get update && \
       g++ && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-RUN cp /root/.local/bin/uv /usr/local/bin/uv
 
 ENV UV_CACHE_DIR=/root/.cache/uv
 ENV UV_PROJECT_ENVIRONMENT=/root/.venv
