@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES=(aptitude nginx screen python3 virtualenv certbot python3-certbot-nginx postgresql-client htop iftop build-essential python3-dev libpq-dev jq)
+PACKAGES=(aptitude nginx screen python3 virtualenv certbot python3-certbot-nginx postgresql-client htop iftop build-essential python3-dev libpq-dev jq postgresql-server-dev-all)
 
 set -e
 
