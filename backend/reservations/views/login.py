@@ -43,25 +43,26 @@ def login(request):
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
         email = data['email']
-        guest_email = Guest.objects.filter(email=email, can_login=True)
+        jwt_key = roombaht_config.JWT_KEY
+
+        # Try admin authentication first
         try:
             admin_email = User.objects.get(email=email)
+            admin_user = authenticate(username=admin_email.username,
+                                      password=data['jwt'])
+            if admin_user is not None:
+                resp = jwt.encode({"email":admin_user.email,
+                                   "datetime":str(datetime.datetime.utcnow())},
+                                  jwt_key,
+                                  algorithm="HS256")
+                logger.info("[+] Admin login success for %s", admin_user.email)
+                body = {"jwt": resp, "admin": True}
+                return Response(body, status=status.HTTP_201_CREATED)
         except User.DoesNotExist:
-            return Response("invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
-
-        jwt_key = roombaht_config.JWT_KEY
-        admin_user = authenticate(username=admin_email.username,
-                                  password=data['jwt'])
-        if admin_user is not None:
-            resp = jwt.encode({"email":admin_user.email,
-                               "datetime":str(datetime.datetime.utcnow())},
-                              jwt_key,
-                              algorithm="HS256")
-            logger.info("[+] Admin login success for %s", admin_user.email)
-            body = {"jwt": resp, "admin": True}
-            return Response(body, status=status.HTTP_201_CREATED)
+            pass  # Continue to check guest authentication
 
         # Check if login attempt is guest
+        guest_email = Guest.objects.filter(email=email, can_login=True)
         for guest in guest_email:
             if data['jwt'] == guest.jwt:
                 resp = jwt.encode({"email":guest.email,
@@ -72,7 +73,7 @@ def login(request):
                 return Response({"jwt": resp}, status=status.HTTP_201_CREATED)
 
         logger.debug("No valid credentials found for %s", email)
-        return Response("Invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
+        return Response("invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['POST'])
