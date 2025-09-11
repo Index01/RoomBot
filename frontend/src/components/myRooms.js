@@ -30,12 +30,12 @@ export default class MyRoomsTable extends React.Component {
       this.setState({error: 'auth'});
       return;
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/my_rooms/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/my_rooms/", {
       jwt: jwt["jwt"]
     })
       .then(res => {
-        const data = JSON.parse(res.data)
-        console.log(JSON.parse(JSON.stringify(data)));
+        const data = res.data;
+        console.log(JSON.stringify(data));
         this.state.rooms = data.rooms;
 	this.state.swaps_enabled = data.swaps_enabled;
         this.setState({ data });
@@ -98,8 +98,7 @@ export default class MyRoomsTable extends React.Component {
     return(
       <DatatableWrapper
         body={this.state.rooms}
-        headers={this.storyHeaderFactory(this.state.swaps_enabled)}
-      >
+        headers={this.storyHeaderFactory(this.state.swaps_enabled)} >
 	{error && (<Navigate to="/login" replace={true} />)}
         <Row className="mb-4 p-2">
           <Col

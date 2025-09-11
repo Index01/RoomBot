@@ -33,6 +33,15 @@ stages:
         json:
           jwt_token: "jwt"
 
+  - name: "need jwt for list of rooms"
+    request:
+      url: "http://localhost:8000/api/rooms/"
+      method: "POST"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
   - name: "retrieve list of rooms"
     request:
       url: "http://localhost:8000/api/rooms/"
@@ -86,6 +95,15 @@ stages:
                           type: "bool"
                           required: true
 
+  - name: "need auth for list of user rooms"
+    request:
+      url: "http://localhost:8000/api/my_rooms/"
+      method: "POST"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
   - name: "retrieve list of users rooms"
     request:
       url: "http://localhost:8000/api/my_rooms/"
@@ -102,7 +120,47 @@ stages:
             type: "Queen"
             swappable: true
             cooldown: false
+          - number: 505
+            type: "Queen"
+            swappable: false
+            cooldown: false
         swaps_enabled: true
+
+  - name: "need auth to request swap"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        number: "69"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
+  - name: "need room number to request swap"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        contact_info: "some words"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "need contact info to request swap"
+    request:
+      url: "http://localhost:8000/api/swap_request/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number: "69"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
 
   - name: "request a swap for a non-existent room"
     request:
@@ -130,7 +188,7 @@ stages:
     response:
       status_code: 400
 
-  - name: "request a swap for an art room"
+  - name: "request a swap for a placed room"
     request:
       url: "http://localhost:8000/api/swap_request/"
       method: "POST"
@@ -206,7 +264,65 @@ stages:
             cooldown: false
         swaps_enabled: true
 
+  - name: "but what if a swap but not actually my room"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        number:
+          row: "501"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "need auth to initiate swap"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        number:
+          row: "{room_id}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 401
+
+  - name: "need room number to initiate swap"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
   - name: "initiate a swap"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        number:
+          row: "{room_id}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 200
+      verify_response_with:
+        - function: tavern.helpers:validate_pykwalify
+          extra_kwargs:
+            schema:
+              type: "map"
+              mapping:
+                swap_phrase:
+                  type: "str"
+                  required: true
+
+  - name: "but what if a second swap code"
     request:
       url: "http://localhost:8000/api/swap_gen/"
       method: "POST"
@@ -230,19 +346,6 @@ stages:
                 swap_phrase:
                   type: "str"
                   required: true
-
-  - name: "initiate a swap during cooldown"
-    request:
-      url: "http://localhost:8000/api/swap_gen/"
-      method: "POST"
-      json:
-        jwt: "{jwt_token2}"
-        number:
-          row: "{room_id}"
-      headers:
-        content-type: "application/json"
-    response:
-      status_code: 400
 
   - name: "get ur swap on oops bad code"
     request:
@@ -270,6 +373,45 @@ stages:
     response:
       status_code: 201
 
+  - name: "initiate a swap during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_it_up/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        number: "{room_id}"
+        swap_code: "{swap_code}"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "cannot gen code for room during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token}"
+        row:
+          number: "500"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
+  - name: "neither user can gen code for room during cooldown"
+    request:
+      url: "http://localhost:8000/api/swap_gen/"
+      method: "POST"
+      json:
+        jwt: "{jwt_token2}"
+        row:
+          number: "501"
+      headers:
+        content-type: "application/json"
+    response:
+      status_code: 400
+
   - name: "retrieve updated list of users rooms"
     request:
       url: "http://localhost:8000/api/my_rooms/"
@@ -286,6 +428,10 @@ stages:
             type: "Queen"
             swappable: false
             cooldown: true
+          - number: 505
+            type: "Queen"
+            swappable: false
+            cooldown: false
         swaps_enabled: true
 
   - name: "retrieve updated list of second users rooms"

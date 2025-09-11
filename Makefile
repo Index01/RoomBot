@@ -1,11 +1,13 @@
 .PHONY = frontend_build frontend_dev frontend_archive frontend_clean \
 	backend_dev backend_archive backend_clean backend_migrations backend_env \
 	archive sample_data clean distclean backend_clean_data frontend_clean \
-	backend_distclean
+	backend_distclean test
+
+test: backend_tests
 
 # generates the frontend static content
 frontend_build:
-	test -d frontend/public/layouts || ./scripts/fetch-images
+#	test -d frontend/public/layouts || ./scripts/fetch-images
 	docker build -t roombaht:latest frontend/
 	docker run -u node \
 		-v $(shell pwd)/frontend:/src \
@@ -45,7 +47,7 @@ frontend_dev: frontend_build
 backend_env:
 	test -d backend/venv || \
 		( mkdir backend/venv && \
-			virtualenv -p python3.8 backend/venv) && \
+			virtualenv -p python3.10 backend/venv) && \
 		backend/venv/bin/python3 -m pip install --upgrade pip
 	backend/venv/bin/pip install \
 		-r backend/requirements.txt \
@@ -72,6 +74,7 @@ backend_clean_data:
 
 # clean up build artifacts and such
 backend_distclean: backend_clean backend_clean_data
+	rm -rf backend/venv
 
 backend_clean:
 	rm -rf build/roombaht-backend.tgz

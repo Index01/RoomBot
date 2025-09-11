@@ -29,12 +29,15 @@ class DatabaseCredentials:
 
         self.secret_id=self.rds_instance['MasterUserSecret']['SecretArn']
 
-    def get_conn_params_from_secrets_manager(self, conn_params):
+    def get_conn_params_from_secrets_manager(self):
         secret_json = self.cache_secrets_manager.get_secret_string(self.secret_id)
         secret_dict = json.loads(secret_json)
-        conn_params['user'] = secret_dict["username"]
-        conn_params['password'] = secret_dict["password"]
-        conn_params['host'] = self.rds_instance['Endpoint']['Address']
+        return {
+            'user': secret_dict["username"],
+            'password': secret_dict["password"],
+            'host': self.rds_instance['Endpoint']['Address'],
+            'port': 5432
+        }
 
     def refresh_now(self):
         self.cache_secrets_manager.refresh_secret_now(self.secret_id)
@@ -42,19 +45,27 @@ class DatabaseCredentials:
 databasecredentials=DatabaseCredentials()
 
 class DatabaseWrapper(base.DatabaseWrapper):
+    def __init__(self, settings, alias):
+        self.conn_params = None
+        super().__init__(settings, alias)
+
     def get_new_connection(self, conn_params):
+        self.conn_params = databasecredentials.get_conn_params_from_secrets_manager()
+        self.conn_params['database'] = conn_params['database']
+
         try:
-            databasecredentials.get_conn_params_from_secrets_manager(conn_params)
-            conn = super().get_new_connection(conn_params)
-            return conn
+            conn = super().get_new_connection(self.conn_params)
         except OperationalError as exp:
-            error_code=exp.args[0]
-            if error_code!='28P01':
+            error_msg=exp.args[0]
+            if 'password authentication failed' not in error_msg:
+                logger.error("Unexpected operational error %s!!", error_msg)
                 raise exp
 
             logger.info("Authentication error. Going to refresh secret and try again.")
             databasecredentials.refresh_now()
-            databasecredentials.get_conn_params_from_secrets_manager(conn_params)
-            conn = super().get_new_connection(conn_params)
+            self.conn_params = databasecredentials.get_conn_params_from_secrets_manager()
+            self.conn_params['database'] = conn_params['database']
+            conn = super().get_new_connection(self.conn_params)
             logger.info("Successfully refreshed secret and established new database connection.")
-            return conn
+
+        return conn

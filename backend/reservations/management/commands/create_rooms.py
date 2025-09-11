@@ -35,12 +35,27 @@ def create_rooms_main(cmd, args):
     rooms={}
     _rooms_fields, rooms_rows = ingest_csv(rooms_file)
     rooms_import_list = []
+    dupe_rooms = []
+    dupe_tickets = []
     for r in rooms_rows:
         try:
             room_data = RoomPlacementListIngest(**r)
+            if len([x for x in rooms_import_list if x.room == room_data.room]) > 0:
+                dupe_rooms.append(str(room_data.room))
+
+            if room_data.ticket_id_in_secret_party and \
+               len([x for x in rooms_import_list if x.ticket_id_in_secret_party == room_data.ticket_id_in_secret_party]) > 0:
+                dupe_tickets.append(room_data.ticket_id_in_secret_party)
+
             rooms_import_list.append(room_data)
         except ValidationError as e:
             cmd.stderr.write(f"Validation error for row {e}")
+
+    if len(dupe_rooms) > 0:
+        raise Exception(f"Duplicate room(s) {','.join(dupe_rooms)} in CSV, refusing to process file")
+
+    if len(dupe_tickets) > 0:
+        raise Exception(f"Duplicate ticket id(s) {','.join(dupe_tickets)} in CSV, refusing to process file")
 
     debug(cmd, args, "read in {len(rooms_rows)} rooms for {hotel}")
 
@@ -102,7 +117,8 @@ def create_rooms_main(cmd, args):
         # Cannot mark a room as non available based on being set to roombaht
         #   in spreadsheet if it already actually assigned, but you can mark
         #   a room as non available/swappable if it is not assigned yet
-        if elem.placed_by == '' and not room.is_special and not room.is_available:
+        if (elem.placed_by == '' and not args['blank_is_available']) \
+           and not room.is_special and not room.is_available:
             if not room.guest and room.is_swappable:
                 room.is_swappable = False
             else:
@@ -140,7 +156,7 @@ def create_rooms_main(cmd, args):
                 else:
                     room.primary = primary_name.title()
 
-            if elem.placed_by == '':
+            if elem.placed_by == '' and not args['blank_is_available']:
                 cmd.stderr.write(f"Room {room.number} Reserved w/o placer")
 
             if elem.placed_by != 'Roombaht' and elem.placed_by != '' and not room.is_placed:
@@ -197,8 +213,7 @@ def create_rooms_main(cmd, args):
                 room_count_obj = {
                     'count': 1,
                     'available': 0,
-                    'swappable': 0,
-                    'art': 0
+                    'swappable': 0
                 }
             else:
                 room_count_obj = rooms[room.name_take3]
@@ -218,21 +233,19 @@ def create_rooms_main(cmd, args):
     total_rooms = 0
     available_rooms = 0
     swappable_rooms = 0
-    art_rooms = 0
     for r_counts, counts in rooms.items():
         cmd.stdout.write((
             f"room {r_counts} total:{counts['count']}, available:{counts['available']}"
-            f", swappable:{counts['swappable']}, art:{counts['art']}"))
+            f", swappable:{counts['swappable']},"))
 
         total_rooms += counts['count']
         available_rooms += counts['available']
         swappable_rooms += counts['swappable']
-        art_rooms += counts['art']
 
     placed_rooms = total_rooms - available_rooms
     cmd.stdout.write((
         f"total:{total_rooms}, available:{available_rooms}, placed:{placed_rooms}"
-        f", swappable:{swappable_rooms}, art:{art_rooms}"))
+        f", swappable:{swappable_rooms}"))
 
 class Command(BaseCommand):
     help='Create/update rooms'

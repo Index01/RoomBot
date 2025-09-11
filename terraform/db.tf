@@ -10,7 +10,7 @@ resource "aws_db_subnet_group" "roombaht" {
   }
 }
 
-resource "aws_db_instance" "roombaht" {
+ resource "aws_db_instance" "roombaht" {
   engine = "postgres"
   engine_version = "16.4"
   identifier = "roombaht"
@@ -36,4 +36,4 @@ resource "aws_db_instance" "roombaht" {
     "Name" = "roombaht data tho"
     "repo" = "Index01/RoomBot"
   }
-}
+ }

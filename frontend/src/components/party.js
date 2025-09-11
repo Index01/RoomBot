@@ -56,7 +56,7 @@ export class PartyTime extends React.Component {
       secret: this.state.secret,
       description: this.state.description
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/", data)
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/party/", data)
       .then(res => {
 	this.props.reload();
 	this.setState({show: false});
@@ -141,7 +141,7 @@ export class PartyDelete extends React.Component {
     var data = {
       secret: this.state.secret
     }
-    axios.delete(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/" + this.state.room_number + "/", {data: data})
+    axios.delete(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/party/" + this.state.room_number + "/", {data: data})
       .then(res => {
 	itsOK("Deleted room");
 	this.setState({show: false});
@@ -196,7 +196,7 @@ export class TheParties extends React.Component {
   }
 
   loadParties() {
-    axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/party/")
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/party/")
       .then((result) => {
 	this.setState({parties: result.data});
       })

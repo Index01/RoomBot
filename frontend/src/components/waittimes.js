@@ -92,7 +92,7 @@ class UpdateTime extends React.Component {
     var data = {
       time: this.state.seconds + (this.state.minutes * 60) + (this.state.hours * 3600)
     }
-    axios.put(window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/" + this.state.short_name + "/", data)
+    axios.put(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/wait/" + this.state.short_name + "/", data)
       .then(res => {
 	this.setState({show: false});
 	this.props.reload();
@@ -169,7 +169,7 @@ class aaaHowLongTho extends React.Component {
       free_update: false,
       has_password: false
     }
-    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/" + this.state.short_name + "/";
+    this.wait_url = window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/wait/" + this.state.short_name + "/";
     this.updateTime = this.updateTime.bind(this);
     this.loadWait = this.loadWait.bind(this);
   }
@@ -265,7 +265,7 @@ export class TheTimers extends React.Component {
   }
 
   loadWaits() {
-    axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/wait/")
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/wait/")
       .then((result) => {
 	    this.setState({waittimes: result.data});
       })

@@ -12,16 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='room',
-            name='is_art',
-            field=models.BooleanField(default=False, verbose_name='ART'),
-        ),
-        migrations.AlterField(
-            model_name='room',
-            name='is_comp',
-            field=models.BooleanField(default=False, verbose_name='Comped'),
-        ),
-        migrations.AlterField(
-            model_name='room',
             name='is_hearing_accessible',
             field=models.BooleanField(default=False, verbose_name='Hearing Accessible'),
         ),

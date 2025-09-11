@@ -37,6 +37,19 @@ class Guest(models.Model):
     can_login = models.BooleanField("Can Login", default=False)
     last_login = models.DateTimeField("Last Login", blank=True, null=True)
 
+    @staticmethod
+    def chain(trans_code, guest_chain=[]):
+        try:
+            existing_guest = Guest.objects.get(ticket=trans_code)
+        except Guest.DoesNotExist:
+            return guest_chain
+
+        guest_chain.append(existing_guest)
+        if existing_guest.transfer:
+            return Guest.chain(existing_guest.transfer, guest_chain)
+
+        return guest_chain
+
     def __str__(self):
         return self.name
 
@@ -87,12 +100,13 @@ class Room(DirtyFieldsMixin, models.Model):
     is_special = models.BooleanField("SpecialRoom", default=False)
     is_placed = models.BooleanField("PlacedRoom", default=False)
     swap_code = models.CharField("SwapCode", max_length=200, blank=True, null=True)
+    swap_code_time = models.DateTimeField(blank=True, null=True)
     swap_time = models.DateTimeField(blank=True, null=True)
     _check_in = models.DateField(blank=True, null=True, db_column='check_in')
     _check_out = models.DateField(blank=True, null=True, db_column='check_out')
     sp_ticket_id = models.CharField("SecretPartyTicketID", max_length=20, blank=True, null=True)
-    primary = models.CharField("PrimaryContact", max_length=50)
-    secondary = models.CharField("SecondaryContact", max_length=50)
+    primary = models.CharField("PrimaryContact", max_length=200)
+    secondary = models.CharField("SecondaryContact", max_length=200)
     placed_by_roombot = models.BooleanField("PlacedByRoombot", default=False)
     guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
 
@@ -180,8 +194,8 @@ class Room(DirtyFieldsMixin, models.Model):
 
     @staticmethod
     def short_product_code(product):
-        for a_room, a_product in ROOM_LIST.items():
-            if product in a_product:
+        for a_room, a_detail in ROOM_LIST.items():
+            if product in a_detail.get('rooms', []):
                 return a_room
 
         if product in ROOM_LIST.keys():
@@ -221,6 +235,7 @@ class Room(DirtyFieldsMixin, models.Model):
         room_one.guest.room_number = room_two.number
 
         room_one.swap_code = None
+        room_one.swap_code_time = None
         guest_id_theirs = room_one.guest
         room_one.guest = room_two.guest
         room_two.guest = guest_id_theirs
@@ -256,7 +271,6 @@ class Room(DirtyFieldsMixin, models.Model):
 
         room_two.guest.save()
         room_one.guest.save()
-
 
 @admin.register(Room)
 class RoomsAdmin(admin.ModelAdmin):
@@ -296,3 +310,24 @@ class RoomsAdmin(admin.ModelAdmin):
         'name_hotel',
         'name_take3'
     ]
+
+class Swap(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    room_one = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='+')
+    room_two = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='+')
+    guest_one = models.ForeignKey(Guest, on_delete=models.PROTECT, related_name='+')
+    guest_two = models.ForeignKey(Guest, on_delete=models.PROTECT, related_name='+')
+
+    def __str__(self):
+        return f"{self.room_one} <-> {self.room_two}"
+
+    @staticmethod
+    def log(room_one, room_two):
+        a_swap = Swap()
+        a_swap.room_one = room_one
+        a_swap.room_two = room_two
+        a_swap.guest_one = room_one.guest
+        a_swap.guest_two = room_two.guest
+        a_swap.save()
+        return a_swap

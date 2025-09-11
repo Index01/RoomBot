@@ -20,7 +20,7 @@ class SubmitForm extends React.Component {
     handleSubmit = event => {
         event.preventDefault();
         const guest = {
-            email: this.state.email,
+            email: this.state.email.trim(),
             jwt: this.state.pass
         }
         if(this.state.pass==""){
@@ -28,7 +28,7 @@ class SubmitForm extends React.Component {
         }
       else{
 	
-            axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/", guest )
+        axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/login/", guest )
             .then(res=>{
               window.localStorage.setItem('jwt', JSON.stringify({'jwt': res.data.jwt}));
                 if (res.data.admin) {
@@ -62,7 +62,7 @@ class SubmitForm extends React.Component {
           notifyLoginError("Cannot reset with empty email");
         } else {
           console.log("Attempting reset request");
-          axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/login_reset/", { guest })
+          axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/login_reset/", { guest })
             .then(res=>{
               console.log(res.data);
               notifyReset();
@@ -89,8 +89,8 @@ class SubmitForm extends React.Component {
     handlePass = event =>{
         this.setState({ pass: event.target.value});
     }
-    componentDidMount() {
-      axios.get(window.location.protocol + "//" + window.location.hostname + ":8000/api/login/")
+  componentDidMount() {
+    axios.get(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") + "/api/login/")
 	.then((res) => {
 	  if (res.data.features.includes("party")) {
 	    this.setState({party: true});

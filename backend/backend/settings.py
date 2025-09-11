@@ -58,7 +58,17 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 ROOT_URLCONF = 'backend.urls'
+
+SILENCED_SYSTEM_CHECKS = [
+    "security.W004",  # we only use https via nginx
+    "security.W008"
+]
+# don't care about debug mode in dev
+if DEV_MODE:
+    SILENCED_SYSTEM_CHECKS.append('security.W018')
 
 TEMPLATES = [
     {
@@ -92,8 +102,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'backend.db.backends.magic_postgres',
-            'NAME': os.environ['ROOMBAHT_DB'],
-            'PORT': 5432
+            'NAME': os.environ['ROOMBAHT_DB']
         }
     }
 

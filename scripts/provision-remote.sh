@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES=(aptitude nginx screen python3 virtualenv certbot postgresql-client htop iftop build-essential python3-dev libpq-dev jq)
+PACKAGES=(aptitude nginx screen python3 virtualenv certbot python3-certbot-nginx postgresql-client htop iftop build-essential python3-dev libpq-dev jq postgresql-server-dev-all)
 
 set -e
 
@@ -45,6 +45,11 @@ sudo_user() {
     echo "${A_USER} ALL=(ALL) NOPASSWD:ALL" >> "$SUDO_FILE"
 }
 
+lock_user() {
+    local A_USER="$1"
+    usermod -s /usr/sbin/nologin "$A_USER"
+}
+
 os_freshen() {
     apt-get update
     apt-get upgrade -y
@@ -57,6 +62,7 @@ os_freshen
 add_user gadget otakup0pe
 add_user index Index01
 add_user roombaht
+lock_user ubuntu
 
 sudo_user gadget
 sudo_user index

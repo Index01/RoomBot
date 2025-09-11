@@ -28,8 +28,10 @@ variable "domain" {
   default = "rooms.take3presents.com"
 }
 
-output "dev_ip" {
-  value = module.dev.public_ip
+variable "ami_id" {
+  type = string
+  description = "Override latest Jammy AMI"
+  default = "ami-0b8c6b923777519db"
 }
 
 output "nameservers" {

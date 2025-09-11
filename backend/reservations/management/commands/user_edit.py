@@ -19,6 +19,17 @@ class Command(BaseCommand):
                             action='store_true',
                             default=False)
 
+        parser.add_argument('--login',
+                            help='Enable user logins',
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument('--no-login',
+                            help='Disable user logins',
+                            default=False,
+                            action='store_true')
+
+
     def handle(self, *args, **kwargs):
         if 'email' not in kwargs:
             raise CommandError("Must specify email")
@@ -31,8 +42,27 @@ class Command(BaseCommand):
             self.stdout.write("Resetting user password...")
             reset_otp(kwargs['email'])
 
-        if kwargs['resend_onboarding']:
-            self.stdout.write("Unsetting activation sent...")
-            for guest in guest_entries:
+        guest_count = 0
+        for guest in guest_entries:
+            # remove this once guest record uses dirtyfieldmixin
+            guest_changed = False
+            if kwargs['resend_onboarding']:
+                self.stdout.write("Unsetting activation sent...")
                 guest.onboarding_sent = False
+                guest_changed = True
+
+
+            if kwargs['login'] and not guest.can_login:
+                guest.can_login = True
+                guest_changed = True
+            elif kwargs['no_login'] and guest.can_login:
+                guest.can_login = False
+                guest_changed = True
+
+            if guest_changed:
                 guest.save()
+                guest_count += 1
+
+
+        if guest_count > 0:
+            self.stdout.write(f"Updated {guest_count} guest records")

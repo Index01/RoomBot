@@ -71,7 +71,7 @@ db_connection() {
 
 # wipe the database if present
 db_wipe() {
-    if psql -h "$ROOMBAHT_DB_HOST" -U root -l | grep -q "$ROOMBAHT_DB" ; then
+    if [ "$(psql -h "$ROOMBAHT_DB_HOST" -U root -Atc "select 1 from pg_database where datname='${ROOMBAHT_DB}'" postgres 2> /dev/null)" == "1" ] ; then
 	dropdb -h "$ROOMBAHT_DB_HOST" -U root "$ROOMBAHT_DB"
     fi
 }
@@ -89,7 +89,7 @@ db_snapshot() {
 
 # create database if needed and then issue migrations
 db_migrate() {
-    if ! psql -h "$ROOMBAHT_DB_HOST" -U root -l | grep -q "$ROOMBAHT_DB" ; then
+    if [ -z "$(psql -h "$ROOMBAHT_DB_HOST" -U root -Atc "select 1 from pg_database where datname='${ROOMBAHT_DB}'" postgres 2> /dev/null)" ] ; then
 	createdb -h "$ROOMBAHT_DB_HOST" -U root "$ROOMBAHT_DB"
     fi
     systemctl stop roombaht
@@ -143,6 +143,8 @@ backend_config() {
 	-e "s/@GUEST_HOTELS@/${ROOMBAHT_GUEST_HOTELS}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
 	-e "s/@FEATURES@/${ROOMBAHT_FEATURES}/" \
+	-e "s/@URL_PORT@/${ROOMBAHT_URL_PORT}/" \
+	-e "s/@URL_SCHEMA@/${ROOMBAHT_URL_SCHEMA}/" \
 	"${BACKEND_DIR}/config/roombaht-systemd.conf" \
 	> "/etc/systemd/system/roombaht.service"
     chmod o-rwx "/etc/systemd/system/roombaht.service"
@@ -161,6 +163,8 @@ backend_config() {
 	-e "s/@ONBOARDING_BATCH@/${ROOMBAHT_ONBOARDING_BATCH}/" \
 	-e "s/@DEV_MAIL@/${ROOMBAHT_DEV_MAIL}/" \
 	-e "s/@SWAPS_ENABLED@/${ROOMBAHT_SWAPS_ENABLED}/" \
+	-e "s/@URL_PORT@/${ROOMBAHT_URL_PORT}/" \
+	-e "s/@URL_SCHEMA@/${ROOMBAHT_URL_SCHEMA}/" \
 	"${BACKEND_DIR}/scripts/roombaht-oob.sh" \
 	> "/opt/roombaht-backend/scripts/roombaht-oob"
     chmod 0770 "/opt/roombaht-backend/scripts/roombaht-oob"
@@ -182,6 +186,13 @@ frontend_deploy() {
 }
 
 nginx_config() {
+    local CERTPATH="/etc/letsencrypt/live/${ROOMBAHT_HOST}"
+    if [ ! -d "$CERTPATH" ] ; then
+	certbot certonly --nginx \
+		-d "$ROOMBAHT_HOST" \
+		--email "$ROOMBAHT_TECH_EMAIL" \
+		--agree-tos --no-eff-email
+    fi
     if [ -e "/etc/nginx/sites-enabled/roombaht" ] ; then
 	rm "/etc/nginx/sites-enabled/roombaht"
     fi
@@ -206,11 +217,6 @@ shift
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 
-# FOR NOW
-if [ "$ROOMBAHT_DB" == "production" ] ; then
-    problems "not yet for prod tee-hee"
-fi
-
 if [ "$ACTION" == "load_staff" ] ; then
     STAFF_FILE="/tmp/${1}"
     shift
@@ -229,7 +235,7 @@ elif [ "$ACTION" == "load_rooms" ] ; then
     db_connection
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" \
-	create_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve --force
+	create_rooms "$ROOM_FILE" --hotel "$HOTEL" --preserve
 elif [ "$ACTION" == "clone_db" ] ; then
     if [ "$ROOMBAHT_DB" == "roombaht" ] ; then
 	problems "can't clone prod to prod"
@@ -259,13 +265,13 @@ elif [ "$ACTION" == "manage" ] ; then
     "/opt/roombaht-backend/venv/bin/python3" \
 	"/opt/roombaht-backend/manage.py" $*
 elif [ "$ACTION" == "deploy" ] ; then
-    nginx_config
     frontend_deploy
     backend_deploy
     backend_venv
     backend_config
     db_connection
     db_migrate
+    nginx_config
 elif [ "$ACTION" == "quick_deploy" ] ; then
     backend_deploy
     backend_config

@@ -1,4 +1,3 @@
-
 import os
 import time
 import logging
@@ -13,6 +12,7 @@ from csv import DictReader, DictWriter
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status
 from django.contrib.auth.models import User
 from fuzzywuzzy import process, fuzz
@@ -20,7 +20,7 @@ from ..models import Guest
 from ..models import Room
 from ..models import UnknownProductError
 from .rooms import phrasing
-from ..reporting import (dump_guest_rooms, diff_latest,
+from ..reporting import (diff_latest, dump_guest_rooms, swaps_report,
                          hotel_export, diff_swaps_count, rooming_list_export)
 from reservations.helpers import ingest_csv, phrasing, egest_csv, my_url, send_email
 from reservations.constants import ROOM_LIST
@@ -145,10 +145,12 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
 
     orphan_rooms = Room.objects \
                        .filter(guest=None, is_available=False) \
-                       .exclude(primary='')
+                       .exclude(primary='') \
+                       .exclude(sp_ticket_id__exact='')
     logger.debug("Attempting to reconcile %s orphan rooms", orphan_rooms.count())
     for room in orphan_rooms:
         guest = None
+        chain = []
         # first check for a guest entry by sp_ticket_id
         try:
             if room.sp_ticket_id:
@@ -199,11 +201,21 @@ def reconcile_orphan_rooms(guest_rows, room_counts):
                         if len(chain) > 0:
                             for chain_guest in chain:
                                 # add stubs to represent the transfers
-                                stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
-                                             email=chain_guest.email,
-                                             ticket=chain_guest.ticket_code)
-                                logger.debug("Created stub guest %s with ticket %s",
-                                             chain_guest.email, chain_guest.ticket_code)
+                                #   note these still get a pw given our auth model is tied to our guest model
+                                stub = None
+                                try:
+                                    stub = Guest.objects.get(ticket=chain_guest.ticket_code)
+                                    logger.debug("Found stub guest %s with ticket %s",
+                                                 chain_guest.email, chain_guest.ticket_code)
+                                except Guest.DoesNotExist:
+                                    stub = Guest(name=f"{chain_guest.first_name} {chain_guest.last_name}".title(),
+                                                 email=chain_guest.email,
+                                                 ticket=chain_guest.ticket_code,
+                                                 jwt=phrasing())
+
+                                    logger.debug("Created stub guest %s with ticket %s",
+                                                 chain_guest.email, chain_guest.ticket_code)
+
                                 if chain_guest.transferred_from_code:
                                     stub.transfer = chain_guest.transferred_from_code
 
@@ -272,6 +284,7 @@ def guest_update(guest_obj, otp, room, og_guest=None):
         logger.debug("Existing guest %s assigned to %s %s (%s)",
                      email, room.number, room.name_hotel, room.name_take3)
         guest.room_number = room.number
+        guest.hotel = room.name_hotel
         guest_changed = True
 
     except Guest.DoesNotExist:
@@ -309,6 +322,7 @@ def guest_update(guest_obj, otp, room, og_guest=None):
                            room.guest.email, room.name_hotel, room.number)
 
         room.guest.room_number = None
+        room.guest.hotel = None
         logger.debug("Removing original owner %s for %s room %s",
                      room.guest.email, room.name_hotel, room.number)
         room.guest.save()
@@ -358,7 +372,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             otp = phrasing()
             guest_update(guest_obj, otp, room)
             room_counts.allocated(room.name_take3)
-        elif trans_code =='' and guest_entries.count() > 0:
+        elif trans_code == '' and guest_entries.count() > 0:
             # There are a few cases that could pop up here
             # * admins / staff
             # * people share email addresses and soft-transfer rooms in sp
@@ -383,9 +397,13 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
             # Transfered ticket...
             existing_guest = None
             transfer_room = None
-            try:
-                existing_guest = Guest.objects.get(ticket=trans_code)
-            except Guest.DoesNotExist:
+            chain = []
+
+            for chain_guest in Guest.chain(trans_code):
+                if chain_guest.room_set.count() == 1:
+                    existing_guest = chain_guest
+
+            if not existing_guest:
                 # sometimes this happens due to transfers showing up earlier in the sp export than
                 # the origial ticket. so we go through the full set of rows
                 chain = transfer_chain(trans_code, guest_rows)
@@ -393,27 +411,33 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
                     logger.warning("Ticket transfer (%s) but no previous guest found", trans_code)
                     continue
 
-                for chain_guest in chain:
+                for chain_guest in [guest_obj] + chain:
                     # add stub guests (if does not already exist)
+                    #  note stubs still get a jwt bc the relationship between our auth and guest model
+                    stub = None
                     try:
-                        _maybe_guest = Guest.objects.get(ticket=chain_guest.ticket_code)
+                        stub = Guest.objects.get(ticket=chain_guest.ticket_code)
+                        logger.debug("Found stub guest %s with ticket %s",
+                                     chain_guest.email, chain_guest.ticket_code)
+
                     except Guest.DoesNotExist:
                         stub_name = f"{chain_guest.first_name} {chain_guest.last_name}".title()
                         stub = Guest(name=stub_name,
                                      email=chain_guest.email,
-                                     ticket=chain_guest.ticket_code)
+                                     ticket=chain_guest.ticket_code,
+                                     jwt=phrasing())
                         logger.debug("Created stub guest %s with ticket %s",
                                      chain_guest.email, chain_guest.ticket_code)
 
                         if chain_guest.transferred_from_code:
                             stub.transfer = chain_guest.transferred_from_code
 
-                        stub.save()
+                    stub.save()
 
-                        transferred_tickets.append(chain_guest.ticket_code)
+                    transferred_tickets.append(chain_guest.ticket_code)
 
-
-                existing_guest = Guest.objects.get(ticket=chain[-1].ticket_code)
+                # now should be able to look it up
+                existing_guest = Guest.chain(trans_code)[-1]
                 if existing_guest.room_number:
                     transfer_room = Room.objects.get(number=existing_guest.room_number,
                                                      name_hotel = Room.derive_hotel(guest_obj.product))
@@ -450,6 +474,7 @@ def create_guest_entries(guest_rows, room_counts, orphan_tickets=[]):
 
                 continue
 
+            existing_room = None
             if existing_guest.room_number is not None:
                 existing_room = Room.objects.get(number = existing_guest.room_number,
                                                  name_hotel = Room.derive_hotel(guest_obj.product))
@@ -522,23 +547,22 @@ def run_reports(request):
 
         admin_emails = [admin.email for admin in User.objects.filter(is_staff=True)]
         guest_dump_file, room_dump_file = dump_guest_rooms()
+        swaps_file = swaps_report()
         attachments = [
             guest_dump_file,
-            room_dump_file
-        ] + [[hotel_export(x), rooming_list_export(x)] for x in roombaht_config.GUEST_HOTELS]
-        if os.path.exists(f"{roombaht_config.TEMP_DIR}/diff_latest.csv"):
-            attachments.append(f"{roombaht_config.TEMP_DIR}/diff_latest.csv")
-
-        if os.path.exists(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv"):
-            attachments.append(f"{roombaht_config.TEMP_DIR}/guestUpload_latest.csv")
+            room_dump_file,
+            swaps_file
+        ]
+        for hotel in roombaht_config.GUEST_HOTELS:
+            attachments.append(hotel_export(hotel))
+            attachments.append(rooming_list_export(hotel))
 
         send_email(admin_emails,
                    'RoomService RoomBaht - Report Time',
                    'Your report(s) are here. *theme song for Brazil plays*',
                    [x for x in attachments if x is not None])
 
-        return Response(str(json.dumps({"admins": admin_emails})),
-                        status=status.HTTP_201_CREATED)
+        return Response({"admins": admin_emails}, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -575,7 +599,7 @@ def request_metrics(request):
             room_total = rooooms.filter(name_take3=room_type).count()
             if room_total > 0:
                 room_metrics.append({
-                    "room_type": room_type,
+                    "room_type": f"{ROOM_LIST[room_type]['hotel']} - {room_type}",
                     "total": room_total,
                     "unoccupied": rooooms.filter(name_take3=room_type, is_available=True).count()
                 })
@@ -614,21 +638,21 @@ def guest_file_upload(request):
         guest_fields, original_guests = ingest_csv(rows)
         guests = []
 
+        # basic input validation, make sure it's the right csv
+        if 'ticket_code' not in guest_fields or \
+           'product' not in guest_fields:
+            return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
+
         # figure out how to handle sku/product consistently between years
         for o_guest in original_guests:
             raw_product = o_guest['product']
             o_guest['product'] = re.sub(r'[\d\.]+ RS24 ', '', raw_product)
             guests.append(o_guest)
 
-        # basic input validation, make sure it's the right csv
-        if 'ticket_code' not in guest_fields or \
-           'product' not in guest_fields:
-            return Response("Unknown file", status=status.HTTP_400_BAD_REQUEST)
-
         # build a list of products that we actually care about
         room_products = []
-        for _take3_product, hotel_products in ROOM_LIST.items():
-            for product in hotel_products:
+        for _take3_product, hotel_details in ROOM_LIST.items():
+            for product in hotel_details.get('rooms', []):
                 room_products.append(product)
 
         for guest in guests:
@@ -661,7 +685,7 @@ def guest_file_upload(request):
                 pass
 
             if existing_ticket:
-                logger.warning("[-] Ticket %s from upload already in db", guest['ticket_code'])
+                logger.debug("[-] Ticket %s from upload already in db", guest['ticket_code'])
                 continue
 
             if guest['ticket_code'] in config.IGNORE_TRANSACTIONS:
@@ -678,6 +702,11 @@ def guest_file_upload(request):
         first_row = {}
         if len(new_guests) > 0:
             first_row = new_guests[0]
+
+        if len(new_guests) > 0 and len(new_guests) != len(guests):
+            logger.info("Processing %s new entries: %s",
+                        len(new_guests), ','.join([x['ticket_code'] for x in new_guests]))
+
 
         resp = str(json.dumps({"received_rows": len(guests),
                                "valid_rows": len(new_guests),
@@ -710,3 +739,31 @@ def system_config(request):
             resp_status = status.HTTP_201_CREATED
 
         return Response(obj, status=resp_status)
+
+
+def fetch_reports(request):
+    if 'report' not in request.data or \
+       'hotel' not in request.data:
+        return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+
+    if request.data['hotel'].title() not in roombaht_config.GUEST_HOTELS:
+        return Response("unknown hotel", status=status.HTTP_400_BAD_REQUEST)
+
+    export_file = None
+    if request.data['report'] == 'hotel':
+        export_file = hotel_export(request.data['hotel'])
+    elif request.data['report'] == 'roomslist':
+        export_file = rooming_list_export(request.data['hotel'])
+    elif request.data['report'] == 'room':
+        _guest_file, export_file = dump_guest_rooms()
+    elif request.data['report'] == 'guest':
+        export_file, _room_file = dump_guest_rooms()
+    elif request.data['report'] == 'swaps':
+        export_file = swaps_report()
+    else:
+        return Response("unknown report", status=status.HTTP_400_BAD_REQUEST)
+
+    response = HttpResponse(open(export_file, 'r'), content_type='text/csv')
+    response['Content-Disposition'] = f"attachment; filename={os.path.basename(export_file)}"
+
+    return response

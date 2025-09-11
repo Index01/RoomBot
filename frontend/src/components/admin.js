@@ -13,7 +13,7 @@ import toast, { Toaster } from 'react-hot-toast';
 const notifyOK = (msg) => toast.success(msg);
 const notifyError = (msg) => toast.error("Error: " + msg);
 
-function GuestsCard() {
+function GuestsCard(props) {
   const [phrase, setPhrase] = useState("");
   const [respText, setRespText] = useState([]);
   const [isLoading, setLoading] = useState(false);
@@ -25,25 +25,26 @@ function GuestsCard() {
       return;
     }
     const guest = {
-        jwt: jwt["jwt"],
-        guest_list: file,
+      jwt: jwt["jwt"],
+      guest_list: file,
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/guest_upload/", guest )
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/guest_upload/", guest )
       .then(res => {
         setPhrase(res.data);
-	notifyOK("File uploaded succesfully.");
+        setRespText([]);
+        notifyOK("File uploaded succesfully.");
       })
       .catch((error) => {
         if (error.response) {
-	  if (error.response.status == 400) {
-	    notifyError("File is in wrong format.");
-	  } else {
-	    notifyError("Unable to upload file");
-	  }
+          if (error.response.status == 400) {
+            notifyError("File is in wrong format.");
+          } else {
+            notifyError("Unable to upload file");
+          }
         } else if (error.request) {
-	  notifyError("Network error!");
+          notifyError("Network error!");
         } else {
-	  notifyError("Mysterious error is mysterious.");
+          notifyError("Mysterious error is mysterious.");
         }
       });
   };
@@ -51,7 +52,7 @@ function GuestsCard() {
   const handleSubmit = (evt) => {
     evt.preventDefault();
     const formData = new FormData(evt.target),
-    formDataObj = Object.fromEntries(formData.entries())
+          formDataObj = Object.fromEntries(formData.entries())
 
     console.log(formDataObj.guestListUpload);
 
@@ -85,18 +86,18 @@ function GuestsCard() {
 
   useEffect(() => {
     if (isLoading) {
-      axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
-	notifyOK("Guests processed");
-        console.log(res.data.results);
-	setLoading(false);
-        setRespText(JSON.parse(JSON.stringify(res.data)).results);
-        setPhrase("");
-      })
-      .catch((error) => {
-	notifyError("Unable to process guests");
-        console.log(error);
+      axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
+        notifyOK("Guests processed");
         setLoading(false);
-      });
+        setRespText(res.data.results);
+        setPhrase("");
+        props.onChange();
+      })
+        .catch((error) => {
+          notifyError("Unable to process guests");
+          console.log(error);
+          setLoading(false);
+        });
     }
   }, [isLoading]);
   return (
@@ -105,19 +106,19 @@ function GuestsCard() {
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         Select a guest list to upload, verify it, load it to database.
+          Select a guest list to upload, verify it, load it to database.
         </Card.Text>
 
 
         <Form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
-            </div>
+          <div className="mb-3">
+            <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
+          </div>
           <Button variant="primary" type="submit">
             Upload
           </Button>
-        <p></p>
-        <Card.Text>{phrase}</Card.Text>
+          <p></p>
+          <Card.Text>{phrase}</Card.Text>
         </Form>
 
         <Button
@@ -130,7 +131,10 @@ function GuestsCard() {
         <p></p>
         <ul className="card-subtitle mb-2 text-muted">
           {respText.map(item =>
-            <li key={item}>load response: {item}</li>
+            item.includes('shortage: 0') ?
+              <li key={item}>load response: {item}</li>
+            :
+            <li className="text-warning"  key={item}>load response: {item}</li >
           )}
         </ul>
 
@@ -154,15 +158,15 @@ function ReportCard() {
       jwt: jwt["jwt"],
     }
     if (isLoading) {
-       axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/run_reports/", data )
-         .then((respText) => {
-           console.log(JSON.parse(respText.data).admins);
-           setLoading(false);
-           setRespText(JSON.parse(respText.data).admins);
-         })
-         .catch((error) => {
-           setLoading(false);
-         });
+      axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/run_reports/", data )
+        .then((respText) => {
+          console.log(respText.data.admins);
+          setLoading(false);
+          setRespText(respText.data.admins);
+        })
+        .catch((error) => {
+          setLoading(false);
+        });
     }
   }, [isLoading]);
   return (
@@ -171,10 +175,6 @@ function ReportCard() {
       <Card.Body>
         <Card.Title>Run the following reports:</Card.Title>
         <ListGroup variant="flush">
-          <ListGroup.Item>Diff GuestList</ListGroup.Item>
-          <ListGroup.Item>Diff Swaps</ListGroup.Item>
-          <ListGroup.Item>Guest Dump</ListGroup.Item>
-          <ListGroup.Item>Room Dump</ListGroup.Item>
           <ListGroup.Item>Hotel Exports</ListGroup.Item>
           <ListGroup.Item>Hotel Rooming Lists</ListGroup.Item>
         </ListGroup>
@@ -203,10 +203,10 @@ export default class RoombotAdmin extends React.Component {
     super(props);
     this.state = {
       metrics: {
-	swaps_enabled: undefined,
-	party_app: undefined,
-	wait_app: undefined,
-	send_onboarding: undefined
+        swaps_enabled: undefined,
+        party_app: undefined,
+        wait_app: undefined,
+        send_onboarding: undefined
       }
     }
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -229,15 +229,15 @@ export default class RoombotAdmin extends React.Component {
     }
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
       .then((result) => {
-	this.setState({metrics: result.data});
+        this.setState({metrics: result.data});
       })
       .catch((error) => {
         if (error.response) {
-	  notifyError("Unable to change config");
+          notifyError("Unable to change config");
         } else if (error.request) {
-	  notifyError("Network error!");
+          notifyError("Network error!");
         } else {
-	  notifyError("Mysterious error is mysterious.");
+          notifyError("Mysterious error is mysterious.");
         }
       });
   }
@@ -251,81 +251,81 @@ export default class RoombotAdmin extends React.Component {
     }
     axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
       .then((result) => {
-	this.setState({metrics: result.data});
+        this.setState({metrics: result.data});
       })
       .catch((error) => {
         //this.setState({errorMessage: error.message});
         if (error.response) {
-	  if (error.response.status === 401) {
-	    this.setState({ error: 'auth' });
+          if (error.response.status === 401) {
+            this.setState({ error: 'auth' });
           } else if (error.request) {
-	    notifyError("Network error.");
+            notifyError("Network error.");
           } else {
-	    notifyError("Mysterious error is mysterious.");
+            notifyError("Mysterious error is mysterious.");
             console.log("unhandled error " + error.response.status + ", " + error.response.data);
           }
-	}
+        }
       });
   }
 
   render() {
     return (
       <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Load Rooms & Guests</Accordion.Header>
-        <Accordion.Body>
-          <div>
-          <GuestsCard />
-          </div>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>Run Reports</Accordion.Header>
-        <Accordion.Body>
-          <div>
-          <ReportCard />
-          </div>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="2">
-        <Accordion.Header>Live Configuration</Accordion.Header>
-        <Accordion.Body>
-          <div>
-	    <Card>
-	      <Card.Header>Live Configuration</Card.Header>
-	      <Card.Body>
-		<Card.Title>Change RoomBaht Configuration</Card.Title>
-		<Form onSubmit={this.handleSubmit}>
-		  <Form.Check
-		    type="switch"
-		    id="config_swaps_enabled"
-		    label="Swaps Enabled"
-		    defaultChecked={this.state.metrics.swaps_enabled} />
-		  <Form.Check
-		    type="switch"
-		    id="config_party_app"
-		    label="Party App Enabled"
-		    defaultChecked={this.state.metrics.party_app} />
-		  <Form.Check
-		    type="switch"
-		    id="config_waittime_app"
-		    label="Waittime App Enabled"
-		    defaultChecked={this.state.metrics.waittime_app} />
-		  <Form.Check
-		    type="switch"
-		    id="config_send_onboarding"
-		    label="Send Onboarding Emails"
-		    defaultChecked={this.state.metrics.send_onboarding} />
-		  <Button variant="primary" type="submit">
-		    Change
-		  </Button>
-		</Form>
-	      </Card.Body>
-	    </Card>
-          </div>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>Load Rooms & Guests</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              <GuestsCard onChange={this.props.onChange} />
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+        <Accordion.Item eventKey="1">
+          <Accordion.Header>Run Reports</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              <ReportCard />
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+        <Accordion.Item eventKey="2">
+          <Accordion.Header>Live Configuration</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              <Card>
+                <Card.Header>Live Configuration</Card.Header>
+                <Card.Body>
+                  <Card.Title>Change RoomBaht Configuration</Card.Title>
+                  <Form onSubmit={this.handleSubmit}>
+                    <Form.Check
+                      type="switch"
+                      id="config_swaps_enabled"
+                      label="Swaps Enabled"
+                      defaultChecked={this.state.metrics.swaps_enabled} />
+                    <Form.Check
+                      type="switch"
+                      id="config_party_app"
+                      label="Party App Enabled"
+                      defaultChecked={this.state.metrics.party_app} />
+                    <Form.Check
+                      type="switch"
+                      id="config_waittime_app"
+                      label="Waittime App Enabled"
+                      defaultChecked={this.state.metrics.waittime_app} />
+                    <Form.Check
+                      type="switch"
+                      id="config_send_onboarding"
+                      label="Send Onboarding Emails"
+                      defaultChecked={this.state.metrics.send_onboarding} />
+                    <Button variant="primary" type="submit">
+                      Change
+                    </Button>
+                  </Form>
+                </Card.Body>
+              </Card>
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
     )
   }
 }

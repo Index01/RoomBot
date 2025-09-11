@@ -38,19 +38,19 @@ def login(request):
     elif request.method == 'POST':
         data = request.data
 
-        logger.info(f"[+] User login attempt: {data['email']}")
-        try:
-            email = data['email'].lower()
-        except KeyError:
-            logger.info(f"[-] User login failed {data['email']}")
-            return Response("User not found", status=status.HTTP_400_BAD_REQUEST)
+        if 'email' not in data or \
+           'jwt' not in data:
+            return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
+
+        email = data['email']
         guest_email = Guest.objects.filter(email=email, can_login=True)
-        admin_email = User.objects.filter(email=email)
+        try:
+            admin_email = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response("invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
+
         jwt_key = roombaht_config.JWT_KEY
-        logger.debug("found %s admin, %s guests that match %s" % (admin_email.count(),
-                                                                  guest_email.count(),
-                                                                  email))
-        admin_user = authenticate(username=admin_email[0].username,
+        admin_user = authenticate(username=admin_email.username,
                                   password=data['jwt'])
         if admin_user is not None:
             resp = jwt.encode({"email":admin_user.email,
@@ -82,7 +82,7 @@ def login_reset(request):
             data = request.data["guest"]
             email = data["email"].lower()
         except KeyError as e:
-            logger.info(f"[+] Reset fail missing field: {data['email']}")
+            logger.info(f"[+] Reset fail missing field: email")
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
         logger.info("[+] User reset attempt: %s", email)

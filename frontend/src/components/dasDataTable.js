@@ -105,7 +105,7 @@ export default class RoomDataTable extends React.Component {
       this.setState({error: 'auth'});
       return;
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/rooms/", {
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/rooms/", {
             jwt: jwt["jwt"]
       })
       .then(res => {
@@ -121,11 +121,6 @@ export default class RoomDataTable extends React.Component {
           rooms: roomsWithIntegers,
           swaps_enabled: data.swaps_enabled
         }, this.sortData0);
-	if (this.state.swaps_enabled && this.state.refreshTimer === null) {
-	  this.state.refreshTimer = setInterval(() => {
-	    this.loadRooms();
-	  }, 5000);
-	}
       })
       .catch((error) => {
         this.setState({errorMessage: error.message});

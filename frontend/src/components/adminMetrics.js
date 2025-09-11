@@ -13,15 +13,16 @@ export default class BasicVis extends React.Component {
   state = {
     metrics : {
       rooms: []
-    }
+    },
+    updates: 0
   }
-  componentDidMount() {
+  loadMetrics() {
     const jwt = JSON.parse(localStorage.getItem('jwt'));
     if ( jwt === null ) {
       this.setState({error: 'auth'});
       return;
     }
-    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/request_metrics/", { jwt: jwt["jwt"] })
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/request_metrics/", { jwt: jwt["jwt"] })
       .then((result) => {
         this.setState({ metrics: result.data });
       })
@@ -38,6 +39,15 @@ export default class BasicVis extends React.Component {
           }
 	}
       });
+  }
+  componentDidMount() {
+    this.loadMetrics();
+  }
+
+  componentDidUpdate(oldProps) {
+    if (oldProps.count != this.props.count ) {
+      this.loadMetrics();
+    }
   }
 
   render(){
@@ -86,7 +96,7 @@ export default class BasicVis extends React.Component {
           </Col>
           <Col xs lg="4">
               <h5> Unoccupied</h5>
-	      {this.state.metrics.rooms.map((metric) => {
+	    {this.state.metrics.rooms.map((metric) => {
 	        return (<div key={metric.room_type} className="card-subtitle mb-2 text-muted">{metric.room_type}: {metric['unoccupied']} of {metric['total']} total</div>)
 	      })}
           </Col>

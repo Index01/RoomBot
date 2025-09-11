@@ -13,8 +13,16 @@ ccc008,Lobster,Rock,rock.lobster@noop.com,Bally's - Standard 2 Queen,,
 # some hard rock transfers
 hha001,Noo,Foo,foo.noo@noop.com,Nugget - Balcony King,hhh016,
 hha002,Moo,Foo,foo.moo@noop.com,Nugget - Standard King,hhh017,
-hha003,Moo,Coo,coo.moo@noop.com,Nugget - Pool View Balcony Suite,hhh019,
+hha003,Moo,Coo,coo.moo@noop.com,Nugget - King Pool View Balcony Suite,hhh019,
 # non placed room
 hha004,Bap,Bon,bon.bap@noop.com,Nugget - Lakeview King,,
-hha005,Cap,Con,con.cap@noop.com,Nugget - Mountain View Suite,,
-hha006,Cap,Bon,bon.cap@noop.com,Nugget - Lakeview Balcony Suite,,
+hha005,Cap,Con,con.cap@noop.com,Nugget - King Mountain View Suite,,
+hha006,Cap,Bon,bon.cap@noop.com,Nugget - King Lakeview Balcony Suite,,
+# double transfer for existing room
+hha007,Cap,Bop,bop.cap@noop.com,Nugget - King Pool View Balcony Suite,hhh020,
+hha008,Cap,Boq,bop.caq@noop.com,Nugget - King Pool View Balcony Suite,hha007,
+# single transfer for existing placed room
+hha009,Baa,Foj,foj.baa@noop.com,Bally's - Art Room King,aaa005
+# double transfer for existing placed room
+hha011,Lobster,Stone,stone.lobster@noop.com,Bally's - Standard King,hha010,
+hha010,Lobster,Boulder,boulder.lobster@noop.com,Bally's - Standard King,aaa023,
