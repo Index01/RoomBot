@@ -94,6 +94,9 @@ stages:
                         is_party:
                           type: "bool"
                           required: true
+                        is_swappable:
+                          type: "bool"
+                          required: true
 
   - name: "need auth for list of user rooms"
     request:
