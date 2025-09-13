@@ -53,22 +53,6 @@ class Guest(models.Model):
     def __str__(self):
         return self.name
 
-    @staticmethod
-    def traverse_transfer(chain):
-        obj = chain[-1]
-        if not obj.transfer:
-            return chain
-
-        guest = Guest.objects.get(ticket=obj.transfer)
-        chain.append(guest)
-        if guest.transfer:
-            return Guest.traverse_transfer(chain)
-
-        return chain
-
-    def chain(self):
-        return Guest.traverse_transfer([self])
-
 @admin.register(Guest)
 class GuestAdmin(admin.ModelAdmin):
     date_heiarchy = 'created_at'

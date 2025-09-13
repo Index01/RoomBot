@@ -740,7 +740,7 @@ def system_config(request):
 
         return Response(obj, status=resp_status)
 
-
+@api_view(['POST'])
 def fetch_reports(request):
     if 'report' not in request.data or \
        'hotel' not in request.data:

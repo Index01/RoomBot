@@ -24,13 +24,8 @@ URL_SCHEMA = env_config('url_schema', 'http')
 
 JWT_KEY = env_config('jwt_key')
 
-SEND_ONBOARDING = env_config('send_onboarding', 'false').lower() == 'true'
-ONBOARDING_BATCH = int(env_config('onboarding_batch', '5'))
-
 TEMP_DIR = env_config('tmp', '/tmp')
 
-IGNORE_TRANSACTIONS = env_config('ignore_transactions').split(',')
-SWAPS_ENABLED = env_config('swaps_enabled', 'true').lower() == 'true'
 GUEST_HOTELS = env_config('guest_hotels', 'Ballys,Nugget').split(',')
 
 def features():
