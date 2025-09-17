@@ -3,6 +3,7 @@ import logging
 import sys
 from django.utils.timezone import make_aware
 from django.db import models
+from django.contrib import admin
 from reservations.constants import ROOM_LIST
 from dirtyfields import DirtyFieldsMixin
 from reservations.helpers import real_date
@@ -24,17 +25,17 @@ class UnknownProductError(Exception):
 class Guest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    name = models.CharField("Name", max_length=240)
-    email = models.EmailField()
+    name = models.CharField("User Name", max_length=240)
+    email = models.EmailField("Email")
     ticket = models.CharField("Ticket", max_length=20)
     transfer = models.CharField("Transfer", max_length=20)
     invitation = models.CharField("Invitation", max_length=20)
-    jwt = models.CharField("JWT", max_length=240)
-    room_number = models.CharField("RoomNumber", max_length=20, blank=True, null=True)
+    jwt = models.CharField("Password", max_length=240)
+    room_number = models.CharField("Room Number", max_length=20, blank=True, null=True)
     hotel = models.CharField("Hotel", max_length=20, null=True, blank=True)
-    onboarding_sent = models.BooleanField("OnboardingSent", default=False)
-    can_login = models.BooleanField("CanLogin", default=False)
-    last_login = models.DateTimeField(blank=True, null=True)
+    onboarding_sent = models.BooleanField("Onboarding Sent", default=False)
+    can_login = models.BooleanField("Can Login", default=False)
+    last_login = models.DateTimeField("Last Login", blank=True, null=True)
 
     @staticmethod
     def chain(trans_code, guest_chain=[]):
@@ -52,28 +53,32 @@ class Guest(models.Model):
     def __str__(self):
         return self.name
 
-class Staff(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    name = models.CharField("Name", max_length=240)
-    email = models.EmailField()
-    is_admin = models.BooleanField("Admin", default=False)
-    guest = models.ForeignKey(Guest, on_delete=models.SET_NULL, blank=True, null=True)
-
-    def __str__(self):
-        return f'staff name: {self.name}'
+@admin.register(Guest)
+class GuestAdmin(admin.ModelAdmin):
+    date_heiarchy = 'created_at'
+    exclude = ['invitation', 'jwt', 'updated_at']
+    fields = [
+        ('name', 'email', 'onboarding_sent'),
+        ('can_login', 'last_login'),
+        ('ticket', 'transfer')
+    ]
+    readonly_fields = ['name', 'email', 'ticket', 'transfer', 'can_login',
+                       'last_login']
+    search_fields = ['name', 'email']
+    description = 'A Guest'
+    search_help_text = 'Search by username or email'
 
 class Room(DirtyFieldsMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    number = models.CharField("Number", max_length=20)
-    name_take3 = models.CharField("Take3Name", max_length=50)
-    name_hotel = models.CharField("HotelName", max_length=50)
+    number = models.CharField("Room Number", max_length=20)
+    name_take3 = models.CharField("Room Type", max_length=50)
+    name_hotel = models.CharField("Hotel", max_length=50)
     is_available = models.BooleanField("Available", default=False)
-    is_swappable = models.BooleanField("IsSwappable", default=False)
-    is_smoking = models.BooleanField("SmokingRoom", default=False)
-    is_lakeview = models.BooleanField("LakeviewRoom", default=False)
-    is_mountainview = models.BooleanField("MountainviewRoom", default=False)
+    is_swappable = models.BooleanField("Swappable", default=False)
+    is_smoking = models.BooleanField("Smoking", default=False)
+    is_lakeview = models.BooleanField("Lakeview", default=False)
+    is_mountainview = models.BooleanField("Mountainview", default=False)
     is_ada = models.BooleanField("ADA", default=False)
     is_hearing_accessible = models.BooleanField("HearingAccessible", default=False)
     is_special = models.BooleanField("SpecialRoom", default=False)
@@ -250,6 +255,45 @@ class Room(DirtyFieldsMixin, models.Model):
 
         room_two.guest.save()
         room_one.guest.save()
+
+@admin.register(Room)
+class RoomsAdmin(admin.ModelAdmin):
+    exclude = ['created_at',
+               'updated_at',
+               'swap_code']
+    fields = [
+        ('number', 'name_take3', 'name_hotel'),
+        ('is_placed', 'primary', 'secondary', 'check_in', 'check_out'),
+        ('is_smoking', 'is_lakeview', 'is_special',
+         'is_hearing_accessible', 'is_mountainview', 'placed_by_roombot',
+         'sp_ticket_id')
+    ]
+    readonly_fields = [
+        'check_in', 'check_out', 'is_smoking', 'is_lakeview', 'is_special',
+        'is_hearing_accessible', 'is_mountainview', 'is_placed',
+        'placed_by_roombot', 'sp_ticket_id'
+    ]
+    description = 'A Room'
+    list_display = [
+        'number',
+        'name_hotel',
+        'name_take3'
+    ]
+    search_fields = [
+        'number',
+        'name_hotel',
+        'name_take3',
+        'primary',
+        'secondary'
+    ]
+    search_help_text = 'Search by room number, hotel name' \
+        'room type, and primary or secondary name'
+
+    sortable_by = [
+        'number',
+        'name_hotel',
+        'name_take3'
+    ]
 
 class Swap(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

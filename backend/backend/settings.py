@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'backend.admin.CustomConstance',
     'reservations',
     'party',
     'waittime'
@@ -175,3 +176,22 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ['ROOMBAHT_EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = os.environ['ROOMBAHT_EMAIL_HOST_PASSWORD']
+
+# real time config
+CONSTANCE_BACKEND='constance.backends.database.DatabaseBackend'
+
+CONSTANCE_CONFIG = {
+    'SWAPS_ENABLED': (False,
+                      'Enable Room Swaps'),
+    'SEND_ONBOARDING': (False,
+                        'Send Onboarding Emails'),
+    'ONBOARDING_BATCH': (25, 'Onboarding Email Batch Size'),
+    'PARTY_APP': (True,
+                  'Enable "where the party at" App'),
+    'WAITTIME_APP': (True,
+                     'Enable "wait time" App'),
+    'ROOM_COOLDOWN': (900,
+                      'Cooldown time between room swaps'),
+    'IGNORE_TRANSACTIONS': ('',
+                            'CSV list of transactions to ignore')
+}

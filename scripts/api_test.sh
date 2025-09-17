@@ -44,6 +44,7 @@ run() {
 
     "${SCRIPTDIR}/manage_dev" loaddata test_users
     "${SCRIPTDIR}/manage_dev" loaddata test_rooms
+    "${SCRIPTDIR}/manage_dev" constance set SWAPS_ENABLED true
     "$TAVERN" backend/tavern/test_room_swap.tavern.yml
     "$TAVERN" backend/tavern/test_admin.tavern.yml
     "$TAVERN" backend/tavern/test_reports.tavern.yml

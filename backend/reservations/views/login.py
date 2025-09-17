@@ -8,11 +8,13 @@ import sys
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from constance import config
 from django.core.mail import send_mail
 from django.utils.timezone import make_aware
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 from ..models import Guest
 from ..models import Room
-from ..models import Staff
 from ..helpers import phrasing, send_email
 import reservations.config as roombaht_config
 from reservations.auth import reset_otp
@@ -30,7 +32,7 @@ def update_last_login(guest):
 def login(request):
     if request.method == 'GET':
         data = {
-            'features': roombaht_config.FEATURES
+            'features': roombaht_config.features()
         }
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
@@ -41,24 +43,26 @@ def login(request):
             return Response("missing fields", status=status.HTTP_400_BAD_REQUEST)
 
         email = data['email']
-        guest_email = Guest.objects.filter(email=email, can_login=True)
-        staff_email = Staff.objects.filter(email=email)
         jwt_key = roombaht_config.JWT_KEY
-        logger.debug("found %s staff, %s guests that match %s",
-                     staff_email.count(), guest_email.count(), email)
-        # Check if login attempt is admin
-        for admin in staff_email:
-            if data['jwt'] == admin.guest.jwt:
-                resp = jwt.encode({"email":admin.email,
+
+        # Try admin authentication first
+        try:
+            admin_email = User.objects.get(email=email)
+            admin_user = authenticate(username=admin_email.username,
+                                      password=data['jwt'])
+            if admin_user is not None:
+                resp = jwt.encode({"email":admin_user.email,
                                    "datetime":str(datetime.datetime.utcnow())},
-                                   jwt_key,
+                                  jwt_key,
                                   algorithm="HS256")
-                logger.info("[+] Admin login success for %s", admin.email)
-                update_last_login(admin.guest)
+                logger.info("[+] Admin login success for %s", admin_user.email)
                 body = {"jwt": resp, "admin": True}
                 return Response(body, status=status.HTTP_201_CREATED)
+        except User.DoesNotExist:
+            pass  # Continue to check guest authentication
 
         # Check if login attempt is guest
+        guest_email = Guest.objects.filter(email=email, can_login=True)
         for guest in guest_email:
             if data['jwt'] == guest.jwt:
                 resp = jwt.encode({"email":guest.email,
@@ -69,7 +73,7 @@ def login(request):
                 return Response({"jwt": resp}, status=status.HTTP_201_CREATED)
 
         logger.debug("No valid credentials found for %s", email)
-        return Response("Invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
+        return Response("invalid credentials", status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['POST'])

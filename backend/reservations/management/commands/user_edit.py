@@ -1,6 +1,6 @@
 from getpass import getpass
 from django.core.management.base import BaseCommand, CommandError
-from reservations.models import Guest, Staff
+from reservations.models import Guest
 from reservations.auth import reset_otp
 
 class Command(BaseCommand):
@@ -33,10 +33,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if 'email' not in kwargs:
             raise CommandError("Must specify email")
-
-        if 'adult' in kwargs and \
-           kwargs['adult'].lower() not in ['admin', 'staff', 'none']:
-            raise CommandError('Invalid option passed to --adult')
 
         guest_entries = Guest.objects.filter(email=kwargs['email'])
         if guest_entries.count() == 0:

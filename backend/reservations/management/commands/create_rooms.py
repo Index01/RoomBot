@@ -3,7 +3,7 @@ from fuzzywuzzy import fuzz
 from django.core.management.base import BaseCommand, CommandError
 from pydantic import ValidationError
 from reservations.helpers import ingest_csv
-from reservations.models import Room, Guest, Staff
+from reservations.models import Room, Guest
 from reservations.constants import ROOM_LIST
 from reservations.ingest_models import RoomPlacementListIngest
 from reservations.management import getch
@@ -293,7 +293,6 @@ class Command(BaseCommand):
 
         if not kwargs['preserve']:
             if len(Room.objects.all()) > 0 or \
-               len(Staff.objects.all()) > 0 or \
                len(Guest.objects.all()) > 0:
                 if not kwargs['force']:
                     print('Wipe data? [y/n]')

@@ -8,6 +8,7 @@ import Spinner from 'react-bootstrap/Spinner';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Form from 'react-bootstrap/Form';
+import React from "react";
 import toast, { Toaster } from 'react-hot-toast';
 const notifyOK = (msg) => toast.success(msg);
 const notifyError = (msg) => toast.error("Error: " + msg);
@@ -24,26 +25,26 @@ function GuestsCard(props) {
       return;
     }
     const guest = {
-        jwt: jwt["jwt"],
-        guest_list: file,
+      jwt: jwt["jwt"],
+      guest_list: file,
     }
     axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/guest_upload/", guest )
       .then(res => {
         setPhrase(res.data);
-	setRespText([]);
-	notifyOK("File uploaded succesfully.");
+        setRespText([]);
+        notifyOK("File uploaded succesfully.");
       })
       .catch((error) => {
         if (error.response) {
-	  if (error.response.status == 400) {
-	    notifyError("File is in wrong format.");
-	  } else {
-	    notifyError("Unable to upload file");
-	  }
+          if (error.response.status == 400) {
+            notifyError("File is in wrong format.");
+          } else {
+            notifyError("Unable to upload file");
+          }
         } else if (error.request) {
-	  notifyError("Network error!");
+          notifyError("Network error!");
         } else {
-	  notifyError("Mysterious error is mysterious.");
+          notifyError("Mysterious error is mysterious.");
         }
       });
   };
@@ -51,7 +52,7 @@ function GuestsCard(props) {
   const handleSubmit = (evt) => {
     evt.preventDefault();
     const formData = new FormData(evt.target),
-    formDataObj = Object.fromEntries(formData.entries())
+          formDataObj = Object.fromEntries(formData.entries())
 
     console.log(formDataObj.guestListUpload);
 
@@ -86,17 +87,17 @@ function GuestsCard(props) {
   useEffect(() => {
     if (isLoading) {
       axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/create_guests/", { jwt: jwt['jwt'] }).then((res) => {
-	notifyOK("Guests processed");
-	setLoading(false);
+        notifyOK("Guests processed");
+        setLoading(false);
         setRespText(res.data.results);
         setPhrase("");
-	props.onChange();
+        props.onChange();
       })
-      .catch((error) => {
-	notifyError("Unable to process guests");
-        console.log(error);
-        setLoading(false);
-      });
+        .catch((error) => {
+          notifyError("Unable to process guests");
+          console.log(error);
+          setLoading(false);
+        });
     }
   }, [isLoading]);
   return (
@@ -105,19 +106,19 @@ function GuestsCard(props) {
       <Card.Body>
         <Card.Title>Using file:</Card.Title>
         <Card.Text>
-         Select a guest list to upload, verify it, load it to database.
+          Select a guest list to upload, verify it, load it to database.
         </Card.Text>
 
 
         <Form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
-            </div>
+          <div className="mb-3">
+            <input className="form-control" type="file" id="formFile" name="guestListUpload"></input>
+          </div>
           <Button variant="primary" type="submit">
             Upload
           </Button>
-        <p></p>
-        <Card.Text>{phrase}</Card.Text>
+          <p></p>
+          <Card.Text>{phrase}</Card.Text>
         </Form>
 
         <Button
@@ -131,9 +132,9 @@ function GuestsCard(props) {
         <ul className="card-subtitle mb-2 text-muted">
           {respText.map(item =>
             item.includes('shortage: 0') ?
-	      <li key={item}>load response: {item}</li>
-	    :
-              <li className="text-warning"  key={item}>load response: {item}</li >
+              <li key={item}>load response: {item}</li>
+            :
+            <li className="text-warning"  key={item}>load response: {item}</li >
           )}
         </ul>
 
@@ -158,14 +159,14 @@ function ReportCard() {
     }
     if (isLoading) {
       axios.post(window.location.protocol + "//" + window.location.hostname + ":" + (window.location.protocol == "https:" ? "8443" : "8000") +  "/api/run_reports/", data )
-         .then((respText) => {
-           console.log(respText.data.admins);
-           setLoading(false);
-           setRespText(respText.data.admins);
-         })
-         .catch((error) => {
-           setLoading(false);
-         });
+        .then((respText) => {
+          console.log(respText.data.admins);
+          setLoading(false);
+          setRespText(respText.data.admins);
+        })
+        .catch((error) => {
+          setLoading(false);
+        });
     }
   }, [isLoading]);
   return (
@@ -197,28 +198,134 @@ function ReportCard() {
   );
 }
 
+export default class RoombotAdmin extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      metrics: {
+        swaps_enabled: undefined,
+        party_app: undefined,
+        wait_app: undefined,
+        send_onboarding: undefined
+      }
+    }
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+  handleSubmit(evt) {
+    evt.preventDefault();
+    const config = {
+      swaps_enabled: evt.currentTarget.elements.config_swaps_enabled.checked,
+      party_app: evt.currentTarget.elements.config_party_app.checked,
+      waittime_app: evt.currentTarget.elements.config_waittime_app.checked,
+      send_onboarding: evt.currentTarget.elements.config_send_onboarding.checked
+    }
+    const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if (jwt == null) {
+      return;
+    }
+    const data = {
+      jwt: jwt["jwt"],
+      config: config
+    }
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
+      .then((result) => {
+        this.setState({metrics: result.data});
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError("Unable to change config");
+        } else if (error.request) {
+          notifyError("Network error!");
+        } else {
+          notifyError("Mysterious error is mysterious.");
+        }
+      });
+  }
+  componentDidMount() {
+    const jwt = JSON.parse(localStorage.getItem('jwt'));
+    if (jwt == null) {
+      return;
+    }
+    const data = {
+      jwt: jwt["jwt"],
+    }
+    axios.post(window.location.protocol + "//" + window.location.hostname + ":8000/api/config/", data )
+      .then((result) => {
+        this.setState({metrics: result.data});
+      })
+      .catch((error) => {
+        //this.setState({errorMessage: error.message});
+        if (error.response) {
+          if (error.response.status === 401) {
+            this.setState({ error: 'auth' });
+          } else if (error.request) {
+            notifyError("Network error.");
+          } else {
+            notifyError("Mysterious error is mysterious.");
+            console.log("unhandled error " + error.response.status + ", " + error.response.data);
+          }
+        }
+      });
+  }
 
-function RoombotAdmin(props) {
-  return (
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Load Rooms & Guests</Accordion.Header>
-        <Accordion.Body>
-          <div>
-      <GuestsCard onChange={props.onChange} />
-          </div>
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>Run Reports</Accordion.Header>
-        <Accordion.Body>
-          <div>
-          <ReportCard />
-          </div>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
-  );
+  render() {
+    return (
+      <Accordion defaultActiveKey="0">
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>Load Rooms & Guests</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              <GuestsCard onChange={this.props.onChange} />
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+        <Accordion.Item eventKey="1">
+          <Accordion.Header>Run Reports</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              <ReportCard />
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+        <Accordion.Item eventKey="2">
+          <Accordion.Header>Live Configuration</Accordion.Header>
+          <Accordion.Body>
+            <div>
+              <Card>
+                <Card.Header>Live Configuration</Card.Header>
+                <Card.Body>
+                  <Card.Title>Change RoomBaht Configuration</Card.Title>
+                  <Form onSubmit={this.handleSubmit}>
+                    <Form.Check
+                      type="switch"
+                      id="config_swaps_enabled"
+                      label="Swaps Enabled"
+                      defaultChecked={this.state.metrics.swaps_enabled} />
+                    <Form.Check
+                      type="switch"
+                      id="config_party_app"
+                      label="Party App Enabled"
+                      defaultChecked={this.state.metrics.party_app} />
+                    <Form.Check
+                      type="switch"
+                      id="config_waittime_app"
+                      label="Waittime App Enabled"
+                      defaultChecked={this.state.metrics.waittime_app} />
+                    <Form.Check
+                      type="switch"
+                      id="config_send_onboarding"
+                      label="Send Onboarding Emails"
+                      defaultChecked={this.state.metrics.send_onboarding} />
+                    <Button variant="primary" type="submit">
+                      Change
+                    </Button>
+                  </Form>
+                </Card.Body>
+              </Card>
+            </div>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
+    )
+  }
 }
-
-export default RoombotAdmin;

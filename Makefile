@@ -1,10 +1,12 @@
 .PHONY = frontend_build frontend_dev frontend_archive frontend_clean \
 	backend_dev backend_archive backend_clean backend_migrations backend_env \
 	archive sample_data clean distclean backend_clean_data frontend_clean \
-	backend_distclean
+	backend_distclean test
+
+test: backend_tests
 
 # generates the frontend static content
-frontend_build: backend_env
+frontend_build:
 #	test -d frontend/public/layouts || ./scripts/fetch-images
 	docker build -t roombaht:latest frontend/
 	docker run -u node \
